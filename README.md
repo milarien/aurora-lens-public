@@ -54,5 +54,6 @@ Patent applications are not granted patents. Publication and market activity are
 - Website: [aurora-lens.ai](https://aurora-lens.ai/)
 - Publications: [Zenodo catalogue](publications/zenodo/PUBLICATION-CATALOGUE.md)
 - ORCID: [0009-0004-6422-4174](https://orcid.org/0009-0004-6422-4174)
+- Commercial licensing or acquisition enquiries: margaret.stokes\@aurora-lens.ai
 
 Licensing varies by document and deposit. See [LICENSES.md](LICENSES.md), [LEGAL-NOTICE.md](LEGAL-NOTICE.md), and the metadata for each Zenodo record.
