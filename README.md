@@ -2,6 +2,8 @@
 
 Aurora-Lens is a deterministic commitment-governance architecture. It evaluates whether a candidate state, interpretation, determination, output, release, or action is admissible to become operative or consequential.
 
+Here, deterministic refers to the admissibility outcome produced from the same candidate, authoritative state, applicable policy pack and evaluation context. It does not describe or require deterministic generation of the candidate.
+
 Its central invariant is:
 
 > A candidate does not acquire standing or consequence merely because a model, retrieval system, application, or prior state produced it. Commitment requires independent admissibility.
@@ -9,6 +11,10 @@ Its central invariant is:
 Where admissibility is not established, Aurora-Lens preserves governed non-commitment rather than forcing resolution.
 
 This repository is the public architecture, publication, patent-status, and provenance record for Aurora-Lens and its foundations. It contains no proprietary source code.
+
+This repository is a canonical public index and preservation corpus, not an independent timestamping authority. Historical priority and publication dates rest on the cited patent filings, Zenodo deposits and other external records.
+
+**Earliest claimed priority represented in this portfolio:** 27 November 2025, Australian provisional application AU 2025905835. Priority is claim-specific and depends on the disclosure contained in the relevant filing.
 
 ## Start here
 

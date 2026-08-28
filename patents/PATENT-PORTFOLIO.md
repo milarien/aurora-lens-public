@@ -22,6 +22,7 @@ Recent applications may not yet be publicly searchable. The source labels below 
 
 - A provisional application is a filing, not a granted patent.
 - The PCT application is recorded as withdrawn, not pending or granted.
+- The PCT application was withdrawn for cost reasons. Withdrawal discontinued international processing; it was not a rejection or determination of patentability.
 - The Australian complete application and United States nonprovisional application are recorded as pending. Pending claims may be amended, narrowed, rejected, abandoned, or granted in a different form.
 - This repository does not predict allowance, validity, final claim scope, or infringement.
 - The unfiled European draft is not an application and is not included.
