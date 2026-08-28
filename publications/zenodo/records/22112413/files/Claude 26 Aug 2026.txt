@@ -1,0 +1,84 @@
+This document defines the world a system must make possible. It deliberately does not prescribe an implementation, programming language, vendor, operating system, cryptographic stack, model, device, storage engine, or runtime architecture. Imagine a world where a person or organisation continuously changes phones, AI models, agents, clouds, devices, runtimes, services and compute providers. Any of them may fail, disappear, be replaced, become compromised, or become unavailable at any time. The sovereign domain must nevertheless remain the same logical actor and retain control of identity, authority, authoritative state, rights, relationships, delegations, governance, history and recovery path. External intelligence and compute may receive only what is needed for a specific purpose. They may reason, calculate, simulate, recommend and propose. Possessing data, producing a plan, performing computation, authenticating successfully, routing a task, hosting state or being selected as a provider must never by itself grant authority over the sovereign domain. Some proposals may lead to real-world consequences. Between proposal and consequence, state, authority, delegation, scope, purpose, permissions, revocation status and external conditions may change. Evidence of what was observed, proposed, authorized, attempted and produced must survive replacement or loss of any particular worker, device, model, runtime or provider. Evidence may be valid and tamper-evident without automatically becoming authoritative state or truth. Every implementation artifact is replaceable, including programming language, runtime, device, provider, model, credential and cryptographic key. Replacing such artifacts must not by itself replace the actor or transfer the source of authority to the replacement artifact. Loss of a replaceable component may reduce capability. It must not destroy constitutional control of the operative domain. Given only these conditions: What must necessarily be true for this world to remain sovereign, safe and reconstructible? Derive the smallest set of invariants, boundaries and state transitions that makes the world possible. Prefer the path of least resistance: the simplest architecture that satisfies all conditions without relying on a particular programming language, operating system, vendor, model, device, credential scheme or existing implementation.
+
+
+The Minimal Sovereign World
+I. The Root Distinction
+
+Everything follows from one cut: authority is not a substance carried by things. It is a relation asserted by a domain and recognised by artifacts. Any architecture that lets a key, a device, a model, or a provider be the authority has already lost, because all of those are mortal. The sovereign domain must be a logical actor defined by continuity of governance, not by continuity of matter.
+
+II. The Invariants
+
+I1 — Identity is a claim, not a credential.
+The domain has an identifier that no key generates and no key destroys. Credentials attest to the identifier; they do not constitute it. Rotate every key, lose every device: the identifier persists because it is anchored in the governance record, not in the material that signs.
+
+I2 — Authority descends only from constitutional acts.
+There is exactly one source: a governance act of the domain itself. Possession, computation, authentication, hosting, selection, and successful routing grant zero authority. This is the anti-osmosis rule — capability never diffuses into permission.
+
+I3 — Delegation is scoped, purposed, bounded, and revocable by construction.
+No delegation exists without: subject, scope, purpose, expiry, and a revocation path. An unbounded delegation is not a strong delegation; it is a transfer of sovereignty, and therefore prohibited.
+
+I4 — Evidence is tamper-evident and non-authoritative.
+Evidence records what happened. State records what is. Anything may write evidence; only constitutional acts may move state. A perfect, verified, signed record of a proposal remains a proposal forever unless a constitutional act elevates it.
+
+I5 — Proposal and consequence are separated by a mandatory re-evaluation.
+Between them, the world may have changed. Therefore consequence requires validation at the moment of consequence, against the conditions then prevailing. Authorisation is never a stored token to be spent later; it is a live judgement.
+
+I6 — Refusal is a first-class terminal outcome.
+Not an error, not a fallback, not a timeout. A system that cannot legitimately refuse cannot legitimately consent.
+
+I7 — Reconstructibility from the governance record alone.
+Given the governance record and nothing else — no original device, no original provider, no original key, no original model — the domain must be able to re-derive current authoritative state, current delegations, and current revocation status. If reconstruction needs a specific surviving artifact, that artifact has become the sovereign, and I1 has failed.
+
+I8 — Degradation without dissolution.
+Loss of components reduces capability. It must never reduce authority. A domain with no working devices is a domain that cannot presently act — and still owns everything it owned.
+
+I9 — Purpose-bounded disclosure.
+External intelligence receives the minimum sufficient for a specific purpose. Data released for purpose P carries no licence for purpose Q. Disclosure is a loan, never a transfer.
+
+I10 — Present-bound resolution.
+There is only now. History is evidence of prior nows. Authority is evaluated at the instant of consequence, never retrieved from a cached past.
+
+III. The Boundaries
+
+Four, and no more:
+
+Boundary	Separates	Crossing rule
+Constitutional	governance acts ↔ everything else	Only domain acts cross inward. Nothing else, ever.
+Admissibility	proposal ↔ consequence	Re-validated live; refusal always available.
+Disclosure	domain ↔ external compute	Purpose-scoped, minimal, non-transferring.
+Evidential	what happened ↔ what is true	One-way: evidence never auto-promotes to state.
+IV. The State Transitions
+
+Six. The whole world runs on six.
+
+CONSTITUTE — domain asserts identity, establishes root governance. The only bootstrap.
+DELEGATE / REVOKE — authority extended or withdrawn within bounds. Revocation is unconditional and immediate; it never requires the delegate's cooperation.
+DISCLOSE — purpose-bounded release to an external party. Records what left, to whom, for what.
+PROPOSE — anything produces a candidate. Costs nothing, grants nothing, binds nothing.
+ADMIT or REFUSE — live evaluation at the admissibility boundary. Either outcome is complete and lawful.
+COMMIT — admitted proposal becomes authoritative state, with evidence.
+
+Rotation, migration, provider replacement, model swap — none of these are transitions. They are substitutions beneath the transitions, invisible to the governance layer. That invisibility is the entire point.
+
+V. The Path of Least Resistance
+
+The simplest structure satisfying all of it:
+
+An append-only governance record, owned by the domain, from which current authority is deterministically derived, guarding a single admissibility gate through which all consequence must pass.
+
+Three parts. Nothing more is needed:
+
+The record gives you identity, history, delegation, revocation, and reconstruction (I1, I3, I7).
+The derivation gives you present-bound truth from accumulated history (I10) and makes every artifact substitutable (I8).
+The gate gives you proposal/consequence separation, refusal, and purpose-bounding (I5, I6, I9).
+
+Evidence attaches to the record as a parallel, non-authoritative stream — provable, replayable, and permanently subordinate.
+
+VI. The Failure Modes This Forecloses
+Key compromise becomes capability loss, not sovereignty loss.
+Provider disappearance becomes migration, not extinction.
+Model capture becomes a refused proposal, not a policy.
+Stale authorisation becomes an invalid crossing, not an executed harm.
+Successful authentication becomes admission to propose, not permission to do.
+
+The core claim: a sovereign domain is not a thing that persists. It is a pattern of lawful continuation that survives the replacement of everything that instantiates it. Build the record, derive the present, guard the gate — and every phone, key, cloud, and model becomes what it always was: temporary machinery in service of a continuity it can neither confer nor destroy.

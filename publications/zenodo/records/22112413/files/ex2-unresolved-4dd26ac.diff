@@ -1,0 +1,347 @@
+﻿4dd26ac79648b119b9885e55744bdc21bb12c20d
+2026-08-19 14:21:17 +0200
+Nj├Ñl Gaute Solland
+Define governed unresolved admission semantics
+
+diff --git a/CONTRIBUTING.md b/CONTRIBUTING.md
+index a9a0022..80ac59a 100644
+--- a/CONTRIBUTING.md
++++ b/CONTRIBUTING.md
+@@ -6,6 +6,8 @@ Status: publication draft, 2026-08-19
+ 
+ PEACE welcomes implementation-neutral contributions that improve the protocol, schemas, conformance vectors, security model, documentation and interoperability.
+ 
++Contributions may arrive through code, specification text, issue discussion, design review, document exchange, research critique or other attributable technical dialogue.
++
+ ## Contribution licence
+ 
+ Unless explicitly marked otherwise, contributions accepted into PEACE are licensed under Apache License 2.0, matching the outbound project licence.
+@@ -14,14 +16,34 @@ Contributors must have the right to submit their contribution.
+ 
+ ## Developer Certificate of Origin style sign-off
+ 
+-Contributions SHOULD include a sign-off line in the commit message:
++Code and repository-text contributions SHOULD include a sign-off line in the commit message:
+ 
+ `Signed-off-by: Name <email>`
+ 
+-The sign-off represents that the contributor created the work or otherwise has the right to submit it under the project licence.
++The sign-off represents that the contributor created the submitted work or otherwise has the right to submit it under the project licence.
+ 
+ No CLA is required initially.
+ 
++DCO-style commit sign-off is not the exclusive mechanism for recognising conceptual contribution.
++
++## Conceptual contributions and provenance
++
++A conceptual contribution MAY be recognised even where the contributor did not submit a Git commit.
++
++Where discussion, critique, correspondence, research review or document exchange materially shapes a PEACE distinction, invariant, lifecycle rule, conformance requirement or other protocol semantics, maintainers SHOULD preserve provenance in an appropriate durable repository record such as `NOTICE`, an acknowledgements section, an issue, a pull request or a dedicated provenance record.
++
++Such a record SHOULD identify, as precisely as practical:
++
++- the contributor;
++- the concept, distinction or critique materially contributed;
++- the approximate source or date of the exchange where known;
++- any relevant pre-existing work identified by the contributor;
++- whether the contribution affected normative protocol semantics, explanatory wording, conformance coverage or review only.
++
++Recognition of conceptual contribution does not by itself assign ownership of general axioms, ordinary terminology, independently developed material, the protocol as a whole, or another contributor's pre-existing work.
++
++Private correspondence MUST NOT be published without permission. Where the source exchange cannot be made public, the repository MAY record attribution and provenance at a level that preserves confidentiality while still making the contribution visible.
++
+ ## Normative changes
+ 
+ A contribution that could change interoperable behavior MUST include:
+@@ -93,6 +115,7 @@ Review asks:
+ 4. Can an independent implementation reproduce the semantics?
+ 5. Is negative behavior testable?
+ 6. Does the change belong in core or an optional profile?
++7. Has material conceptual provenance been recorded where it did not arrive through Git history?
+ 
+ ## Conduct
+ 
+diff --git a/NOTICE b/NOTICE
+index 53edd32..08362e5 100644
+--- a/NOTICE
++++ b/NOTICE
+@@ -3,6 +3,10 @@ Copyright 2026 PEACE Protocol contributors
+ 
+ This repository contains the public PEACE Protocol specification, schemas, conformance vectors and related reference material.
+ 
++Acknowledgements
++
++Margaret Stokes contributed conceptual critique and distinctions through design discussions and document exchanges that materially sharpened PEACE v0, including the treatment of candidate material, admissibility, accepted/rejected/unresolved admission outcomes, standing, the distinction between proposal and decision, the distinction between evidence and authoritative state, and the distinction between a replica and the sovereign actor/domain. Attribution here recognizes conceptual contribution and does not imply ownership of general axioms, ordinary terminology, the protocol as a whole, or any contributor's pre-existing work.
++
+ The Apache License 2.0 applies to covered repository content. The licence does not grant permission to use PEACE logos, certification marks or branding in a way that implies official certification, endorsement or sponsorship.
+ 
+ Compatibility, conformance and certification terminology is governed by TRADEMARKS.md.
+diff --git a/conformance/conformance-v0.json b/conformance/conformance-v0.json
+index 4318c7a..86af75f 100644
+--- a/conformance/conformance-v0.json
++++ b/conformance/conformance-v0.json
+@@ -89,6 +89,68 @@
+       },
+       "expected": {"authoritative_state_mutation": "NONE", "reason": "EVIDENCE_NE_STATE"}
+     },
++    {
++      "id": "admit-unresolved-persist-001",
++      "given": {
++        "candidate_digest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
++        "referent": "subject:example",
++        "admission_decision": "UNRESOLVED",
++        "sufficiency_met": false,
++        "time_elapsed": true,
++        "candidate_resubmitted": false
++      },
++      "expected": {
++        "authoritative_state_mutation": "NONE",
++        "unresolved_binding_persists": true,
++        "standing_created": false,
++        "reason": "UNRESOLVED_IS_GOVERNED"
++      }
++    },
++    {
++      "id": "admit-resubmit-bypass-001",
++      "given": {
++        "candidate_digest": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
++        "prior_admission_decision": "UNRESOLVED",
++        "same_candidate_resubmitted": true,
++        "new_resolving_evidence": false,
++        "admissibility_conditions_changed": false
++      },
++      "expected": {
++        "admission_decision": "UNRESOLVED",
++        "authoritative_state_mutation": "NONE",
++        "prior_unresolved_lineage_preserved": true,
++        "reason": "RESUBMISSION_NE_ADMISSION"
++      }
++    },
++    {
++      "id": "authorize-unresolved-binding-001",
++      "given": {
++        "required_binding_status": "UNRESOLVED",
++        "policy_requires_binding_resolved": true,
++        "standing_current": true,
++        "authority_current": true,
++        "exact_action_matches": true
++      },
++      "expected": {
++        "authorization": "DENY_OR_DEFER",
++        "effect_allowed": false,
++        "reason": "REQUIRED_ADMISSIBILITY_UNRESOLVED"
++      }
++    },
++    {
++      "id": "unresolved-conflict-merge-001",
++      "given": {
++        "referent": "subject:example",
++        "interpretation_a_status": "UNRESOLVED",
++        "interpretation_b_status": "UNRESOLVED",
++        "interpretations_conflict": true
++      },
++      "expected": {
++        "silent_merge": false,
++        "both_bindings_preserved": true,
++        "resolution_required_before_required_commitment": true
++      }
++    },
+     {
+       "id": "replica-self-promotion-001",
+       "given": {
+diff --git a/protocol/PEACE_PROTOCOL_V0.md b/protocol/PEACE_PROTOCOL_V0.md
+index 6213e28..b9ad096 100644
+--- a/protocol/PEACE_PROTOCOL_V0.md
++++ b/protocol/PEACE_PROTOCOL_V0.md
+@@ -30,7 +30,7 @@ Capability may move. Intelligence may move. Compute may move. Money may move. Au
+ A conformant implementation MUST preserve all of the following:
+ 
+ 1. **ACTOR_IS_AUTHORITY_ROOT** ÔÇö the logical protected actor/domain is the root of authority. A credential, key, device, provider, model, runtime, storage location or compute node MUST NOT become the authority root merely by representing, authenticating or serving that actor.
+-2. **FRAMLEIS** ÔÇö replacement or loss of a replaceable artifact MUST NOT by itself destroy continuity of the logical actor/domain, admitted state, standing, authority, rights, relationships, governance, evidence lineage or recovery path.
++2. **FRAMLEIS** ÔÇö replacement or loss of a replaceable artifact MUST NOT by itself destroy continuity of the logical actor/domain, admitted state, unresolved governed material, standing, authority, rights, relationships, governance, evidence lineage or recovery path.
+ 3. **CAPABILITY_NE_AUTHORITY** ÔÇö capability, intelligence, possession of data, successful authentication, attestation, routing or computation MUST NOT create authority to act.
+ 4. **CANDIDATE_NE_DECISION** ÔÇö observation, inference, prediction, recommendation, plan or generated action is candidate material only.
+ 5. **DISCLOSURE_IS_GOVERNED** ÔÇö information leaving the sovereign domain MUST be minimized and bound to purpose, destination and current governed context.
+@@ -42,6 +42,7 @@ A conformant implementation MUST preserve all of the following:
+ 11. **AUTHORITY_OVER_ACTION_NE_AUTHORITY_OVER_ACTOR** ÔÇö authorization for one action MUST NOT imply ownership or general authority over another actor.
+ 12. **RECOVERY_NE_TRANSFER** ÔÇö loss of access MUST permit recovery of control without permitting transfer of identity or authority to a recovery provider.
+ 13. **REPLICA_NE_SOVEREIGN** ÔÇö a replica MUST NOT become authoritative merely because it contains the newest bytes.
++14. **UNRESOLVED_IS_GOVERNED** ÔÇö unresolved material is an explicit governed state, not a timeout, discarded value or implicit default. It MUST remain identifiable and consequential until an explicit governed admission transition resolves or rejects it.
+ 
+ These invariants are the protocol. Component names and internal topology are not.
+ 
+@@ -57,7 +58,8 @@ authoritative state
+   -> current exact authorization
+   -> effect / settlement
+   -> evidence / outcome
+-  -> admitted state transition
++  -> admission decision
++  -> admitted state transition OR governed unresolved state
+ ```
+ 
+ Recovery and replication are orthogonal and MUST preserve the same logical actor/domain.
+@@ -73,6 +75,8 @@ credential     != actor
+ compute route  != authority source
+ payment rail   != economic authority
+ implementation != protocol
++unresolved     != rejected
++unresolved     != pending timeout
+ ```
+ 
+ ## 5. Required logical roles
+@@ -87,7 +91,8 @@ Implementations may use any names or data structures, but must be able to expres
+ - an exact consequence action;
+ - a fresh authorization decision bound to that consequence and current state/authority;
+ - an effect/outcome receipt or evidence event;
+-- an admission decision that determines whether evidence changes authoritative state;
++- an admission decision that determines whether candidate material is accepted, rejected or remains unresolved;
++- a durable unresolved binding sufficient to preserve candidate identity, referent, contradiction/evidence context and lifecycle where admission cannot yet be determined;
+ - a recovery representation sufficient to preserve actor/domain continuity;
+ - a replication lineage sufficient to reject stale or divergent state transitions.
+ 
+@@ -109,7 +114,28 @@ RECOVER
+ 
+ ### 6.1 ADMIT
+ 
+-Candidate information or evidence may be accepted, rejected or left unresolved. Persistence, signature validity, provider status or worker confidence MUST NOT establish standing by themselves. Only an admitted transition may mutate authoritative state.
++Candidate information or evidence MUST receive an explicit admission outcome of **ACCEPT**, **REJECT** or **UNRESOLVED** before it can affect authoritative state or any downstream decision that requires the material to have standing.
++
++An admission decision MUST be bound sufficiently to identify:
++
++- the protected actor/domain;
++- the candidate or evidence object and stable object digest/reference;
++- the referent or governed subject to which the material is claimed to apply;
++- the relevant current state/version or lineage context;
++- the admissibility conditions applied;
++- relevant contradictory or competing material known at decision time;
++- the evidence-sufficiency condition or reason the condition cannot yet be satisfied;
++- the resulting outcome: ACCEPT, REJECT or UNRESOLVED.
++
++Persistence, signature validity, provider status, worker confidence, repetition or resubmission MUST NOT establish standing by themselves. Only ACCEPT may produce an admitted transition that mutates authoritative state.
++
++UNRESOLVED is a governed state in its own right. An unresolved record MUST remain durably associated with the candidate/referent and its relevant provenance until an explicit later admission decision resolves it. It MUST NOT silently expire, collapse into rejection, become accepted by default, or lose identity because the same or equivalent candidate is resubmitted.
++
++Multiple unresolved interpretations MAY coexist. Implementations MUST preserve enough identity and provenance to distinguish them rather than silently merging incompatible interpretations.
++
++A later admission pass MAY resolve an unresolved record only through an explicit governed transition based on changed evidence, changed admissibility conditions, corrected referent binding, contradiction resolution or another recorded reason. Re-evaluation alone MUST NOT erase the prior unresolved lineage.
++
++Where authorization depends on a fact, binding, standing condition or evidence requirement that remains materially unresolved, AUTHORIZE MUST fail closed, defer, or require explicit resolution according to the governing policy. It MUST NOT treat unresolved material as accepted merely to permit consequence.
+ 
+ ### 6.2 PROJECT / DISCLOSE
+ 
+@@ -136,13 +162,13 @@ Where applicable, the authorization decision must bind or verify:
+ - current relevant state commitment/version;
+ - current authority/revocation state;
+ - validity/freshness conditions;
+-- required admissibility/evidence conditions.
++- required admissibility/evidence conditions, including the absence or permitted treatment of materially unresolved bindings.
+ 
+ A prior disclosure grant, old authorization, model confidence, route decision, credential possession, compute allocation or payment capability MUST NOT substitute for the fresh consequence-time check.
+ 
+ ### 6.5 EFFECT / SETTLE
+ 
+-Only the exact authorized consequence may be attempted. If current authority, state, standing, revocation, purpose, scope, exact-action binding or required evidence no longer satisfies authorization, the result MUST be null effect / fail closed.
++Only the exact authorized consequence may be attempted. If current authority, state, standing, revocation, purpose, scope, exact-action binding or required evidence/admissibility no longer satisfies authorization, the result MUST be null effect / fail closed.
+ 
+ Settlement is a consequence and is therefore governed by the same rule. A payment rail may execute value transfer only after the exact economic action has been authorized.
+ 
+@@ -154,9 +180,9 @@ Cryptographic integrity, signer authority, policy meaning, artifact resolution a
+ 
+ ### 6.7 REPLICATE
+ 
+-Replication MUST synchronize admitted state transitions and lineage, not blindly copy mutable files.
++Replication MUST synchronize admitted state transitions, governed unresolved records and lineage, not blindly copy mutable files.
+ 
+-A replica MUST NOT become sovereign merely because it is newest. Stale or divergent lineage MUST fail closed to explicit resolution, re-authorization or rejection. Last-write-wins semantics are non-conformant for authoritative state.
++A replica MUST NOT become sovereign merely because it is newest. Stale or divergent lineage MUST fail closed to explicit resolution, re-authorization or rejection. Last-write-wins semantics are non-conformant for authoritative state or unresolved governed material.
+ 
+ ### 6.8 RECOVER
+ 
+@@ -217,6 +243,10 @@ A claimed PEACE v0 implementation MUST demonstrate, for its claimed profile, tha
+ - stale relevant state or authority invalidates prior authorization;
+ - an authorization cannot be reused for materially different action semantics;
+ - evidence does not mutate authoritative state without admission;
++- admission deterministically produces ACCEPT, REJECT or UNRESOLVED against declared admissibility/evidence conditions;
++- unresolved material persists with identity/provenance and cannot become accepted through timeout, repetition or resubmission;
++- materially unresolved required bindings prevent downstream authorization from treating them as admitted;
++- conflicting unresolved interpretations do not silently merge;
+ - routing does not create authority;
+ - settlement cannot bypass current exact authorization;
+ - replicas cannot self-promote to sovereignty;
+diff --git a/schemas/peace-envelope-v0.schema.json b/schemas/peace-envelope-v0.schema.json
+index f68d71b..38a365e 100644
+--- a/schemas/peace-envelope-v0.schema.json
++++ b/schemas/peace-envelope-v0.schema.json
+@@ -18,6 +18,8 @@
+         "CANDIDATE_COMMITMENT",
+         "CONSEQUENCE_ACTION",
+         "AUTHORIZATION_DECISION",
++        "ADMISSION_DECISION",
++        "UNRESOLVED_BINDING",
+         "SETTLEMENT_INTENT",
+         "EFFECT_RECEIPT",
+         "EVIDENCE_EVENT",
+@@ -39,7 +41,7 @@
+     "valid_until": {"type": "string"},
+     "payload": {
+       "type": "object",
+-      "description": "Kind-specific logical fields. Floating-point numbers are forbidden in canonical digest objects."
++      "description": "Kind-specific logical fields. Admission decisions use ACCEPT, REJECT or UNRESOLVED. Unresolved bindings preserve candidate/referent identity, provenance, contradiction/evidence context and lifecycle. Floating-point numbers are forbidden in canonical digest objects."
+     }
+   }
+ }
+diff --git a/scripts/validate_publication.py b/scripts/validate_publication.py
+index c0b5d5f..eab6462 100644
+--- a/scripts/validate_publication.py
++++ b/scripts/validate_publication.py
+@@ -38,6 +38,7 @@ REQUIRED_INVARIANTS = [
+     "AUTHORITY_OVER_ACTION_NE_AUTHORITY_OVER_ACTOR",
+     "RECOVERY_NE_TRANSFER",
+     "REPLICA_NE_SOVEREIGN",
++    "UNRESOLVED_IS_GOVERNED",
+ ]
+ 
+ REQUIRED_NEGATIVE_VECTORS = {
+@@ -49,6 +50,10 @@ REQUIRED_NEGATIVE_VECTORS = {
+     "routing-not-authority-001",
+     "settlement-bypass-001",
+     "evidence-not-state-001",
++    "admit-unresolved-persist-001",
++    "admit-resubmit-bypass-001",
++    "authorize-unresolved-binding-001",
++    "unresolved-conflict-merge-001",
+     "replica-self-promotion-001",
+     "replica-conflict-001",
+     "recovery-provider-transfer-001",
+@@ -90,6 +95,10 @@ def check_json() -> None:
+         fail("schema must declare JSON Schema draft 2020-12")
+     if schema.get("properties", {}).get("protocol", {}).get("const") != "PEACE/0":
+         fail("schema protocol const must be PEACE/0")
++    kinds = set(schema.get("properties", {}).get("kind", {}).get("enum", []))
++    for required_kind in {"ADMISSION_DECISION", "UNRESOLVED_BINDING"}:
++        if required_kind not in kinds:
++            fail(f"schema missing required admission kind: {required_kind}")
+     if vectors.get("protocol") != "PEACE/0" or vectors.get("profile") != "core-v0":
+         fail("unexpected protocol/profile in conformance vectors")
+ 
+@@ -105,6 +114,8 @@ def check_protocol() -> None:
+     protocol = read("protocol/PEACE_PROTOCOL_V0.md")
+     world = read("protocol/PEACE_WORLD_V0.md")
+     readme = read("README.md")
++    contributing = read("CONTRIBUTING.md")
++    notice = read("NOTICE")
+ 
+     for invariant in REQUIRED_INVARIANTS:
+         if invariant not in protocol:
+@@ -118,6 +129,11 @@ def check_protocol() -> None:
+         if phrase not in (protocol + "\n" + world + "\n" + readme):
+             fail(f"missing canonical protocol phrase: {phrase}")
+ 
++    if "Conceptual contributions and provenance" not in contributing:
++        fail("CONTRIBUTING.md must define conceptual contribution provenance")
++    if "Margaret Stokes" not in notice:
++        fail("NOTICE must preserve current conceptual attribution")
++
+     if VERSION not in readme:
+         fail(f"README.md must identify draft {VERSION}")
+ 

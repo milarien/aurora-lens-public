@@ -1,0 +1,11 @@
+# Operating-system and editor artefacts
+.DS_Store
+Thumbs.db
+Desktop.ini
+~$*
+*.tmp
+*.bak
+
+# Local review and archive artefacts
+*.zip
+Revised-Documents-Import/

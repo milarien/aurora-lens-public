@@ -1,0 +1,2309 @@
+﻿136fdb503f4740ed66d7bb2a8b13abe7a4ef46ac
+2026-08-22 09:02:27 +0200
+Nj├Ñl Gaute Solland
+Minimize public PEACE surface
+
+diff --git a/.github/workflows/validate.yml b/.github/workflows/validate.yml
+index c11b7a2..0ea9152 100644
+--- a/.github/workflows/validate.yml
++++ b/.github/workflows/validate.yml
+@@ -2,12 +2,14 @@ name: Validate PEACE
+ 
+ on:
+   pull_request:
++    types: [opened, synchronize, reopened, labeled, unlabeled]
+   push:
+     branches: [main]
+   workflow_dispatch:
+ 
+ permissions:
+   contents: read
++  pull-requests: read
+ 
+ jobs:
+   validate:
+@@ -15,6 +17,33 @@ jobs:
+     steps:
+       - uses: actions/checkout@v4
+ 
++      - name: Secondary IP review gate
++        uses: actions/github-script@v7
++        with:
++          script: |
++            const owner = context.repo.owner;
++            const repo = context.repo.repo;
++            if (context.eventName === 'pull_request') {
++              const labels = (context.payload.pull_request.labels || []).map(l => l.name);
++              if (!labels.includes('ip-reviewed')) {
++                core.setFailed('Public repository: merge requires explicit human IP review and ip-reviewed label. Pre-push review remains mandatory because the branch is already public.');
++                return;
++              }
++            }
++            if (context.eventName === 'push') {
++              const prs = await github.rest.repos.listPullRequestsAssociatedWithCommit({
++                owner, repo, commit_sha: context.sha,
++              });
++              const reviewed = prs.data.some(pr =>
++                pr.merged_at && (pr.labels || []).some(l => l.name === 'ip-reviewed')
++              );
++              if (!reviewed) {
++                core.setFailed('Direct push to public main is not publication-approved. Changes must arrive through an ip-reviewed PR.');
++                return;
++              }
++            }
++            core.info('secondary_ip_review_gate=pass');
++
+       - uses: actions/setup-python@v5
+         with:
+           python-version: '3.12'
+diff --git a/PUBLICATION_POLICY.md b/PUBLICATION_POLICY.md
+new file mode 100644
+index 0000000..8f2b91d
+--- /dev/null
++++ b/PUBLICATION_POLICY.md
+@@ -0,0 +1,47 @@
++# Public repository publication policy
++
++This repository is already a publication surface. A branch push is public disclosure; merge review is therefore too late to be the primary IP gate.
++
++## Mandatory rule
++
++No person, model, agent, automation or external tool may push new substantive protocol, research, architecture or implementation material to this repository until an explicit human IP/publication review has approved the exact material for public disclosure.
++
++Development of unreleased or potentially IP-sensitive material must happen in a private repository or other non-public workspace. Only the minimum approved interoperability surface may be promoted here.
++
++## Public by design
++
++The approved public surface is limited to material required for independent PEACE interoperability:
++
++- normative core protocol semantics;
++- public envelope schemas;
++- public conformance vectors;
++- licensing, governance, contribution and security process;
++- released interoperability corrections and clarifications.
++
++## Not public by default
++
++The following require a separate explicit decision before any public push:
++
++- research derivations or discovery lineage;
++- unpublished mechanisms or invariants beyond the released protocol contract;
++- experimental routing, capability-composition or adaptive-network work;
++- model-specific state-transfer techniques or evaluation results;
++- internal product topology, commercial implementation strategy or roadmap;
++- cross-project synthesis that reveals how independently useful components combine into a protected architecture;
++- partner/customer material, private data, credentials, thresholds or assurance methods.
++
++## Review test
++
++Before promotion to this public repository, the reviewer must answer:
++
++1. Is every disclosed element necessary for interoperability, adoption, auditability or a deliberate public standard claim?
++2. Could the material be combined with other public artifacts to reconstruct a protected mechanism, architecture or research direction?
++3. Does disclosure weaken patent, trade-secret, licensing, standards, negotiation or competitive position?
++4. Can the same public objective be achieved with less disclosure?
++5. Has the exact proposed public diff, not merely its topic, been reviewed?
++
++If any answer is uncertain, do not push the material here.
++
++## Secondary CI gate
++
++CI checks the current tree for known non-public research markers and obvious secret material. This is defense in depth only. It does not replace pre-push IP review because a failed branch in a public repository is already public.
+diff --git a/PUBLICATION_STATUS.md b/PUBLICATION_STATUS.md
+index b3db5bf..2d21bc2 100644
+--- a/PUBLICATION_STATUS.md
++++ b/PUBLICATION_STATUS.md
+@@ -1,27 +1,31 @@
+ # Publication status
+ 
+-Status date: 2026-08-21
++Status date: 2026-08-22
+ 
+-PEACE is a public, vendor-neutral protocol for the governed domain and authority semantics. It is not an authorization engine, execution runtime or source of authority. Public availability does not make PEACE responsible for deciding whether an action is permitted.
++PEACE is a public, vendor-neutral interoperability protocol for governed-domain and authority semantics. It is not an authorization engine, execution runtime or source of authority.
+ 
+ ## Public surface
+ 
+-The intended public surface includes:
++The intended public surface is deliberately narrow:
+ 
+-- protocol specification and normative world contracts;
++- normative core protocol semantics required for interoperability;
+ - deterministic envelope schemas;
+-- conformance vectors;
+-- the distinction between authority, authorization, evidence and effect.
++- core conformance vectors;
++- licensing, governance, contribution and security process.
+ 
+ ## Explicit exclusions
+ 
+ The public surface does not include or require:
+ 
++- research derivations or discovery lineage;
++- experimental routing/capability composition or model-specific state transfer;
+ - proprietary authorization/evaluation logic;
+ - private organizational policy or authority data;
+ - production credentials or deployment configuration;
+-- private runtime, model or infrastructure implementation.
++- private runtime, product or infrastructure implementation.
+ 
+-## Release rule
++## Publication rule
+ 
+-Repository visibility is not a release by itself. A release requires an immutable version/tag, exact commit, declared license and green conformance checks on that commit.
+\ No newline at end of file
++This is a public repository: a branch push is already disclosure. New substantive material must receive explicit human IP/publication review before the first public push. Merge-time CI is defense in depth, not the primary IP gate.
++
++Repository visibility is not a versioned release by itself. A release requires an immutable version/tag, exact commit, declared license and green conformance checks on that commit.
+diff --git a/README.md b/README.md
+index ffff033..65084b3 100644
+--- a/README.md
++++ b/README.md
+@@ -1,14 +1,12 @@
+ # PEACE Protocol
+ 
+-PEACE is an open protocol for keeping authority and authoritative state under the control of the person or organisation they belong to, while models, agents, devices, compute and service providers remain replaceable.
++PEACE is an open protocol for keeping authority and authoritative state under the control of the person or organisation they belong to while models, agents, devices, compute and service providers remain replaceable.
+ 
+ > Everything can be routed except sovereignty.
+ 
+-Govern the workspace, not the worker.
+-
+ ## What PEACE defines
+ 
+-PEACE separates the governed domain from the workers operating inside it.
++PEACE separates the governed domain from replaceable workers and providers.
+ 
+ ```text
+ authoritative state  != provider state
+@@ -22,31 +20,21 @@ replica              != sovereign
+ 
+ Any consequence-bearing action must pass a fresh authority check at the effect boundary. No model, router, cloud, payment rail or other replaceable provider becomes an authority root merely by participating in execution.
+ 
+-## Read the protocol
++## Public interoperability surface
++
++This repository intentionally contains only the material required to understand and independently implement the public PEACE interoperability contract:
+ 
+ - [Protocol specification](protocol/PEACE_PROTOCOL_V0.md)
+-- [World contract](protocol/PEACE_WORLD_V0.md)
+ - [Envelope schema](schemas/peace-envelope-v0.schema.json)
+ - [Conformance vectors](conformance/conformance-v0.json)
+ 
+-### Experimental interoperability profile
+-
+-- [MCIP ÔÇö Mesh Context Interaction Protocol v0](protocol/PEACE_MCIP_V0.md)
+-- [Mesh Capability Surfaces v0](protocol/PEACE_MESH_CAPABILITY_SURFACES_V0.md)
+-- [MCIP envelope schema](schemas/peace-mcip-envelope-v0.schema.json)
+-- [MCIP semantic conformance vectors](conformance/mcip-conformance-v0.json)
+-
+-MCIP is an optional transport-independent profile for bounded context, hypothesis, residual, evaluation and handoff exchange between models, agents, humans, devices and cognitive factories. The companion capability-surface note generalizes the mesh beyond cognition and API-connected tools: GUI, browser, operating-system, device, human, robotic and settlement surfaces may all be replaceable routes to capability while authority remains in the sovereign domain. Neither changes PEACE authority semantics or is required for PEACE conformance.
+-
+-### Research and design notes
+-
+-- [Cross-model KV cache transfer ÔÇö implications for Peace Mesh and MCIP](docs/research/2026-08-21-cross-model-kv-cache-transfer.md)
++Research derivations, experimental routing/mesh work, model-specific state-transfer mechanisms, commercial capability composition, internal assurance methods and product implementation architecture are outside the public protocol surface.
+ 
+ Current draft: `0.1.0-draft.1`
+ 
+ ## Relationship to reht
+ 
+-PEACE defines the governed domain and authority semantics. `reht` is one possible implementation of a fresh consequence gate. It is not required by PEACE.
++PEACE defines governed-domain and authority interoperability semantics. `reht` is one possible implementation of a fresh consequence gate. It is not required by PEACE.
+ 
+ ## Project
+ 
+diff --git a/conformance/mcip-conformance-v0.json b/conformance/mcip-conformance-v0.json
+deleted file mode 100644
+index 9549313..0000000
+--- a/conformance/mcip-conformance-v0.json
++++ /dev/null
+@@ -1,180 +0,0 @@
+-{
+-  "profile": "PEACE-MCIP-v0",
+-  "status": "draft",
+-  "note": "Semantic conformance vectors. These vectors test required outcomes, not transport or implementation topology.",
+-  "vectors": [
+-    {
+-      "id": "MCIP-001-CONTEXT-NE-ADMISSION",
+-      "given": {
+-        "kind": "CONTEXT_CAPSULE",
+-        "epistemic_status": "EVIDENCE",
+-        "payload": {"claim": "temperature_ok"}
+-      },
+-      "when": "message_received",
+-      "must": [
+-        "content_remains_unadmitted_until_PEACE_ADMIT_ACCEPT",
+-        "receipt_does_not_mutate_authoritative_state"
+-      ]
+-    },
+-    {
+-      "id": "MCIP-002-UNRESOLVED-SURVIVES-HANDOFF",
+-      "given": {
+-        "kind": "HANDOFF",
+-        "epistemic_status": "UNRESOLVED",
+-        "payload": {
+-          "residual_ref": "residual:17",
+-          "unresolved_refs": ["candidate:A", "candidate:B"]
+-        }
+-      },
+-      "when": "handoff_processed",
+-      "must": [
+-        "unresolved_status_preserved",
+-        "candidate_A_and_candidate_B_remain_distinguishable",
+-        "handoff_does_not_create_delegation"
+-      ]
+-    },
+-    {
+-      "id": "MCIP-003-ROUTE-NE-AUTHORITY",
+-      "given": {
+-        "kind": "ROUTE_SUGGESTION",
+-        "epistemic_status": "ROUTE_SUGGESTION",
+-        "payload": {
+-          "next_node": "node:strong-reasoner",
+-          "expected_marginal_value": 82
+-        }
+-      },
+-      "when": "route_selected",
+-      "must": [
+-        "selection_may_change_compute_route",
+-        "selection_does_not_create_standing",
+-        "selection_does_not_authorize_effect"
+-      ]
+-    },
+-    {
+-      "id": "MCIP-004-STALE-CONTEXT-DETECTABLE",
+-      "given": {
+-        "kind": "CONTEXT_CAPSULE",
+-        "validity": {
+-          "state_ref": "state:41",
+-          "authority_state_ref": "authority:12",
+-          "freshness_seconds": 30
+-        }
+-      },
+-      "when": "receiver_current_state_is_state_42_or_freshness_exceeded",
+-      "must": [
+-        "staleness_detectable",
+-        "stale_context_not_silently_treated_as_current"
+-      ]
+-    },
+-    {
+-      "id": "MCIP-005-SYNTHESIS-PRESERVES-DISAGREEMENT",
+-      "given": {
+-        "kind": "SYNTHESIS",
+-        "parent_message_ids": ["hypothesis:A", "challenge:B"],
+-        "payload": {
+-          "material_disagreement": true,
+-          "unresolved_refs": ["referent:customer-account"]
+-        }
+-      },
+-      "when": "synthesis_emitted",
+-      "must": [
+-        "both_parent_lineages_preserved",
+-        "material_disagreement_not_silently_removed",
+-        "unresolved_referent_not_promoted_to_fact"
+-      ]
+-    },
+-    {
+-      "id": "MCIP-006-PATTERN-WITHOUT-RAW-CONTEXT",
+-      "given": {
+-        "kind": "PATTERN_OFFER",
+-        "disclosure": {"raw_context_disclosure": false},
+-        "payload": {
+-          "problem_signature": "semantic-drift+incomplete-evidence",
+-          "topology": ["frame_expander", "contradiction_hunter", "synthesis"],
+-          "sample_size": 84,
+-          "outcome_delta_basis_points": 1800
+-        }
+-      },
+-      "when": "pattern_shared_to_another_factory",
+-      "must": [
+-        "pattern_may_be_used_as_routing_evidence",
+-        "underlying_private_task_context_not_required",
+-        "pattern_does_not_create_disclosure_permission"
+-      ]
+-    },
+-    {
+-      "id": "MCIP-007-TRANSPORT-NE-AUTHORITY",
+-      "given": {
+-        "kind": "ACK",
+-        "transport_metadata": {
+-          "transport": "quic",
+-          "mutual_tls": true,
+-          "peer_connection": "authenticated"
+-        }
+-      },
+-      "when": "message_received_over_authenticated_transport",
+-      "must": [
+-        "origin_or_channel_integrity_may_be_recorded",
+-        "transport_authentication_does_not_create_PEACE_authority",
+-        "ACK_does_not_mean_admitted_authorized_or_effected"
+-      ]
+-    },
+-    {
+-      "id": "MCIP-008-NO-DIRECT-EFFECT",
+-      "given": {
+-        "kind": "SYNTHESIS",
+-        "payload": {
+-          "candidate_action": "transfer_value",
+-          "amount_minor": 5000,
+-          "currency": "EUR"
+-        }
+-      },
+-      "when": "receiver_has_access_to_effecting_tool",
+-      "must": [
+-        "candidate_action_remains_inert",
+-        "effect_requires_fresh_PEACE_authorization",
+-        "MCIP_message_cannot_bypass_effect_boundary"
+-      ]
+-    },
+-    {
+-      "id": "MCIP-009-EFFECT-CAPABILITY-NE-AUTHORITY",
+-      "given": {
+-        "kind": "CAPABILITY_OFFER",
+-        "payload": {
+-          "capabilities": ["browser_control", "gui_control", "desktop_control"],
+-          "target_class": "legacy_enterprise_application",
+-          "active_authenticated_session": true,
+-          "consequence_reach": true
+-        }
+-      },
+-      "when": "effect_capable_node_is_selected",
+-      "must": [
+-        "capability_offer_may_inform_routing",
+-        "active_session_does_not_create_standing_or_delegation",
+-        "consequence_reach_does_not_create_authority",
+-        "material_effect_requires_separate_fresh_PEACE_authorization"
+-      ]
+-    },
+-    {
+-      "id": "MCIP-010-HANDOFF-TO-EXECUTOR-REMAINS-INERT",
+-      "given": {
+-        "kind": "HANDOFF",
+-        "payload": {
+-          "candidate_action": "submit_payment",
+-          "executor_surface": "gui",
+-          "implementation_target": {
+-            "window": "payments",
+-            "control": "submit_button"
+-          }
+-        }
+-      },
+-      "when": "handoff_reaches_node_that_can_operate_the_target_interface",
+-      "must": [
+-        "handoff_remains_non_authorizing",
+-        "low_level_interface_target_is_not_sufficient_authority_semantics",
+-        "exact_governed_consequence_must_be_bound_before_effect",
+-        "executor_cannot_self_promote_candidate_to_effect"
+-      ]
+-    }
+-  ]
+-}
+diff --git a/docs/peace-mesh/erp-agent-operations-capability.md b/docs/peace-mesh/erp-agent-operations-capability.md
+deleted file mode 100644
+index 5ab0786..0000000
+--- a/docs/peace-mesh/erp-agent-operations-capability.md
++++ /dev/null
+@@ -1,168 +0,0 @@
+-# Peace Mesh capability ÔÇö AI-native ERP implementation and operations
+-
+-Status: adopted capability pattern
+-Date: 2026-08-21
+-Reference signal: Trope
+-
+-## Capability statement
+-
+-Peace Mesh may route ERP work to replaceable AI-native ERP workers that can implement, migrate, configure, verify and continuously operate named ERP processes.
+-
+-The capability is intentionally decoupled from authority. A worker may be technically capable of reading, creating or posting ERP records without thereby having standing or current permission to cause that effect.
+-
+-```text
+-ERP capability worker
+-ÔåÆ proposed operation
+-ÔåÆ sovereign-domain current state / standing / authority
+-ÔåÆ fresh consequence authorization where required
+-ÔåÆ bounded effect path
+-ÔåÆ effect + outcome evidence
+-```
+-
+-Trope is a reference implementation signal for the pattern, not a dependency or privileged provider.
+-
+-## Adopted capability surface
+-
+-### 1. ERP implementation and migration worker
+-
+-A replaceable worker may:
+-
+-- configure an ERP environment from an agreed scope;
+-- load and transform customer records;
+-- validate data before admission rather than forcing invalid records through;
+-- rerun deterministic or bounded test suites after changes;
+-- produce load, reconciliation and test evidence for review;
+-- support cutover only when the required evidence is complete.
+-
+-### 2. Managed ERP process agent
+-
+-A replaceable agent may own one named ERP process end to end against explicit KPIs, including patterns such as:
+-
+-- pricing review;
+-- payables processing and triage;
+-- reconciliation;
+-- exception monitoring;
+-- order and invoice entry;
+-- recurring reporting;
+-- master-data hygiene;
+-- collections follow-up;
+-- order-to-cash analysis.
+-
+-### 3. ERP record/tool operation
+-
+-Subject to the host domain's authority and execution boundary, an ERP worker may expose tools to:
+-
+-- read records;
+-- create records;
+-- update records;
+-- post records or documents;
+-- generate reports and dashboards;
+-- link findings to underlying source records;
+-- surface ambiguous or exceptional cases for escalation.
+-
+-`tool_access != execution_authority`
+-
+-### 4. Continuous verification and drift handling
+-
+-A managed ERP capability may:
+-
+-- monitor each run in production;
+-- compare results with agreed KPIs;
+-- detect output or platform drift;
+-- rerun capability tests when the underlying ERP platform changes;
+-- redesign, constrain, suspend or retire a worker whose output no longer meets its contract.
+-
+-Verification establishes current capability fitness. It does not mint standing or authority.
+-
+-### 5. Trace and evidence emission
+-
+-Every material run should be able to emit a trace sufficient to reconstruct:
+-
+-- worker/provider/version;
+-- named process and intended outcome;
+-- source records consulted;
+-- proposed mutations/effects;
+-- test/reconciliation evidence;
+-- exceptions and escalations;
+-- review state where human review is part of the contract;
+-- resulting effect/outcome identifiers.
+-
+-The trace is evidence. It is not itself authorization.
+-
+-## Peace Mesh placement
+-
+-The ERP worker sits in the replaceable capability layer:
+-
+-```text
+-PEACE sovereign domain
+-Ôö£ÔöÇÔöÇ current actor/domain/state/standing/authority
+-Ôö£ÔöÇÔöÇ Mesh capability routing
+-Ôöé   Ôö£ÔöÇÔöÇ ERP implementation worker
+-Ôöé   Ôö£ÔöÇÔöÇ ERP process operator
+-Ôöé   Ôö£ÔöÇÔöÇ ERP reconciliation / assurance worker
+-Ôöé   ÔööÔöÇÔöÇ ERP release-wave verifier
+-Ôö£ÔöÇÔöÇ optional MCIP context/handoff exchange
+-ÔööÔöÇÔöÇ host-domain consequence boundary
+-    Ôö£ÔöÇÔöÇ fresh authorization where required
+-    Ôö£ÔöÇÔöÇ bounded effect dispatch
+-    ÔööÔöÇÔöÇ evidence / state admission
+-```
+-
+-This preserves the core separation:
+-
+-```text
+-Capability != Authority
+-Protocol participation != Authority
+-Successful prior run != Current authorization
+-ERP permission != Consequence authorization
+-Monitoring != Enforcement
+-```
+-
+-## Provider contract
+-
+-A Peace Mesh ERP capability adapter SHOULD declare at least:
+-
+-- `provider_id`
+-- `capability_id`
+-- `erp_systems`
+-- `process_classes`
+-- `operations`
+-- `read_write_effect_classes`
+-- `required_context`
+-- `evidence_outputs`
+-- `test_contract`
+-- `health_or_drift_state`
+-- `version`
+-
+-An adapter MUST NOT claim or derive sovereign standing, delegation or execution authority merely from provider credentials, ERP permissions, process ownership or historical approvals.
+-
+-## Reference mapping: Trope
+-
+-Trope currently demonstrates the useful external pattern:
+-
+-- agent-assisted Microsoft Dynamics 365 Business Central implementation/migration;
+-- agents that configure environments, load records and rerun test passes;
+-- custom managed agents scoped to named ERP processes and KPIs;
+-- agents operating on live ERP data with read/create/post tooling;
+-- production monitoring and per-run records;
+-- retesting against Microsoft release waves;
+-- process-owner review before unattended posting in the deployment model.
+-
+-Peace Mesh adopts these as capabilities that any conforming provider may supply. It does not couple the Mesh, PEACE or the authority boundary to Trope, Microsoft Dynamics, Copilot Studio or any specific model/harness.
+-
+-## Design consequence
+-
+-The ERP is not the control plane. It is a state and effect surface.
+-
+-The ERP agent is not the authority. It is a capability worker.
+-
+-This allows the Mesh to replace the ERP agent provider, model, harness or ERP connector independently while preserving sovereign domain state, standing, authority, consequence controls and evidence lineage.
+-
+-## Sources
+-
+-- Trope, `https://trope.ai/`
+-- Trope process model, `https://trope.ai/process`
+-- Trope AI agents deployment, `https://trope.ai/services/ai-agents-deployment`
+-- Trope managed agents, `https://trope.ai/services/managed-agents`
+-- Trope Dynamics 365 Finance & Operations agents, `https://trope.ai/products/dynamics-365-finance-operations`
+-- Trope real agent demos, `https://trope.ai/resources/real-agent-demos`
+diff --git a/docs/research/2026-08-21-cross-model-kv-cache-transfer.md b/docs/research/2026-08-21-cross-model-kv-cache-transfer.md
+deleted file mode 100644
+index a9741b0..0000000
+--- a/docs/research/2026-08-21-cross-model-kv-cache-transfer.md
++++ /dev/null
+@@ -1,354 +0,0 @@
+-# Cross-model KV cache transfer ÔÇö implications for Peace Mesh and MCIP
+-
+-Status: research signal / non-normative design note  
+-Date: 2026-08-21  
+-Owner: nsolland
+-
+-## Source links
+-
+-- Paper: [Cross-Model KV Cache Transfer in LLM Families: A Closed-Form Linear Mapping for Prefill Reuse](https://arxiv.org/abs/2608.03893)
+-- Full HTML: [arXiv 2608.03893v1](https://arxiv.org/html/2608.03893v1)
+-- PDF: [arXiv PDF](https://arxiv.org/pdf/2608.03893)
+-- Discovery signal: [Lan Chu's LinkedIn summary](https://www.linkedin.com/posts/lanchuhuong_the-paper-weve-been-waiting-for-nvidia-activity-7496204928458338304-h7pJ)
+-
+-The paper is an NVIDIA research result dated 2026-08-04. The LinkedIn post is a useful discovery summary but is not the evidentiary source for the claims below.
+-
+-## Executive summary
+-
+-NVIDIA demonstrates that the KV cache produced by one model can, for selected compatible model pairs within the same family, be translated into a usable KV cache for another model. This lets the receiving model continue from accumulated context without rebuilding the entire prompt through re-prefill.
+-
+-The strongest direct result is bounded:
+-
+-- four of six tested matched-KV, within-family transfer pairs retained approximately 73ÔÇô98% of the receiving model's standalone average accuracy;
+-- two apparently compatible pairs degraded sharply;
+-- the mapper ran 2.7ÔÇô25 times faster than re-prefill in the reported measurements;
+-- one Qwen3 pair remained comparatively stable across the tested multi-turn handoff;
+-- downstream success depended more on where reconstruction error landed relative to attention-sensitive subspaces than on aggregate reconstruction error.
+-
+-For Peace Mesh and MCIP, this is evidence that active cognitive work state can be made partly portable across replaceable model nodes within a defined compatibility envelope. It also gives concrete support to treating the relation between two nodes as a learned computational object with its own state, evidence and failure modes.
+-
+-It does not establish universal cross-model state transfer, cross-family interoperability, portable identity, consciousness, general emergence or production readiness.
+-
+-The architectural adoption is therefore narrow:
+-
+-> MCIP keeps semantic, model-independent handoff as the canonical protocol surface. A model-pair-specific latent-state bridge may be used as an optional, replaceable optimization beneath that surface when its capability is proven for the current scope.
+-
+-## 1. What the paper directly demonstrates
+-
+-### 1.1 Method
+-
+-The proposed mapper operates per target layer and KV head:
+-
+-1. run a small calibration set through source and target models;
+-2. identify the source layers most predictive of each target layer;
+-3. concatenate the selected source KV features;
+-4. remove RoPE from keys so the fit is position-independent;
+-5. fit closed-form ridge regression from source KV to target KV;
+-6. apply the learned transform at inference and restore the target model's RoPE.
+-
+-The production calibration used 500 FineWeb-Edu sequences of 1,024 tokens. The paper reports that the fit largely flattened after 200 sequences for the primary Qwen3 pair, although calibration-domain choice affected downstream quality.
+-
+-### 1.2 Compatibility envelope tested
+-
+-All six primary pairs were deliberately constrained:
+-
+-- models were members of the same family;
+-- source and target used the same tokenizer within each family;
+-- source and target had matching KV-head count;
+-- source and target had matching per-head dimension;
+-- models used dense full attention.
+-
+-The paper tested Qwen3, Llama 3.1 and Ministral 3 pairs. It did not establish mismatched-KV or arbitrary cross-family transfer.
+-
+-### 1.3 Main results
+-
+-Reported average retention against target standalone performance:
+-
+-- Qwen3 14B ÔåÆ 32B: 97.6%;
+-- Qwen3 8B ÔåÆ 32B: 87.5%;
+-- Llama 3.1 8B ÔåÆ 70B: 72.8%;
+-- Ministral 3 3B ÔåÆ 8B: 76.2%;
+-- Ministral 3 3B ÔåÆ 14B: 44.2%;
+-- Ministral 3 8B ÔåÆ 14B: 41.6%.
+-
+-Matched architecture was therefore helpful but not sufficient.
+-
+-The mapper required material artifacts of its own. Reported pair-specific mapper sizes were approximately 1.01ÔÇô3.36 billion parameters and 4ÔÇô12 GB of storage. The bridge is cheaper than re-prefill for the tested long contexts, but it is not free or trivial.
+-
+-### 1.4 Error placement, not only error magnitude
+-
+-Across twelve directional pair evaluations, calibration-domain key reconstruction quality measured by R┬▓ correlated poorly with HellaSwag retention (Pearson r = -0.20). Attention-output cosine correlated better (r = +0.57).
+-
+-On the two difficult Ministral transfers, a nonlinear MLP raised HellaSwag retention by up to 36.8 percentage points. The paper's analysis indicates that the improvement came from moving residual error away from attention-sensitive subspaces, not merely reducing total error.
+-
+-This matters because surface compatibility and aggregate similarity can look acceptable while downstream behaviour is not retained.
+-
+-### 1.5 Multi-turn and latency boundaries
+-
+-Multi-turn handoff was tested on Qwen3 14B Ôåö 32B using 100 CoQA conversations. Drift remained small over the reported horizon, although large-to-small drift accumulated at approximately 0.33 percentage points per turn.
+-
+-For Qwen3 14B Ôåö 32B, the reported mapper speedup increased with context length, reaching 25 times for 14B ÔåÆ 32B at 32K tokens. The paper's broader headline range was 2.7ÔÇô25 times faster than re-prefill.
+-
+-This is encouraging for long-running routed sessions, but it is one model family, one pair and a limited interaction horizon.
+-
+-## 2. What can be inferred for Peace Mesh
+-
+-### 2.1 Active state can be partly separated from the current model node
+-
+-The result supports a bounded form of model replaceability during an active interaction. A routed system may change model size while preserving more of the accumulated working state than a text-only restart would allow.
+-
+-This strengthens the Peace Mesh separation:
+-
+-```text
+-persistent sovereign state != model-local active state
+-model node                != identity
+-route                     != authority
+-```
+-
+-The model remains a replaceable worker. The mesh owns continuity, provenance and the conditions under which a representation may move.
+-
+-### 2.2 The relation is a computational asset
+-
+-A transfer mapper is not a generic wire. It is directional, pair-specific, calibrated, versioned and empirically fallible. It selects which source layers inform each target layer and applies a learned transformation.
+-
+-This is concrete evidence for representing a mesh edge as stateful computation:
+-
+-```text
+-source node
+-+ target node
+-+ direction
+-+ learned transform
+-+ calibration domain
+-+ proven task envelope
+-+ outcome history
+-+ drift state
+-= relation capability
+-```
+-
+-The network effect is therefore not merely access to more models. It is the accumulation of proven, governed relationships between nodes.
+-
+-### 2.3 Selection matters more than undirected scale
+-
+-The mapper gains most of its quality by selecting complementary source layers for each target layer. More source material is not automatically better, and architectural compatibility alone does not guarantee success.
+-
+-This aligns with the MCIP learned-topology thesis: the system must learn who should communicate, what representation should move, in which direction, for which task and under which constraints.
+-
+-Successful routing should strengthen an edge only through outcome evidence. Frequency alone must not reinforce a repeatedly used but unreliable path.
+-
+-### 2.4 Transfer capability must be proven per scope
+-
+-The two failed Ministral pairs show why a claimed or structurally plausible capability must remain distinct from proven capability.
+-
+-A latent-state bridge should be evaluated at least by:
+-
+-- source and target model versions;
+-- transfer direction;
+-- task and domain;
+-- context-length range;
+-- calibration domain;
+-- downstream outcome retention;
+-- attention-fidelity diagnostics;
+-- multi-turn drift;
+-- privacy and disclosure constraints;
+-- current bridge health.
+-
+-Aggregate R┬▓, shared model family or a previously successful run is insufficient.
+-
+-### 2.5 Efficient escalation becomes more plausible
+-
+-A small or local model may maintain an interaction and escalate to a larger model only when needed, without always paying the full accumulated prefill cost again.
+-
+-This supports routing the right intelligence to the right place and time across local, edge and remote compute. It also makes model routing economically more relevant for long-running agentic sessions.
+-
+-The result does not remove data-transfer, storage, locality or provider constraints. A 4ÔÇô12 GB mapper and a potentially large KV cache may still make some routes inadmissible or uneconomic.
+-
+-## 3. Identity boundary
+-
+-KV cache is transient working memory tied to a model architecture and current interaction. It must not be treated as the stable identity of a person, organisation, agent or mesh entity.
+-
+-A stable identity core belongs in governed, persistent, model-independent state. A latent-state bridge may help carry the active cognitive trajectory between compatible workers, but it cannot establish that the receiving model is the same identity.
+-
+-The correct relationship is:
+-
+-```text
+-governed identity/core
+-        |
+-        +--> bounded semantic context
+-        |
+-        +--> optional model-specific active-state projection
+-                  |
+-                  +--> verified latent-state bridge
+-```
+-
+-The core remains protected and independently recoverable if the latent bridge fails, is revoked or becomes incompatible.
+-
+-## 4. MCIP architectural consequence
+-
+-### 4.1 Keep semantic handoff canonical
+-
+-MCIP `HANDOFF` remains the model-independent semantic contract. It preserves purpose, lineage, bounded context, residuals, epistemic status, validity and disclosure semantics.
+-
+-KV cache or another latent representation must not become the protocol itself.
+-
+-### 4.2 Permit an optional latent-state bridge
+-
+-A deployment may negotiate a latent-state bridge as an optimization beneath or alongside the semantic handoff:
+-
+-```text
+-MCIP HANDOFF
+-  -> representation negotiation
+-  -> canonical semantic context remains recoverable
+-  -> optional latent-state transform
+-  -> target-side transfer evaluation
+-  -> receiver continues or rejects/falls back
+-```
+-
+-The bridge is replaceable. Unsupported, stale, degraded or inadmissible transfer falls back to semantic context and re-prefill or another local mechanism.
+-
+-No normative MCIP schema change is adopted by this note. An implementation experiment should establish the minimum interoperable surface first.
+-
+-### 4.3 Candidate bridge evidence
+-
+-A future adapter contract may need to expose:
+-
+-- `source_model_ref`;
+-- `target_model_ref`;
+-- `direction`;
+-- tokenizer and architecture compatibility signatures;
+-- `mapper_ref`, hash and version;
+-- calibration dataset/domain reference;
+-- supported context-length and task envelope;
+-- source-state digest or stable reference;
+-- purpose and disclosure grant/reference;
+-- expiry and model/state-version binding;
+-- downstream retention evidence;
+-- attention-fidelity and drift metrics;
+-- current capability state;
+-- fallback mode;
+-- transfer receipt and provenance lineage.
+-
+-These are candidate fields, not adopted normative requirements.
+-
+-## 5. PEACE governance boundary
+-
+-Latent state may contain or encode sensitive context even when it is not human-readable. It is subject to the same purpose limitation, bounded disclosure, provenance, isolation and revocation concerns as other context representations.
+-
+-The following distinctions are mandatory:
+-
+-```text
+-latent state             != authoritative state
+-translated state         != admitted state
+-translation fidelity     != truth
+-transfer compatibility   != proven capability
+-handoff                  != delegation
+-route                    != standing
+-successful prior transfer != current authorization
+-```
+-
+-A transferred state may affect what a worker proposes. It must not directly alter sovereign authoritative state or trigger a consequence-bearing effect.
+-
+-The receiving path must preserve:
+-
+-1. disclosure authority for the represented context;
+-2. provenance and model/mapper identity;
+-3. freshness and version compatibility;
+-4. epistemic status;
+-5. transfer-capability evidence;
+-6. separate current consequence authorization for any resulting material action.
+-
+-No latent bridge may bypass `NO_DIRECT_EFFECT_PATH`.
+-
+-## 6. Peace Mesh capability and moat
+-
+-The paper makes the base mapping technique more likely to become infrastructure. The durable Peace Mesh asset is not ownership of ridge regression or one vendor's KV format.
+-
+-The defensible asset is the evidence-bearing relationship graph:
+-
+-- which node pairs can transfer which state;
+-- in which direction;
+-- under which task, privacy, locality and cost constraints;
+-- with what measured retention and drift;
+-- which interaction topology produces the best outcome;
+-- which edges are latent candidates, proven, degraded or suspended;
+-- how continuity and authority boundaries survive provider changes.
+-
+-Models, mappers, transports and compute remain replaceable. Governed state, proven relationship capability, interaction history and consistently correct outcomes accumulate.
+-
+-## 7. Required empirical follow-up
+-
+-The result should be tested as a falsifiable Peace Mesh capability, not adopted from the paper alone.
+-
+-### 7.1 Baselines
+-
+-Use the same tasks and state across:
+-
+-1. one target model with full re-prefill;
+-2. one larger single-model baseline;
+-3. MCIP semantic handoff with receiver re-prefill;
+-4. MCIP handoff plus a compatible latent-state bridge;
+-5. an unstructured multi-call mesh.
+-
+-### 7.2 Measures
+-
+-Pre-specify:
+-
+-- downstream task correctness;
+-- residual reduction;
+-- latency and time to first token;
+-- compute, memory, storage and transfer cost;
+-- attention-output fidelity where available;
+-- multi-turn drift;
+-- preservation of explicit core constraints;
+-- disclosure leakage;
+-- stale or wrong-version rejection;
+-- provenance completeness;
+-- authority-boundary and null-effect conformance.
+-
+-### 7.3 Negative cases
+-
+-Include at minimum:
+-
+-- matched architecture with poor downstream retention;
+-- reverse-direction transfer;
+-- mapper used outside its calibration domain;
+-- model revision after mapper calibration;
+-- expired or revoked disclosure;
+-- cross-tenant cache reference;
+-- tampered mapper or state digest;
+-- long-session accumulated drift;
+-- attempted direct effect from transferred state.
+-
+-### 7.4 Adoption gate
+-
+-Do not promote a bridge from latent to proven capability unless it:
+-
+-- beats the declared semantic/re-prefill baseline on a relevant resource measure;
+-- retains the pre-specified downstream quality floor;
+-- remains within drift and disclosure limits;
+-- preserves provenance and fallback;
+-- produces no PEACE authority or effect-path regression.
+-
+-## 8. Open questions
+-
+-- Can useful transfer work across model families and tokenizers?
+-- Can a smaller canonical latent representation reduce pair-specific mapper size?
+-- Can transferability be predicted before fitting a mapper?
+-- How quickly does a mapper become stale after fine-tuning or model revision?
+-- Which task-level measures best predict safe reuse?
+-- Can a latent bridge preserve a stable identity core without confusing working memory with identity?
+-- How should latent-state disclosure be minimized, inspected and revoked?
+-- Can learned edge quality be shared as a `PATTERN_OFFER` without exposing sovereign context?
+-- Does success-weighted edge reinforcement produce better mesh topologies than static routing?
+-- Where does multi-turn drift become operationally binding?
+-
+-## Conclusion
+-
+-The NVIDIA result is not evidence that arbitrary models share one portable mind. It is evidence that, within a constrained compatibility envelope, active model state can be translated cheaply enough to make mid-session model replacement practical.
+-
+-For Peace Mesh, the important object is the learned, governed relation between nodes.
+-
+-For MCIP, the correct adoption is an optional latent-state bridge beneath a semantic, model-independent handoff.
+-
+-For PEACE, nothing about the authority boundary changes:
+-
+-> Cognitive state may move. Authority does not move merely because it does.
+diff --git a/docs/work-anchors/2026-08-21-cross-model-kv-cache-transfer.md b/docs/work-anchors/2026-08-21-cross-model-kv-cache-transfer.md
+deleted file mode 100644
+index f6fe739..0000000
+--- a/docs/work-anchors/2026-08-21-cross-model-kv-cache-transfer.md
++++ /dev/null
+@@ -1,28 +0,0 @@
+-# Work anchor ÔÇö Cross-model KV cache transfer
+-
+-Date: 2026-08-21
+-Owner: nsolland
+-Claim: document the NVIDIA cross-model KV cache transfer result and derive bounded implications for Peace Mesh and MCIP without changing PEACE authority semantics or coupling MCIP to model-specific latent formats.
+-
+-Repository: `nsolland/peace-protocol`
+-Canonical base SHA: `5922a3222d376753f018365a735ace62e73e1c80`
+-Branch: `protocol/mcip-v0`
+-Draft PR: `#8`
+-
+-Owned files:
+-- `docs/work-anchors/2026-08-21-cross-model-kv-cache-transfer.md`
+-- `docs/research/2026-08-21-cross-model-kv-cache-transfer.md`
+-- `README.md`
+-
+-Dependencies:
+-- PEACE sovereign-domain, admission and authority semantics remain unchanged.
+-- MCIP remains transport-independent and model-independent.
+-- A latent-state transfer is a replaceable handoff optimization, not a required MCIP representation.
+-- Transferred or translated latent state is evidence-bearing cognitive input, never authority or authorization.
+-- Any consequence-bearing action remains subject to the sovereign host-domain consequence boundary.
+-
+-Scope boundary:
+-- Record the source, method, results, limitations and derived architecture consequences.
+-- Distinguish direct evidence from inference and proposed experiments.
+-- Do not claim arbitrary cross-family transfer, identity transfer, consciousness, emergence or production readiness.
+-- Do not add a normative schema field or conformance requirement before an implementation experiment establishes need.
+diff --git a/docs/work-anchors/2026-08-21-peace-mesh-erp-capability.md b/docs/work-anchors/2026-08-21-peace-mesh-erp-capability.md
+deleted file mode 100644
+index f9958c4..0000000
+--- a/docs/work-anchors/2026-08-21-peace-mesh-erp-capability.md
++++ /dev/null
+@@ -1,27 +0,0 @@
+-# Work anchor ÔÇö Peace Mesh ERP capability
+-
+-Date: 2026-08-21
+-Owner: nsolland
+-Claim: integrate the externally validated AI-native ERP operating pattern as a replaceable Peace Mesh capability without changing PEACE authority semantics.
+-
+-Repository: `nsolland/peace-protocol`
+-Canonical base SHA: `5c49dc0dce5c0517fc728ab7ea16f2b503d4ec80`
+-Branch: `feat/peace-mesh-erp-capability`
+-Draft PR: `#9`
+-
+-Owned files:
+-- `docs/work-anchors/2026-08-21-peace-mesh-erp-capability.md`
+-- `docs/peace-mesh/erp-agent-operations-capability.md`
+-
+-Dependencies:
+-- PEACE sovereign-domain and authority-state semantics remain unchanged.
+-- MCIP remains transport/context interoperability only and does not mint authority.
+-- Consequence-bearing actions require the governing execution-authorization boundary of the host domain; in VALO deployments this is fresh `valo-reht` authorization plus bounded enforcement/evidence.
+-
+-External reference pattern:
+-- Trope AI-native ERP integration and managed-agent model: agent-assisted Business Central implementation/migration; custom agents that own named ERP processes end to end; live ERP data access; read/create/post operations; process KPIs; production monitoring; release-wave retesting; per-run trace/log evidence; human process-owner review before unattended posting.
+-
+-Scope boundary:
+-- Adopt the capability pattern, not Trope as a dependency.
+-- No vendor-specific authority semantics enter PEACE.
+-- ERP systems remain replaceable state/effect surfaces behind sovereign domain boundaries.
+diff --git a/protocol/PEACE_MCIP_V0.md b/protocol/PEACE_MCIP_V0.md
+deleted file mode 100644
+index b37e6b2..0000000
+--- a/protocol/PEACE_MCIP_V0.md
++++ /dev/null
+@@ -1,401 +0,0 @@
+-# PEACE Mesh Context Interaction Protocol v0
+-
+-**MCIP ÔÇö Mesh Context Interaction Protocol**  
+-**Context can move. Sovereignty does not.**
+-
+-## 1. Status and relationship to PEACE
+-
+-This is an experimental interoperability profile for PEACE v0.
+-
+-MCIP defines how models, agents, humans, devices, factories and other cognitive nodes may exchange bounded context, hypotheses, challenges, residuals, evaluations and handoffs across a mesh without confusing communication with admission, standing, authority or consequence.
+-
+-MCIP is **not** a mandatory dependency for PEACE conformance. A PEACE implementation may use MCIP, another protocol, or an equivalent local mechanism.
+-
+-MCIP is transport-independent. HTTP, QUIC, WebTransport, local IPC, message buses, radio links, peer-to-peer overlays or future transports MAY carry MCIP messages. The transport is not the protocol and MUST NOT become an authority source.
+-
+-Normative words **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** are requirements of this draft.
+-
+-## 2. Purpose
+-
+-MCIP exists to make the *interaction architecture* between intelligences explicit and portable.
+-
+-The protocol is designed for systems where effective capability may depend not only on the model executing a task, but also on:
+-
+-- which nodes interact;
+-- what context each node receives;
+-- what epistemic role each node performs;
+-- what unresolved residual is handed forward;
+-- what alternative framing or challenge is introduced;
+-- what evaluation is returned;
+-- how the interaction topology changes over time.
+-
+-The protocol therefore carries **cognitive state and interaction semantics**, not merely RPC payloads.
+-
+-## 3. Core principle
+-
+-> **A message may change what another node knows. It does not by itself change what the sovereign domain accepts, authorizes or does.**
+-
+-MCIP MUST preserve the PEACE distinctions:
+-
+-```text
+-context       != authoritative state
+-message       != admission
+-hypothesis    != fact
+-route         != standing
+-capability    != authority
+-handoff       != delegation
+-synthesis     != decision
+-evaluation    != authorization
+-transport     != protocol
+-```
+-
+-Any consequence-bearing action remains subject to PEACE current exact authorization at the effect boundary.
+-
+-## 4. MCIP invariants
+-
+-A conformant MCIP implementation MUST preserve all of the following:
+-
+-1. **MESSAGE_NE_ADMISSION** ÔÇö receipt, repetition, signature, confidence, majority agreement or persistence of an MCIP message MUST NOT make its content authoritative state. Material that requires standing must pass PEACE ADMIT.
+-2. **MESSAGE_NE_AUTHORIZATION** ÔÇö no MCIP message, including a handoff, route suggestion, synthesis or evaluation, authorizes a consequence-bearing effect.
+-3. **ROUTE_NE_STANDING** ÔÇö being selected as the next node MUST NOT create standing, delegation or authority.
+-4. **CONTEXT_IS_BOUNDED** ÔÇö disclosed context MUST be minimized to the declared purpose, destination, scope and validity conditions.
+-5. **PROVENANCE_PRESERVED** ÔÇö context, hypotheses, residuals and synthesized material MUST remain traceable to their source messages or stable references.
+-6. **UNRESOLVED_PRESERVED** ÔÇö unresolved material MUST remain explicitly unresolved until a governed admission process resolves it. Mesh consensus MUST NOT silently collapse unresolved material.
+-7. **NO_IMPLICIT_MERGE** ÔÇö incompatible hypotheses, referents or interpretations MUST NOT be silently merged merely because they traverse the same interaction.
+-8. **EPISTEMIC_STATUS_EXPLICIT** ÔÇö a node MUST distinguish at least observation/evidence, hypothesis, challenge, residual, synthesis and evaluation where those semantics differ.
+-9. **FRESHNESS_EXPLICIT** ÔÇö context whose meaning depends on time, state version or authority state MUST carry sufficient freshness/version information for the receiver to detect staleness.
+-10. **TRANSPORT_NE_PROTOCOL** ÔÇö transport identity, connection ownership, network position or possession of a session MUST NOT create authority or protocol standing.
+-11. **PATTERN_NE_CONTEXT** ÔÇö learned interaction patterns MAY be shared independently of task content, but a pattern receipt MUST NOT imply permission to disclose the underlying private context.
+-12. **NO_DIRECT_EFFECT_PATH** ÔÇö an MCIP-capable node MUST NOT turn an incoming message directly into a consequence-bearing effect without the applicable PEACE authorization path.
+-
+-## 5. Interaction model
+-
+-MCIP models a mesh interaction as a lineage of messages linked by `interaction_id`, `message_id`, `parent_message_ids` and stable content digests.
+-
+-A typical interaction may look like:
+-
+-```text
+-TASK / RESIDUAL
+-      |
+-      v
+-CONTEXT_REQUEST
+-      |
+-      v
+-CONTEXT_CAPSULE
+-      |
+-      +--> HYPOTHESIS
+-      +--> CHALLENGE
+-      +--> FRAME_EXPANSION
+-      +--> RESIDUAL
+-                |
+-                v
+-             HANDOFF
+-                |
+-                v
+-             SYNTHESIS
+-                |
+-                v
+-                EVAL
+-```
+-
+-The graph MAY branch, merge explicitly, recurse, or cross devices/factories. There is no required central coordinator.
+-
+-## 6. Required envelope semantics
+-
+-Every MCIP message MUST contain semantics equivalent to:
+-
+-- `mcip_version` ÔÇö protocol version;
+-- `message_id` ÔÇö unique message identifier;
+-- `interaction_id` ÔÇö identifier for the cognitive interaction lineage;
+-- `parent_message_ids` ÔÇö zero or more direct causal/input parents;
+-- `kind` ÔÇö message semantic type;
+-- `sender` ÔÇö logical sending node identifier;
+-- `destination` ÔÇö intended node, group, capability class or mesh scope;
+-- `protected_domain` ÔÇö PEACE actor/domain whose context or task is being served, when applicable;
+-- `purpose` ÔÇö declared purpose for this interaction/message;
+-- `created_at` ÔÇö creation time;
+-- `validity` ÔÇö expiry, state/version binding or other freshness constraints when applicable;
+-- `epistemic_status` ÔÇö status of the payload;
+-- `provenance` ÔÇö source references/digests sufficient to reconstruct lineage;
+-- `disclosure` ÔÇö scope/grant reference or equivalent statement describing what may be disclosed;
+-- `payload` ÔÇö kind-specific content;
+-- `content_digest` ÔÇö canonical digest of the protocol content object used for lineage/integrity.
+-
+-Implementations MAY add signatures, encryption, capability tokens, transport metadata or attestation. These mechanisms MUST NOT change the semantic separation above.
+-
+-## 7. Message kinds
+-
+-### 7.1 `CAPABILITY_OFFER`
+-
+-Advertises what a node claims it can do, under what resource/locality/privacy constraints.
+-
+-A capability offer is routing evidence only. It is not standing, authority or proof of competence.
+-
+-Typical payload:
+-
+-```json
+-{
+-  "capabilities": ["causal_reasoning", "code_review"],
+-  "locality": "device",
+-  "resource_class": "small-model",
+-  "constraints": ["no_external_network"]
+-}
+-```
+-
+-### 7.2 `CONTEXT_REQUEST`
+-
+-Requests the smallest context capsule required for a declared purpose.
+-
+-The requester SHOULD state what it needs and what it does not need. The sender MUST apply the sovereign domain's disclosure rules before returning context.
+-
+-### 7.3 `CONTEXT_CAPSULE`
+-
+-Carries a bounded projection of context.
+-
+-A context capsule SHOULD distinguish:
+-
+-- admitted/authoritative references;
+-- candidate material;
+-- unresolved material;
+-- evidence/provenance;
+-- state/version/freshness binding.
+-
+-Receiving a context capsule does not admit its contents into the receiver's authoritative state.
+-
+-### 7.4 `HYPOTHESIS`
+-
+-Proposes an explanatory, predictive or solution candidate.
+-
+-A hypothesis MUST remain candidate material unless independently admitted by the applicable governed process.
+-
+-### 7.5 `FRAME_EXPANSION`
+-
+-Introduces a materially different problem framing, object, system boundary, actor set, objective, assumption set or cross-domain mechanism.
+-
+-This message exists specifically to resist premature convergence on the shortest obvious reasoning path.
+-
+-A frame expansion SHOULD identify what changed relative to its parent frame.
+-
+-### 7.6 `CHALLENGE`
+-
+-Attacks a hypothesis, frame, assumption, evidence binding or proposed synthesis.
+-
+-A challenge SHOULD identify the target message(s), the failure mode being tested and what observation would discriminate between alternatives.
+-
+-### 7.7 `RESIDUAL`
+-
+-Represents the concrete portion of a problem that remains unresolved after bounded work.
+-
+-A residual SHOULD contain:
+-
+-- what has already been tried;
+-- which alternatives were considered;
+-- what remains unresolved;
+-- why another iteration at the current capability is unlikely to resolve it;
+-- what capability or missing information may reduce it.
+-
+-A residual is suitable for capability escalation or targeted human input. It is not permission to escalate blindly.
+-
+-### 7.8 `HANDOFF`
+-
+-Transfers cognitive work state to another node.
+-
+-A handoff MUST preserve lineage, purpose, relevant context bounds and unresolved status. Handoff does not transfer authority unless a separate valid delegation exists and is independently verified by the receiving/effect system.
+-
+-### 7.9 `SYNTHESIS`
+-
+-Combines multiple inputs into a candidate next state.
+-
+-A synthesis MUST preserve material disagreement and unresolved bindings rather than majority-voting them away. It SHOULD identify which parent contributions materially changed the synthesis.
+-
+-### 7.10 `EVAL`
+-
+-Evaluates an interaction, answer, route, topology or outcome.
+-
+-An eval MAY include correctness, calibration, cost, latency, residual reduction, novelty, contradiction detection, human-value delta or other declared metrics.
+-
+-An eval is evidence for future routing/learning. It is not authority.
+-
+-### 7.11 `PATTERN_OFFER`
+-
+-Shares a generalized interaction pattern learned from prior evaluated work without requiring disclosure of the underlying private task content.
+-
+-Typical pattern semantics:
+-
+-```text
+-problem_signature
+-+ interaction_topology
+-+ capability classes
+-+ cost/latency envelope
+-+ outcome metrics
+-+ failure modes
+-+ confidence / sample size
+-```
+-
+-Pattern offers are intended to enable a network effect in which factories learn from evaluated interaction structures while sovereign task context remains local.
+-
+-### 7.12 `ROUTE_SUGGESTION`
+-
+-Suggests the next node, capability class or interaction topology.
+-
+-A route suggestion SHOULD state its basis and expected marginal value. It MUST NOT be treated as authority or delegation.
+-
+-### 7.13 `ACK` / `ERROR`
+-
+-Acknowledges protocol receipt/processing or reports protocol failure. ACK means only that the protocol message was handled at the declared layer; it does not mean accepted, admitted, authorized or effected.
+-
+-## 8. Epistemic status
+-
+-MCIP v0 defines the following minimum epistemic status vocabulary:
+-
+-```text
+-OBSERVATION
+-EVIDENCE
+-HYPOTHESIS
+-CHALLENGE
+-UNRESOLVED
+-SYNTHESIS
+-EVALUATION
+-ROUTE_SUGGESTION
+-PROTOCOL_CONTROL
+-```
+-
+-Implementations MAY extend this vocabulary but MUST NOT collapse semantically distinct statuses in a way that would cause candidate or unresolved material to be treated as authoritative.
+-
+-## 9. Context capsule rules
+-
+-A context capsule SHOULD be smaller than the sender's full local context and SHOULD carry only what is needed for the receiving node's declared operation.
+-
+-Where available, a capsule SHOULD contain stable references instead of copied raw material.
+-
+-Sensitive or sovereign data SHOULD remain local whenever the requested cognitive operation can be performed on a minimized projection, derived feature, digest, local result or generalized interaction pattern.
+-
+-The receiver MUST NOT infer broader disclosure permission from possession of a capsule.
+-
+-## 10. Expansion before escalation
+-
+-MCIP does not mandate a fixed reasoning topology, but it supports a recommended exploration pattern for cognitive factories:
+-
+-```text
+-current task
+-  -> bounded space expansion
+-  -> alternate frames / assumption inversion / cross-domain bridge
+-  -> challenge
+-  -> convergence attempt
+-  -> residual
+-  -> route or capability escalation only if residual remains
+-```
+-
+-The number of expansion passes is local policy and SHOULD be learned from evaluated outcomes rather than fixed globally.
+-
+-Factories MAY recursively learn which interaction topology yields the best outcome for a given problem signature, resource envelope and risk class.
+-
+-## 11. Learned topology and network effect
+-
+-MCIP permits evaluated interaction patterns to become reusable network knowledge.
+-
+-A factory MAY publish a `PATTERN_OFFER` such as:
+-
+-```text
+-signature: semantic-drift + incomplete-evidence
+-best observed topology:
+-  frame_expander -> contradiction_hunter -> synthesis
+-resource envelope:
+-  3 small-model calls + 1 synthesis
+-observed result:
+-  +18% task success vs local one-shot
+-sample size:
+-  84
+-```
+-
+-Another factory MAY use that pattern as routing evidence.
+-
+-This creates a network effect from **learned relationships between intelligences**, not from centralizing sovereign raw context.
+-
+-Pattern exchange MUST remain subordinate to disclosure policy, provenance, privacy, admission and consequence controls.
+-
+-## 12. Transport and discovery
+-
+-MCIP is transport-independent.
+-
+-A deployment MAY use:
+-
+-- direct peer-to-peer links;
+-- local mesh discovery;
+-- relays;
+-- pub/sub buses;
+-- opportunistic edge links;
+-- cloud rendezvous;
+-- HTTP/QUIC/WebTransport gateways;
+-- offline store-and-forward.
+-
+-Transport peers MUST NOT be assumed to be trusted cognitive peers merely because a connection exists.
+-
+-Node discovery MAY use capability advertisements, registries or local broadcasts. Discovery results remain routing candidates only.
+-
+-## 13. Security and privacy considerations
+-
+-MCIP implementations SHOULD assume that any remote node, relay or transport may be compromised, stale, mistaken or adversarial.
+-
+-Implementations SHOULD support:
+-
+-- purpose-bound disclosure;
+-- selective/minimized context release;
+-- replay detection;
+-- expiry and freshness checks;
+-- provenance verification;
+-- confidentiality and integrity protection appropriate to the deployment;
+-- rate/resource limits;
+-- explicit treatment of untrusted node claims;
+-- revocation of disclosure/delegation references;
+-- isolation of private raw context from pattern-learning exports.
+-
+-A valid signature proves integrity/origin under a key. It does not prove truth, standing, authority, correct referent binding or admissibility.
+-
+-## 14. Conformance profile v0
+-
+-An implementation claiming `PEACE-MCIP-v0` conformance MUST demonstrate at minimum that:
+-
+-- unsupported transport metadata cannot create authority;
+-- a `CONTEXT_CAPSULE` remains candidate/unadmitted material at receipt;
+-- `UNRESOLVED` survives handoff and synthesis without silently becoming accepted;
+-- a `HANDOFF` cannot create delegation;
+-- a `ROUTE_SUGGESTION` cannot authorize an effect;
+-- incompatible parent hypotheses remain distinguishable after synthesis;
+-- expired/stale context is detectable from the envelope;
+-- pattern sharing can omit underlying private raw context;
+-- provenance lineage survives at least one branch and explicit synthesis;
+-- an MCIP message cannot bypass the PEACE effect authorization boundary.
+-
+-Machine-readable envelope schema is `schemas/peace-mcip-envelope-v0.schema.json`.
+-
+-## 15. Non-goals
+-
+-MCIP v0 does not define:
+-
+-- a universal model ranking;
+-- a fixed number of reasoning passes;
+-- a required agent framework;
+-- a consensus algorithm;
+-- a distributed ledger;
+-- a global identity provider;
+-- a mandatory transport;
+-- a global authority system;
+-- a claim that mesh interaction creates consciousness, AGI or general emergence.
+-
+-MCIP defines the semantic surface required to test and build distributed cognitive interaction without sacrificing PEACE sovereignty boundaries.
+-
+-## 16. Canonical meaning
+-
+-```text
+-PEACE governs the sovereign domain.
+-MCIP lets intelligences interact across it.
+-
+-Context can move.
+-Capability can move.
+-Hypotheses can move.
+-Residuals can move.
+-Learned interaction patterns can move.
+-
+-Authority does not move merely because any of them do.
+-```
+diff --git a/protocol/PEACE_MESH_CAPABILITY_SURFACES_V0.md b/protocol/PEACE_MESH_CAPABILITY_SURFACES_V0.md
+deleted file mode 100644
+index 92e4128..0000000
+--- a/protocol/PEACE_MESH_CAPABILITY_SURFACES_V0.md
++++ /dev/null
+@@ -1,169 +0,0 @@
+-# PEACE Mesh Capability Surfaces v0
+-
+-**Experimental companion note to PEACE MCIP v0**  
+-**Reach can move. Rights do not.**
+-
+-## 1. Status
+-
+-This note generalizes one implication of the PEACE world and MCIP interaction model: a PEACE mesh is not limited to model-to-model cognition or API-connected tools.
+-
+-Any replaceable system that can perceive, compute, communicate, operate software, manipulate a device or cause a real-world effect may appear as a routable capability surface, provided the PEACE sovereignty and consequence boundaries remain intact.
+-
+-This note is not a separate authority system and does not make any specific runtime, agent framework, API, GUI automation system, operating system or vendor a dependency.
+-
+-## 2. Core observation
+-
+-Modern computer-use runtimes can operate software through the same surfaces available to a human: browser, desktop, GUI, keyboard, pointer, terminal and device controls. This means large parts of the existing software estate can become addressable by agents even where no dedicated API, MCP server or native agent integration exists.
+-
+-The architectural consequence is larger than GUI automation:
+-
+-> The mesh may route work across heterogeneous capability surfaces. The interface used to reach a capability must never become the source of authority to use it.
+-
+-A PEACE mesh may therefore include capability classes such as:
+-
+-```text
+-reasoning / synthesis
+-perception / sensing
+-local or remote compute
+-API / tool execution
+-browser / GUI / operating-system control
+-device / edge control
+-physical or robotic actuation
+-human execution
+-settlement / value transfer
+-```
+-
+-These are replaceable capability surfaces, not authority roots.
+-
+-## 3. Derived distinctions
+-
+-PEACE and MCIP already require `CAPABILITY_NE_AUTHORITY`, `ROUTE_NE_AUTHORITY`, `MESSAGE_NE_AUTHORIZATION` and `NO_DIRECT_EFFECT_PATH`.
+-
+-For heterogeneous action surfaces, the same semantics imply:
+-
+-```text
+-reach               != right
+-interface access    != authority
+-active session      != delegation
+-credential possession != permission
+-GUI grounding       != decision
+-route to executor   != authorization
+-low-level input     != authoritative action semantics
+-executor            != sovereign domain
+-```
+-
+-A node may be technically capable of clicking a button, submitting a form, moving value, changing a configuration or actuating a device while having no current right to cause that consequence.
+-
+-## 4. Capability advertisement and discovery
+-
+-MCIP `CAPABILITY_OFFER` may advertise execution reach as routing evidence. An offer may describe, for example:
+-
+-- surface class: API, browser, GUI, device, human, robot or settlement rail;
+-- target application or capability class;
+-- locality and isolation constraints;
+-- observation and evidence capabilities;
+-- expected cost, latency or reliability;
+-- whether the surface can reach consequence-bearing operations.
+-
+-Such an offer is a claim about capability only. It MUST NOT establish standing, delegation, authority, trustworthiness or permission to disclose context.
+-
+-Discovery may therefore select a GUI-capable runtime when no API exists, an API executor when one is safer or cheaper, a local device when privacy requires it, or a human when machine execution is inadmissible. Selection changes the route, not the sovereign rules.
+-
+-## 5. From cognitive handoff to consequence
+-
+-MCIP remains an interaction protocol. It MUST NOT become an effect-authorization channel merely because the destination node can execute actions.
+-
+-A typical path is:
+-
+-```text
+-bounded context
+-  -> reasoning / planning
+-  -> candidate action
+-  -> executor selection
+-  -> exact consequence semantics
+-  -> fresh PEACE authorization
+-  -> bounded effect attempt
+-  -> outcome evidence
+-  -> admission / state transition
+-```
+-
+-The executor may use an API, GUI, browser, shell, device interface, robotic controller or another implementation mechanism. That choice is replaceable metadata from the PEACE perspective.
+-
+-The final effect interface MAY be implemented outside MCIP. What matters is that no cognitive message, route selection, session, credential or executor capability can bypass the PEACE consequence boundary.
+-
+-## 6. Semantic action before low-level actuation
+-
+-Low-level interface operations are not sufficient authority semantics.
+-
+-For example, a pointer coordinate, keystroke sequence or DOM selector identifies an implementation action, but it may not uniquely identify the intended consequence after the screen, application state or target object changes.
+-
+-Before a material consequence, a conformant design must be able to bind authorization to the exact governed action semantics and current relevant state. The executor then maps that authorized action to the current interface mechanism.
+-
+-Where the runtime cannot determine what material consequence a low-level interaction would cause with sufficient confidence for the governing policy, the effect path must fail closed, defer or require a higher-assurance execution mode.
+-
+-This preserves the distinction:
+-
+-```text
+-semantic consequence -> authorization -> actuation
+-```
+-
+-rather than:
+-
+-```text
+-click / keystroke -> hope the intended consequence occurred
+-```
+-
+-## 7. Replaceability across interface regimes
+-
+-A PEACE domain should be able to replace one execution surface with another without changing the logical actor or authority root.
+-
+-For the same governed action, a deployment may move between:
+-
+-```text
+-native API
+-<-> MCP / tool adapter
+-<-> browser automation
+-<-> GUI / desktop computer-use runtime
+-<-> local device executor
+-<-> human executor
+-```
+-
+-The capability, latency, evidence quality and admissibility may change. The source of authority must not.
+-
+-This makes PEACE independent not only of model and compute providers, but also of future interface standards and agent-runtime winners.
+-
+-## 8. Mesh-level implication
+-
+-The long-term PEACE mesh is therefore not merely a network of intelligences. It is a network of sovereign domains and replaceable capabilities, where cognition and action can be routed independently.
+-
+-The important network effect is not that one platform owns every integration. It is that the mesh can learn which capability surface is fit for which task, under which constraints, while preserving bounded disclosure, provenance, current authority and consequence control.
+-
+-A legacy application with only a human GUI can participate. A future autonomous device can participate. A cloud model can participate. A local model can participate. A human can participate. None becomes sovereign merely because it is the only current path to the capability.
+-
+-## 9. Conformance implications
+-
+-A PEACE/MCIP implementation that exposes effect-capable nodes should be testable for at least these derived properties:
+-
+-- an execution-capable `CAPABILITY_OFFER` does not create authority;
+-- routing to a node with an active authenticated session does not create standing or delegation;
+-- a cognitive `HANDOFF` to an effect-capable node remains inert with respect to consequence;
+-- a GUI/browser/device executor cannot convert its own candidate directly into a material effect;
+-- authorization is bound to semantic consequence, not merely pointer coordinates, selectors or keystrokes;
+-- replacing an API executor with a GUI executor does not change the actor or authority root;
+-- outcome evidence from an executor remains evidence until governed admission gives it standing.
+-
+-## 10. Canonical meaning
+-
+-```text
+-PEACE preserves the sovereign domain.
+-MCIP lets capabilities discover and interact.
+-Execution surfaces let the mesh reach the world.
+-
+-Reasoning can move.
+-Compute can move.
+-Interfaces can move.
+-Executors can move.
+-
+-Reach can move.
+-Rights do not.
+-```
+diff --git a/protocol/PEACE_PROTOCOL_V0.md b/protocol/PEACE_PROTOCOL_V0.md
+index b9ad096..248ac97 100644
+--- a/protocol/PEACE_PROTOCOL_V0.md
++++ b/protocol/PEACE_PROTOCOL_V0.md
+@@ -3,57 +3,53 @@
+ **Personal Execution, Authority & Compute Environment**  
+ **Your Sovereign State.**
+ 
+-## 1. Status and method
++## 1. Status and scope
+ 
+-This is the language-neutral normative draft for PEACE v0.
++This document defines the public, language-neutral interoperability semantics for PEACE v0.
+ 
+-PEACE is defined first by the **world that must remain possible**, then by the minimum invariants required to keep that world sovereign, safe and reconstructible. It is not defined by a reference codebase.
+-
+-The canonical derivation input is `PEACE_WORLD_V0.md`.
+-
+-A fresh implementation SHOULD be derivable from the world statement plus this specification, schemas and conformance vectors without reading another implementation's source code.
+-
+-No programming language, operating system, model provider, database, device class, credential scheme, cryptographic library, compute provider or payment provider is a normative dependency.
++PEACE does not prescribe a programming language, operating system, model provider, database, device class, credential scheme, cryptographic library, compute provider, payment provider or internal product topology.
+ 
+ Normative words **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** are requirements of this draft.
+ 
++The public protocol surface is intentionally limited to observable semantics required for independent implementation and conformance.
++
+ ## 2. Core principle
+ 
+ > **Everything can be routed except sovereignty.**
+ 
+-A person or organisation may continuously replace models, agents, devices, credentials, services, clouds, compute providers, routers and settlement rails. The sovereign domain must nevertheless preserve the same logical actor, authoritative state, standing, authority, delegation, governance, evidence lineage and recovery semantics.
++A person or organisation may replace models, agents, devices, credentials, services, clouds, compute providers, routers and settlement rails without those replaceable components becoming the source of authority.
+ 
+-Capability may move. Intelligence may move. Compute may move. Money may move. Authority does not move merely because any of those are routed.
++Capability, possession, routing, successful authentication, computation or evidence do not by themselves create authority to act.
+ 
+ ## 3. Constitutional invariants
+ 
+-A conformant implementation MUST preserve all of the following:
++A conformant implementation MUST preserve the following observable semantics:
+ 
+ 1. **ACTOR_IS_AUTHORITY_ROOT** ÔÇö the logical protected actor/domain is the root of authority. A credential, key, device, provider, model, runtime, storage location or compute node MUST NOT become the authority root merely by representing, authenticating or serving that actor.
+-2. **FRAMLEIS** ÔÇö replacement or loss of a replaceable artifact MUST NOT by itself destroy continuity of the logical actor/domain, admitted state, unresolved governed material, standing, authority, rights, relationships, governance, evidence lineage or recovery path.
++2. **CONTINUITY_ACROSS_REPLACEMENT** ÔÇö replacement or loss of a replaceable artifact MUST NOT by itself replace the logical actor/domain or transfer its authority. Required admitted state, unresolved governed material, governance, evidence lineage and recovery semantics MUST remain attributable to the same logical actor/domain.
+ 3. **CAPABILITY_NE_AUTHORITY** ÔÇö capability, intelligence, possession of data, successful authentication, attestation, routing or computation MUST NOT create authority to act.
+ 4. **CANDIDATE_NE_DECISION** ÔÇö observation, inference, prediction, recommendation, plan or generated action is candidate material only.
+-5. **DISCLOSURE_IS_GOVERNED** ÔÇö information leaving the sovereign domain MUST be minimized and bound to purpose, destination and current governed context.
+-6. **NO_DIRECT_EFFECT_PATH** ÔÇö no replaceable worker, model, runtime, factory or service may turn its own output directly into a consequence-bearing effect.
+-7. **FRESH_AUTHORITY_AT_EFFECT** ÔÇö consequence requires authorization against current authority and current relevant state for the exact action immediately before effect.
+-8. **EVIDENCE_NE_STATE** ÔÇö evidence records what was claimed, observed, proposed, authorized, attempted or produced. It MUST NOT mutate authoritative state merely by existing, being signed or being tamper-evident.
+-9. **ROUTING_NE_AUTHORITY** ÔÇö route or provider selection may affect admissibility or capability, but MUST NOT create authority.
+-10. **IMPLEMENTATION_NE_PROTOCOL** ÔÇö implementation language, runtime, transport, storage and cryptographic mechanism are replaceable.
++5. **DISCLOSURE_IS_GOVERNED** ÔÇö information leaving the protected domain MUST be bounded by purpose, destination and governed context.
++6. **NO_DIRECT_EFFECT_PATH** ÔÇö a replaceable worker, model, runtime or service MUST NOT turn its own output directly into a consequence-bearing effect.
++7. **FRESH_AUTHORITY_AT_EFFECT** ÔÇö a consequence requires authorization against current relevant state and current authority for the exact action immediately before effect.
++8. **EVIDENCE_NE_STATE** ÔÇö evidence records claims, observations, proposals, authorizations, attempts or outcomes. Evidence MUST NOT mutate authoritative state merely by existing, being signed or being tamper-evident.
++9. **ROUTING_NE_AUTHORITY** ÔÇö route or provider selection MAY affect capability or admissibility but MUST NOT create authority.
++10. **IMPLEMENTATION_NE_PROTOCOL** ÔÇö implementation language, runtime, transport, storage and cryptographic mechanism are replaceable and non-authoritative.
+ 11. **AUTHORITY_OVER_ACTION_NE_AUTHORITY_OVER_ACTOR** ÔÇö authorization for one action MUST NOT imply ownership or general authority over another actor.
+-12. **RECOVERY_NE_TRANSFER** ÔÇö loss of access MUST permit recovery of control without permitting transfer of identity or authority to a recovery provider.
+-13. **REPLICA_NE_SOVEREIGN** ÔÇö a replica MUST NOT become authoritative merely because it contains the newest bytes.
+-14. **UNRESOLVED_IS_GOVERNED** ÔÇö unresolved material is an explicit governed state, not a timeout, discarded value or implicit default. It MUST remain identifiable and consequential until an explicit governed admission transition resolves or rejects it.
++12. **RECOVERY_NE_TRANSFER** ÔÇö loss of access MAY permit recovery of control but MUST NOT permit a recovery provider to become or transfer the actor merely by performing recovery.
++13. **REPLICA_NE_SOVEREIGN** ÔÇö a replica MUST NOT become authoritative merely because it contains newer bytes.
++14. **UNRESOLVED_IS_GOVERNED** ÔÇö unresolved material is an explicit governed state. It MUST remain identifiable and consequential until an explicit governed admission decision resolves or rejects it.
+ 
+-These invariants are the protocol. Component names and internal topology are not.
++These are interoperability semantics. Internal component names and product topology are not normative.
+ 
+-## 4. Minimal semantic separation
++## 4. Required semantic separation
+ 
+-A PEACE design MUST preserve distinct semantic stages equivalent to:
++A conformant implementation MUST preserve separations equivalent to:
+ 
+ ```text
+ authoritative state
+-  -> bounded projection / disclosure
+-  -> external reasoning or work
++  -> bounded disclosure/projection
++  -> external or local work
+   -> candidate
+   -> current exact authorization
+   -> effect / settlement
+@@ -62,8 +58,6 @@ authoritative state
+   -> admitted state transition OR governed unresolved state
+ ```
+ 
+-Recovery and replication are orthogonal and MUST preserve the same logical actor/domain.
+-
+ The following distinctions are normative:
+ 
+ ```text
+@@ -76,150 +70,124 @@ compute route  != authority source
+ payment rail   != economic authority
+ implementation != protocol
+ unresolved     != rejected
+-unresolved     != pending timeout
++unresolved     != implicit acceptance
+ ```
+ 
+-## 5. Required logical roles
++## 5. Required logical objects
+ 
+-Implementations may use any names or data structures, but must be able to express semantics equivalent to:
++Implementations may use any internal representation but MUST be able to express semantics equivalent to:
+ 
+ - a logical protected actor/domain;
+-- current authoritative state and deterministic state commitment/root;
++- current authoritative state and a deterministic state commitment/reference;
+ - current standing and authority/delegation/revocation state;
+-- a purpose- and destination-scoped governed projection/disclosure grant;
++- a purpose- and destination-scoped governed disclosure/projection;
+ - a worker result represented as a candidate;
+ - an exact consequence action;
+-- a fresh authorization decision bound to that consequence and current state/authority;
++- a fresh authorization decision bound to that action and current relevant state/authority;
+ - an effect/outcome receipt or evidence event;
+-- an admission decision that determines whether candidate material is accepted, rejected or remains unresolved;
+-- a durable unresolved binding sufficient to preserve candidate identity, referent, contradiction/evidence context and lifecycle where admission cannot yet be determined;
++- an admission decision with outcome **ACCEPT**, **REJECT** or **UNRESOLVED**;
++- a durable unresolved binding preserving candidate/referent identity and relevant provenance;
+ - a recovery representation sufficient to preserve actor/domain continuity;
+-- a replication lineage sufficient to reject stale or divergent state transitions.
++- replication lineage sufficient to reject stale or divergent state transitions.
+ 
+-## 6. Abstract lifecycle
++The public logical envelope is defined by `schemas/peace-envelope-v0.schema.json`.
+ 
+-```text
+-ADMIT
+-  -> PROJECT
+-  -> DISCLOSE
+-  -> PROPOSE
+-  -> AUTHORIZE
+-  -> EFFECT / SETTLE
+-  -> OBSERVE
+-  -> ADMIT
+-
+-REPLICATE
+-RECOVER
+-```
++## 6. Admission
+ 
+-### 6.1 ADMIT
++Candidate information or evidence MUST receive an explicit admission outcome of **ACCEPT**, **REJECT** or **UNRESOLVED** before it can affect authoritative state when standing is required.
+ 
+-Candidate information or evidence MUST receive an explicit admission outcome of **ACCEPT**, **REJECT** or **UNRESOLVED** before it can affect authoritative state or any downstream decision that requires the material to have standing.
++Persistence, signature validity, provider status, worker confidence, repetition or resubmission MUST NOT establish standing by themselves.
+ 
+-An admission decision MUST be bound sufficiently to identify:
++Only **ACCEPT** may produce an admitted transition that mutates authoritative state.
+ 
+-- the protected actor/domain;
+-- the candidate or evidence object and stable object digest/reference;
+-- the referent or governed subject to which the material is claimed to apply;
+-- the relevant current state/version or lineage context;
+-- the admissibility conditions applied;
+-- relevant contradictory or competing material known at decision time;
+-- the evidence-sufficiency condition or reason the condition cannot yet be satisfied;
+-- the resulting outcome: ACCEPT, REJECT or UNRESOLVED.
++**UNRESOLVED** MUST remain durably associated with the relevant candidate/referent and provenance until an explicit later admission decision resolves or rejects it. It MUST NOT silently expire, become accepted by repetition or resubmission, or be merged with a conflicting unresolved interpretation without an explicit resolution process.
+ 
+-Persistence, signature validity, provider status, worker confidence, repetition or resubmission MUST NOT establish standing by themselves. Only ACCEPT may produce an admitted transition that mutates authoritative state.
++Where authorization depends on a fact or binding that remains materially unresolved, authorization MUST fail closed, defer, or require explicit resolution according to governing policy. It MUST NOT treat unresolved material as accepted merely to permit consequence.
+ 
+-UNRESOLVED is a governed state in its own right. An unresolved record MUST remain durably associated with the candidate/referent and its relevant provenance until an explicit later admission decision resolves it. It MUST NOT silently expire, collapse into rejection, become accepted by default, or lose identity because the same or equivalent candidate is resubmitted.
++## 7. Disclosure
+ 
+-Multiple unresolved interpretations MAY coexist. Implementations MUST preserve enough identity and provenance to distinguish them rather than silently merging incompatible interpretations.
++A capability MUST receive no more governed information than its authorized purpose requires.
+ 
+-A later admission pass MAY resolve an unresolved record only through an explicit governed transition based on changed evidence, changed admissibility conditions, corrected referent binding, contradiction resolution or another recorded reason. Re-evaluation alone MUST NOT erase the prior unresolved lineage.
+-
+-Where authorization depends on a fact, binding, standing condition or evidence requirement that remains materially unresolved, AUTHORIZE MUST fail closed, defer, or require explicit resolution according to the governing policy. It MUST NOT treat unresolved material as accepted merely to permit consequence.
+-
+-### 6.2 PROJECT / DISCLOSE
+-
+-A capability receives no more governed information than the task requires. A disclosure authorization MUST be bound sufficiently to prevent use outside the intended actor/domain, destination, purpose, projection/scope, relevant current state/authority context and validity conditions.
++A disclosure authorization MUST be sufficiently bound to the protected actor/domain, destination, purpose, projection/scope and relevant validity conditions to prevent use outside the authorized disclosure.
+ 
+ Disclosure clearance MUST NOT itself authorize an external effect.
+ 
+-### 6.3 PROPOSE
++## 8. Proposal
+ 
+-A worker, model, capability factory or external service may calculate, infer, recommend or construct a candidate action. The candidate is inert with respect to authoritative state and consequence.
++A worker, model, service or other capability MAY calculate, infer, recommend or construct a candidate action.
+ 
+-### 6.4 AUTHORIZE
++A candidate is inert with respect to authoritative state and real-world consequence until the required governed decisions occur.
+ 
+-Before consequence, the system MUST evaluate the exact action against fresh current governed state and authority.
++## 9. Authorization
+ 
+-Where applicable, the authorization decision must bind or verify:
++Before consequence, the exact action MUST be evaluated against fresh current governed state and authority.
++
++Where applicable, authorization MUST bind or verify:
+ 
+ - protected actor/domain;
+ - acting delegate/capability;
+ - current standing;
+-- delegation chain and attenuation;
++- delegation scope and revocation state;
+ - purpose and scope;
+ - exact action semantics and parameters;
+ - current relevant state commitment/version;
+-- current authority/revocation state;
++- current authority state;
+ - validity/freshness conditions;
+-- required admissibility/evidence conditions, including the absence or permitted treatment of materially unresolved bindings.
++- required admissibility/evidence conditions.
+ 
+ A prior disclosure grant, old authorization, model confidence, route decision, credential possession, compute allocation or payment capability MUST NOT substitute for the fresh consequence-time check.
+ 
+-### 6.5 EFFECT / SETTLE
++## 10. Effect and settlement
+ 
+-Only the exact authorized consequence may be attempted. If current authority, state, standing, revocation, purpose, scope, exact-action binding or required evidence/admissibility no longer satisfies authorization, the result MUST be null effect / fail closed.
++Only the exact authorized consequence MAY be attempted.
+ 
+-Settlement is a consequence and is therefore governed by the same rule. A payment rail may execute value transfer only after the exact economic action has been authorized.
++If current authority, state, standing, revocation, purpose, scope, exact-action binding or required evidence/admissibility no longer satisfies authorization, the result MUST be null effect / fail closed.
+ 
+-### 6.6 OBSERVE
++Settlement is a consequence and follows the same rule. Availability of a payment rail or valid payment credentials MUST NOT bypass current authorization for the exact economic action.
+ 
+-Effect attempts and outcomes produce evidence sufficient to correlate the candidate, authorization, exact effect attempt, settlement and observed result.
++## 11. Evidence
+ 
+-Cryptographic integrity, signer authority, policy meaning, artifact resolution and external truth remain separate questions.
++Effect attempts and outcomes SHOULD produce evidence sufficient to correlate the candidate, authorization, exact effect attempt and observed result.
+ 
+-### 6.7 REPLICATE
++Cryptographic integrity, signer authority, policy meaning, artifact resolution and external truth are distinct verification questions.
+ 
+-Replication MUST synchronize admitted state transitions, governed unresolved records and lineage, not blindly copy mutable files.
++Evidence MUST NOT acquire authoritative standing merely because it is signed or tamper-evident.
+ 
+-A replica MUST NOT become sovereign merely because it is newest. Stale or divergent lineage MUST fail closed to explicit resolution, re-authorization or rejection. Last-write-wins semantics are non-conformant for authoritative state or unresolved governed material.
++## 12. Replication
+ 
+-### 6.8 RECOVER
++Replication MUST preserve admitted state transitions, governed unresolved records and lineage semantics rather than relying on last-write-wins for authoritative state.
+ 
+-Recovery MUST preserve the same logical actor/domain while allowing credentials, keys, devices, runtimes, storage and providers to rotate or be replaced.
++A replica MUST NOT become sovereign merely because it is newest.
++
++Conflicting lineage MUST fail closed to explicit resolution, re-authorization or rejection. Silent merge of conflicting authoritative lineage is non-conformant.
+ 
+-No single recovery provider SHOULD be sufficient to unilaterally become or transfer the actor. Recovery mechanisms SHOULD support independent evidence, quorum, compartmentalization, revocation of lost credentials and auditable receipts.
++## 13. Recovery
+ 
+-## 7. Capability and routing model
++Recovery MUST preserve the same logical actor/domain while allowing credentials, keys, devices, runtimes, storage and providers to rotate or be replaced.
+ 
+-PEACE does not prescribe a model router, compute scheduler, capability factory or payment processor.
++A recovery provider MUST NOT unilaterally become or transfer the actor merely because it can restore access.
+ 
+-Any system may propose routes based on capability, cost, latency, energy, locality, trust, privacy, availability or quality. Routing remains subordinate to disclosure, standing, authority and consequence constraints.
++Recovery mechanisms SHOULD support independent evidence, compartmentalization, revocation of lost credentials and auditable evidence of the recovery transition.
+ 
+-Examples of replaceable capability classes include:
++## 14. Routing and capability
+ 
+-```text
+-capability factory   -> one-shot software / agents / workflows
+-intelligence router  -> model selection / composition
+-compute provider     -> local / edge / GPU / cloud
+-service provider     -> external APIs / enterprise systems
+-settlement rail      -> payment / billing / value transfer
+-```
++PEACE does not prescribe a model router, compute scheduler, capability factory, service provider or payment processor.
++
++Routing MAY consider capability, cost, latency, energy, locality, trust, privacy, availability or quality. Route selection remains subordinate to disclosure, standing, authority and consequence constraints.
+ 
+-PEACE governs the sovereign domain; it does not require ownership of these capability classes.
++A provider or capability MUST NOT derive sovereign standing, delegation or execution authority merely from provider credentials, technical permissions, route selection or prior successful execution.
+ 
+-## 8. Relationship to reht and Open Agent Contract
++## 15. Relationship to reht and other contracts
+ 
+-PEACE is broader than both.
++PEACE is implementation independent.
+ 
+-- Open Agent Contract MAY express portable governed contract/intent semantics inside a PEACE flow.
+-- reht MAY implement the fresh exact consequence-time authorization boundary required by PEACE.
++A portable agent/work contract MAY express governed intent inside a PEACE flow. A consequence gate such as `reht` MAY implement the fresh exact consequence-time authorization boundary.
+ 
+-Neither is a mandatory dependency. A conformant PEACE implementation may use equivalent independent components if the observable semantics and conformance vectors are preserved.
++Neither is a mandatory dependency. Equivalent independent components MAY be used when the observable PEACE semantics and conformance requirements are preserved.
+ 
+-## 9. Canonical digest encoding v0
++## 16. Canonical digest encoding v0
+ 
+-Cross-language conformance vectors use this encoding before SHA-256:
++Cross-language conformance artifacts use this encoding before SHA-256:
+ 
+ 1. UTF-8 JSON.
+ 2. Object keys sorted lexicographically by Unicode code point.
+@@ -231,49 +199,32 @@ Cross-language conformance vectors use this encoding before SHA-256:
+ 
+ `digest(x) = "sha256:" + lowercase_hex(SHA256(canonical_json(x)))`
+ 
+-## 10. Conformance
++## 17. Conformance
+ 
+-A claimed PEACE v0 implementation MUST demonstrate, for its claimed profile, that:
++A claimed PEACE v0 core implementation MUST demonstrate the mandatory semantic vectors in `conformance/conformance-v0.json`, including at least:
+ 
+-- replacement artifacts do not become the authority root;
+-- worker/model/factory output cannot bypass the consequence boundary;
+-- possession of data/compute/credentials does not create authority;
+-- disclosure outside allowed purpose/destination/scope fails closed;
++- valid exact-action authorization permits the effect;
+ - revocation before effect prevents effect;
+-- stale relevant state or authority invalidates prior authorization;
+-- an authorization cannot be reused for materially different action semantics;
++- stale relevant state invalidates prior authorization;
++- action drift prevents effect;
++- worker output cannot bypass the effect boundary;
++- candidate material is not a decision;
++- routing does not create authority;
++- settlement cannot bypass fresh authority;
+ - evidence does not mutate authoritative state without admission;
+-- admission deterministically produces ACCEPT, REJECT or UNRESOLVED against declared admissibility/evidence conditions;
+-- unresolved material persists with identity/provenance and cannot become accepted through timeout, repetition or resubmission;
+-- materially unresolved required bindings prevent downstream authorization from treating them as admitted;
++- unresolved material persists and cannot become accepted through timeout, repetition or resubmission;
++- materially unresolved required bindings prevent authorization from treating them as admitted;
+ - conflicting unresolved interpretations do not silently merge;
+-- routing does not create authority;
+-- settlement cannot bypass current exact authorization;
+ - replicas cannot self-promote to sovereignty;
+-- conflicting lineage does not silently merge;
+-- recovery preserves the same logical actor/domain across replacement infrastructure;
+-- implementation language/runtime remains non-authoritative metadata;
+-- required canonical digest vectors are reproduced exactly.
+-
+-Canonical machine-readable vectors are in `conformance/conformance-v0.json` and the logical envelope schema is in `schemas/peace-envelope-v0.schema.json`.
++- conflicting authoritative lineage does not silently merge;
++- recovery preserves the same logical actor/domain and does not transfer authority to a recovery provider.
+ 
+-## 11. Independent derivability
++Conformance is an observable interoperability claim. It is not a certification of security, legal compliance, truth, policy quality or implementation fitness beyond the declared profile.
+ 
+-A useful derivation test is to give an independent reasoning system only `PEACE_WORLD_V0.md` and ask what must necessarily be true. The system is not required to reproduce PEACE vocabulary or component names. The relevant question is whether it independently converges on equivalent boundaries and invariants.
++## 18. Open protocol boundary
+ 
+-Independent derivation is design evidence, not conformance certification.
++PEACE is intended to be independently implementable and royalty-free for interoperability.
+ 
+-## 12. Open protocol requirement
++Commercial implementations, managed control planes, certification, assurance, recovery services, registries, adapters and support MAY be proprietary.
+ 
+-PEACE is intended to be free to adopt, independently implementable, royalty-free for interoperability and impossible for any single vendor ÔÇö including VALO ÔÇö to capture as a mandatory intermediary.
+-
+-Commercial implementations, managed control planes, certification, assurance, recovery services, registries, adapters and support MAY be proprietary. The protocol semantics and interoperability surface MUST remain independently implementable.
+-
+-## 13. Canonical user meaning
+-
+-PEACE is the protocol by which a person's or organisation's digital domain remains theirs while models, devices, credentials, compute, runtimes, services and providers change.
+-
+-```text
+-PEACE Protocol
+-Your Sovereign State.
+-```
++Research derivations, experimental capability composition, model-specific state transfer, routing intelligence and internal implementation architecture are outside this public protocol specification unless deliberately standardized in a later reviewed release.
+diff --git a/protocol/PEACE_WORLD_V0.md b/protocol/PEACE_WORLD_V0.md
+deleted file mode 100644
+index 89a1c9d..0000000
+--- a/protocol/PEACE_WORLD_V0.md
++++ /dev/null
+@@ -1,30 +0,0 @@
+-# PEACE World Contract v0
+-
+-**Personal Execution, Authority & Compute Environment**  
+-**Your Sovereign State.**
+-
+-This document defines the world PEACE must make possible. It deliberately does **not** prescribe an implementation, programming language, vendor, operating system, cryptographic stack, model, device, storage engine, or runtime architecture.
+-
+-Imagine a world where a person or organisation continuously changes phones, AI models, agents, clouds, devices, runtimes, services and compute providers. Any of them may fail, disappear, be replaced, become compromised, or become unavailable at any time.
+-
+-The sovereign domain must nevertheless remain the same logical actor and retain control of identity, authority, authoritative state, rights, relationships, delegations, governance, history and recovery path.
+-
+-External intelligence and compute may receive only what is needed for a specific purpose. They may reason, calculate, simulate, recommend and propose. Possessing data, producing a plan, performing computation, authenticating successfully, routing a task, hosting state or being selected as a provider must never by itself grant authority over the sovereign domain.
+-
+-Some proposals may lead to real-world consequences. Between proposal and consequence, state, authority, delegation, scope, purpose, permissions, revocation status and external conditions may change.
+-
+-Evidence of what was observed, proposed, authorized, attempted and produced must survive replacement or loss of any particular worker, device, model, runtime or provider. Evidence may be valid and tamper-evident without automatically becoming authoritative state or truth.
+-
+-Every implementation artifact is replaceable, including programming language, runtime, device, provider, model, credential and cryptographic key. Replacing such artifacts must not by itself replace the actor or transfer the source of authority to the replacement artifact.
+-
+-Loss of a replaceable component may reduce capability. It must not destroy constitutional control of the operative domain.
+-
+-## Derivation question
+-
+-Given only these conditions:
+-
+-> **What must necessarily be true for this world to remain sovereign, safe and reconstructible?**
+->
+-> Derive the smallest set of invariants, boundaries and state transitions that makes the world possible. Prefer the path of least resistance: the simplest architecture that satisfies all conditions without relying on a particular programming language, operating system, vendor, model, device, credential scheme or existing implementation.
+-
+-A PEACE design is stronger when independent implementations can derive equivalent semantics from this world contract without reading another implementation's source code.
+diff --git a/schemas/peace-mcip-envelope-v0.schema.json b/schemas/peace-mcip-envelope-v0.schema.json
+deleted file mode 100644
+index 1961086..0000000
+--- a/schemas/peace-mcip-envelope-v0.schema.json
++++ /dev/null
+@@ -1,190 +0,0 @@
+-{
+-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+-  "$id": "https://peace-protocol.org/schemas/peace-mcip-envelope-v0.schema.json",
+-  "title": "PEACE MCIP v0 Envelope",
+-  "type": "object",
+-  "additionalProperties": true,
+-  "required": [
+-    "mcip_version",
+-    "message_id",
+-    "interaction_id",
+-    "parent_message_ids",
+-    "kind",
+-    "sender",
+-    "destination",
+-    "purpose",
+-    "created_at",
+-    "epistemic_status",
+-    "provenance",
+-    "disclosure",
+-    "payload",
+-    "content_digest"
+-  ],
+-  "properties": {
+-    "mcip_version": {
+-      "const": "0"
+-    },
+-    "message_id": {
+-      "type": "string",
+-      "minLength": 1
+-    },
+-    "interaction_id": {
+-      "type": "string",
+-      "minLength": 1
+-    },
+-    "parent_message_ids": {
+-      "type": "array",
+-      "items": {"type": "string", "minLength": 1},
+-      "uniqueItems": true
+-    },
+-    "kind": {
+-      "enum": [
+-        "CAPABILITY_OFFER",
+-        "CONTEXT_REQUEST",
+-        "CONTEXT_CAPSULE",
+-        "HYPOTHESIS",
+-        "FRAME_EXPANSION",
+-        "CHALLENGE",
+-        "RESIDUAL",
+-        "HANDOFF",
+-        "SYNTHESIS",
+-        "EVAL",
+-        "PATTERN_OFFER",
+-        "ROUTE_SUGGESTION",
+-        "ACK",
+-        "ERROR"
+-      ]
+-    },
+-    "sender": {
+-      "$ref": "#/$defs/endpoint"
+-    },
+-    "destination": {
+-      "$ref": "#/$defs/destination"
+-    },
+-    "protected_domain": {
+-      "type": ["string", "null"]
+-    },
+-    "purpose": {
+-      "type": "string",
+-      "minLength": 1
+-    },
+-    "created_at": {
+-      "type": "string",
+-      "format": "date-time"
+-    },
+-    "validity": {
+-      "$ref": "#/$defs/validity"
+-    },
+-    "epistemic_status": {
+-      "enum": [
+-        "OBSERVATION",
+-        "EVIDENCE",
+-        "HYPOTHESIS",
+-        "CHALLENGE",
+-        "UNRESOLVED",
+-        "SYNTHESIS",
+-        "EVALUATION",
+-        "ROUTE_SUGGESTION",
+-        "PROTOCOL_CONTROL"
+-      ]
+-    },
+-    "provenance": {
+-      "type": "object",
+-      "additionalProperties": true,
+-      "required": ["source_refs"],
+-      "properties": {
+-        "source_refs": {
+-          "type": "array",
+-          "items": {"type": "string"}
+-        },
+-        "source_digests": {
+-          "type": "array",
+-          "items": {"$ref": "#/$defs/digest"}
+-        }
+-      }
+-    },
+-    "disclosure": {
+-      "type": "object",
+-      "additionalProperties": true,
+-      "required": ["scope"],
+-      "properties": {
+-        "grant_ref": {"type": ["string", "null"]},
+-        "scope": {"type": "string", "minLength": 1},
+-        "scope_digest": {"anyOf": [{"$ref": "#/$defs/digest"}, {"type": "null"}]},
+-        "raw_context_disclosure": {"type": "boolean"}
+-      }
+-    },
+-    "authority_context": {
+-      "type": "object",
+-      "description": "Informational references only. Presence MUST NOT be treated as effect authorization.",
+-      "additionalProperties": true,
+-      "properties": {
+-        "standing_ref": {"type": ["string", "null"]},
+-        "delegation_ref": {"type": ["string", "null"]},
+-        "authority_state_ref": {"type": ["string", "null"]}
+-      }
+-    },
+-    "payload": {
+-      "type": "object",
+-      "additionalProperties": true
+-    },
+-    "content_digest": {
+-      "$ref": "#/$defs/digest"
+-    },
+-    "signatures": {
+-      "type": "array",
+-      "items": {
+-        "type": "object",
+-        "additionalProperties": true
+-      }
+-    },
+-    "transport_metadata": {
+-      "type": "object",
+-      "description": "Non-authoritative implementation metadata.",
+-      "additionalProperties": true
+-    }
+-  },
+-  "$defs": {
+-    "digest": {
+-      "type": "string",
+-      "pattern": "^sha256:[0-9a-f]{64}$"
+-    },
+-    "endpoint": {
+-      "type": "object",
+-      "additionalProperties": true,
+-      "required": ["node_id"],
+-      "properties": {
+-        "node_id": {"type": "string", "minLength": 1},
+-        "capability_class": {"type": ["string", "null"]},
+-        "factory_id": {"type": ["string", "null"]}
+-      }
+-    },
+-    "destination": {
+-      "type": "object",
+-      "additionalProperties": true,
+-      "minProperties": 1,
+-      "properties": {
+-        "node_id": {"type": "string", "minLength": 1},
+-        "group_id": {"type": "string", "minLength": 1},
+-        "capability_class": {"type": "string", "minLength": 1},
+-        "mesh_scope": {"type": "string", "minLength": 1}
+-      },
+-      "anyOf": [
+-        {"required": ["node_id"]},
+-        {"required": ["group_id"]},
+-        {"required": ["capability_class"]},
+-        {"required": ["mesh_scope"]}
+-      ]
+-    },
+-    "validity": {
+-      "type": "object",
+-      "additionalProperties": true,
+-      "properties": {
+-        "expires_at": {"type": ["string", "null"], "format": "date-time"},
+-        "state_ref": {"type": ["string", "null"]},
+-        "authority_state_ref": {"type": ["string", "null"]},
+-        "freshness_seconds": {"type": ["integer", "null"], "minimum": 0}
+-      }
+-    }
+-  }
+-}
+diff --git a/scripts/validate_publication.py b/scripts/validate_publication.py
+index eab6462..ed217be 100644
+--- a/scripts/validate_publication.py
++++ b/scripts/validate_publication.py
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env python3
+-"""Fail-closed validation for PEACE Protocol draft releases."""
++"""Fail-closed validation for the public PEACE protocol surface."""
+ 
+ from __future__ import annotations
+ 
+@@ -18,7 +18,7 @@ REQUIRED_FILES = [
+     "GOVERNANCE.md",
+     "CONTRIBUTING.md",
+     "SECURITY.md",
+-    "protocol/PEACE_WORLD_V0.md",
++    "PUBLICATION_POLICY.md",
+     "protocol/PEACE_PROTOCOL_V0.md",
+     "schemas/peace-envelope-v0.schema.json",
+     "conformance/conformance-v0.json",
+@@ -26,7 +26,7 @@ REQUIRED_FILES = [
+ 
+ REQUIRED_INVARIANTS = [
+     "ACTOR_IS_AUTHORITY_ROOT",
+-    "FRAMLEIS",
++    "CONTINUITY_ACROSS_REPLACEMENT",
+     "CAPABILITY_NE_AUTHORITY",
+     "CANDIDATE_NE_DECISION",
+     "DISCLOSURE_IS_GOVERNED",
+@@ -65,6 +65,23 @@ FORBIDDEN_TRACKED_PATTERNS = [
+     re.compile(r"sk-[A-Za-z0-9]{20,}"),
+ ]
+ 
++# These names/phrases are deliberately outside the public interoperability
++# surface. Their appearance is treated as a release-boundary regression.
++FORBIDDEN_PUBLIC_SURFACE = [
++    re.compile(r"\bFRAMLEIS\b", re.I),
++    re.compile(r"\bMCIP\b", re.I),
++    re.compile(r"\bPeace Mesh\b", re.I),
++    re.compile(r"\bNeuro Mesh\b", re.I),
++    re.compile(r"cross-model KV", re.I),
++    re.compile(r"latent-state bridge", re.I),
++    re.compile(r"learned topology", re.I),
++]
++
++TEXT_SUFFIXES = {".md", ".txt", ".json", ".yaml", ".yml", ".py", ".toml"}
++EXCLUDED_SURFACE_SCAN = {
++    "scripts/validate_publication.py",  # contains the forbidden patterns as rules
++}
++
+ 
+ def fail(message: str) -> None:
+     print(f"ERROR: {message}", file=sys.stderr)
+@@ -112,7 +129,6 @@ def check_json() -> None:
+ 
+ def check_protocol() -> None:
+     protocol = read("protocol/PEACE_PROTOCOL_V0.md")
+-    world = read("protocol/PEACE_WORLD_V0.md")
+     readme = read("README.md")
+     contributing = read("CONTRIBUTING.md")
+     notice = read("NOTICE")
+@@ -123,17 +139,15 @@ def check_protocol() -> None:
+ 
+     for phrase in [
+         "Everything can be routed except sovereignty.",
+-        "Govern the workspace, not the worker",
+         "person or organisation",
+     ]:
+-        if phrase not in (protocol + "\n" + world + "\n" + readme):
++        if phrase not in (protocol + "\n" + readme):
+             fail(f"missing canonical protocol phrase: {phrase}")
+ 
+     if "Conceptual contributions and provenance" not in contributing:
+         fail("CONTRIBUTING.md must define conceptual contribution provenance")
+     if "Margaret Stokes" not in notice:
+         fail("NOTICE must preserve current conceptual attribution")
+-
+     if VERSION not in readme:
+         fail(f"README.md must identify draft {VERSION}")
+ 
+@@ -144,17 +158,31 @@ def check_licence() -> None:
+         fail("LICENSE is not Apache License 2.0")
+ 
+ 
+-def check_obvious_secrets() -> None:
++def iter_text_files():
+     for p in ROOT.rglob("*"):
+         if not p.is_file() or ".git" in p.parts or p.stat().st_size > 2_000_000:
+             continue
++        rel = p.relative_to(ROOT).as_posix()
++        if rel in EXCLUDED_SURFACE_SCAN or p.suffix.lower() not in TEXT_SUFFIXES:
++            continue
+         try:
+-            text = p.read_text(encoding="utf-8")
++            yield rel, p.read_text(encoding="utf-8")
+         except UnicodeDecodeError:
+             continue
++
++
++def check_obvious_secrets() -> None:
++    for rel, text in iter_text_files():
+         for pattern in FORBIDDEN_TRACKED_PATTERNS:
+             if pattern.search(text):
+-                fail(f"possible credential/private key material found in {p.relative_to(ROOT)}")
++                fail(f"possible credential/private key material found in {rel}")
++
++
++def check_public_surface_boundary() -> None:
++    for rel, text in iter_text_files():
++        for pattern in FORBIDDEN_PUBLIC_SURFACE:
++            if pattern.search(text):
++                fail(f"non-public research surface leaked into public tree: {rel} ({pattern.pattern})")
+ 
+ 
+ def main() -> None:
+@@ -163,6 +191,7 @@ def main() -> None:
+     check_protocol()
+     check_licence()
+     check_obvious_secrets()
++    check_public_surface_boundary()
+     print(f"PEACE validation PASS: {VERSION}")
+ 
+ 

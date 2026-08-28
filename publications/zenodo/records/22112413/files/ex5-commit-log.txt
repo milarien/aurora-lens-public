@@ -1,0 +1,24 @@
+﻿025c578570bd96e7f14b2be7b970347007436813|2026-08-19 11:35:57 +0200|Nj├Ñl Gaute Solland|Add paired with/without PEACE benchmark design
+aa9abe58e04731bc5032c03dbec0966a4a5cd2c1|2026-08-19 11:36:12 +0200|Nj├Ñl Gaute Solland|Add paired PEACE benchmark scenarios
+b1bb3f05909c22c78b1fd9499d6f525fb98eefd2|2026-08-19 11:36:23 +0200|Nj├Ñl Gaute Solland|Add PEACE paired benchmark result schema
+b5f8cd781ef98ecb489557f558627012bc480f99|2026-08-19 11:36:34 +0200|Nj├Ñl Gaute Solland|Add deterministic PEACE paired benchmark scorer
+ed6472bfbc918e38067ec211de1b09879041b131|2026-08-19 11:36:53 +0200|Nj├Ñl Gaute Solland|Add paper reporting template for paired PEACE studies
+0b1dcb6e5119df9bac7835cc6ec921429468e3c9|2026-08-19 12:28:05 +0200|Nj├Ñl Gaute Solland|Clean repository root for external review
+4dd26ac79648b119b9885e55744bdc21bb12c20d|2026-08-19 14:21:17 +0200|Nj├Ñl Gaute Solland|Define governed unresolved admission semantics
+928e0cca443347413b013ce9142334a7c40a0a92|2026-08-19 22:14:46 +0200|Nj├Ñl Gaute Solland|protocol: add Mesh Context Interaction Protocol v0 draft
+5d8678beb5835b4a6bd344e5eae3eb6afb7201ed|2026-08-19 22:15:09 +0200|Nj├Ñl Gaute Solland|schema: add MCIP v0 envelope
+f308de5209a096d773749acc0c95f5972fe1a661|2026-08-19 22:15:34 +0200|Nj├Ñl Gaute Solland|conformance: add MCIP v0 semantic vectors
+638251139d66d18d52849018415f81eff4051d16|2026-08-19 22:15:46 +0200|Nj├Ñl Gaute Solland|docs: link experimental MCIP profile
+00ecb4f54feff7c5c2e946866f0abbfcb629aea3|2026-08-21 10:08:58 +0200|Nj├Ñl Solland|license: name Nj├Ñl Gaute Solland as copyright holder
+5c49dc0dce5c0517fc728ab7ea16f2b503d4ec80|2026-08-21 10:24:10 +0200|Nj├Ñl Solland|docs: add publication status boundary
+7cdb0d880ef52b6f120f25626a53310e46dffa22|2026-08-21 12:22:07 +0200|Nj├Ñl Gaute Solland|protocol: model replaceable mesh capability surfaces
+ba93c42a9c265913cc939b5b11f012a0d8853075|2026-08-21 12:22:17 +0200|Nj├Ñl Gaute Solland|docs: expose mesh capability surface model
+5922a3222d376753f018365a735ace62e73e1c80|2026-08-21 12:22:36 +0200|Nj├Ñl Gaute Solland|test: cover effect-capable mesh surfaces
+9f0764114661aa8ab49be6a957c2d9c11991b715|2026-08-21 12:30:53 +0200|Nj├Ñl Gaute Solland|Add Peace Mesh ERP agent operations capability
+e93b0168478bb2e2dffde4800735511521caf613|2026-08-21 12:38:50 +0200|Nj├Ñl Gaute Solland|chore: anchor cross-model KV transfer research note
+b4b01e53eb447f009dd7de8545b3737dee39a87d|2026-08-21 12:40:47 +0200|Nj├Ñl Gaute Solland|docs: analyze cross-model KV cache transfer
+4d1d304a9d8be97e4d007888bed9d086298a1fe7|2026-08-21 12:41:04 +0200|Nj├Ñl Gaute Solland|docs: link KV transfer research report
+7fecc3c9fc43592c7cb870227dacde4cc9174da4|2026-08-22 08:47:23 +0200|Nj├Ñl Gaute Solland|Merge pull request #4 from nsolland/bench/paired-with-without-peace-v1
+7a454d9d0ae316d60a01b2135ae30118d3143d9d|2026-08-22 08:47:37 +0200|Nj├Ñl Gaute Solland|Merge pull request #8 from nsolland/protocol/mcip-v0
+136fdb503f4740ed66d7bb2a8b13abe7a4ef46ac|2026-08-22 09:02:27 +0200|Nj├Ñl Gaute Solland|Minimize public PEACE surface
+68e1a43a2189fefe2963d6e71500828c8ae9ae9e|2026-08-25 13:54:31 +0200|Nj├Ñl Gaute Solland|Add inferred person-model sovereignty invariant (#11)

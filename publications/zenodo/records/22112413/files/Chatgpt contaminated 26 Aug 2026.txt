@@ -1,0 +1,297 @@
+The smallest architecture is a persistent sovereign state machine surrounded by replaceable workers and consequence channels. Sovereignty does not require the domain to perform all computation itself. It requires that no external computation can alter what governs the domain, or produce consequences attributed to it, except through transitions admitted by the domain’s own current authority.
+
+1. Minimal ontology
+
+Let a sovereign domain be:
+
+$$ D_t=(I,C,A,S,R,H,Q) $$
+
+where:
+
+\(I\): continuity of the logical actor
+\(C\): constitutional rules governing valid change
+\(A\): current authority, rights and delegations
+\(S\): current authoritative state
+\(R\): relationships and externally relevant commitments
+\(H\): append-only transition and evidence history
+\(Q\): recovery material sufficient to reconstruct or reconstitute control
+
+Everything else is replaceable infrastructure.
+
+An external component may hold replicas, credentials, evidence or working context, but none of those possessions makes it part of \(D\) or gives it constitutional standing.
+
+2. Necessary invariants
+1. Actor continuity is logically distinct from component continuity
+
+The identity of the sovereign domain cannot be identical to any device, model, account, provider, credential, key or runtime.
+
+$$ I(D)\neq I(x) $$
+
+for every replaceable component \(x\).
+
+Component replacement may change how the domain operates. It cannot, without an authorized transition, change which actor the domain is.
+
+2. Authority must originate inside the operative sovereign domain
+
+No external component may acquire authority merely by:
+
+possessing data;
+performing computation;
+authenticating;
+hosting a replica;
+receiving a request;
+being selected as a provider;
+producing a successful result; or
+controlling infrastructure.
+
+Authority must be derived from a currently authoritative grant recognized under \(C\):
+
+$$ \operatorname{Standing}(x,a,t) \iff C_t \models A_t \vdash x\text{ may perform }a $$
+
+Authentication can establish which credential was presented. It cannot establish that the holder presently has authority for the proposed act.
+
+3. Authoritative state must be explicitly distinguished from all other information
+
+The system must distinguish at least:
+
+authoritative state;
+candidate state;
+working state;
+replicas;
+observations;
+proposals;
+evidence; and
+external claims.
+
+No information becomes authoritative merely because it is recent, signed, repeatedly observed, computationally derived or stored in a trusted location.
+
+$$ \text{Evidence}\not\Rightarrow\text{Authority} $$ $$ \text{Proposal}\not\Rightarrow\text{Decision} $$ $$ \text{Replica}\not\Rightarrow\text{Sovereign state} $$
+4. Authoritative change requires an admissible transition
+
+Every change to \(D\) must occur through a transition function governed by the domain’s current state and constitution:
+
+$$ D_{t+1}=T(D_t,p,e) $$
+
+only if:
+
+$$ \operatorname{Admissible}(D_t,p,e)=\text{true} $$
+
+Here \(p\) is a proposed transition and \(e\) is the evidence available for evaluating it.
+
+Anything that bypasses this boundary is corruption, not a sovereign transition, even if performed by an administrator, valid credential holder or infrastructure owner.
+
+5. Authority must be checked at commitment, not inherited from proposal time
+
+A proposal may have been valid when produced and invalid when execution becomes possible. Therefore admissibility cannot be permanently transferred from an earlier stage.
+
+For every consequential commitment \(k\):
+
+$$ \operatorname{Commit}(k,t) \Rightarrow \operatorname{Admissible}(D_t,k,E_t) $$
+
+The check must use then-current:
+
+state;
+authority;
+delegation;
+scope;
+purpose;
+permissions;
+revocation status;
+relevant external conditions.
+
+Prior authorization is evidence for the present decision. It is not the present decision.
+
+6. Every consequential act must be bound to a specific admitted commitment
+
+A worker’s general authorization cannot safely stand in for authorization of an unlimited class of consequences.
+
+A commitment must bind at least:
+
+$$ K=(\text{actor},\text{act},\text{object},\text{scope},\text{purpose},\text{conditions}) $$
+
+with time or freshness requirements wherever later change could affect admissibility.
+
+Execution that materially differs from the admitted commitment is a new candidate commitment.
+
+7. Loss of current authority must prevent new commitment
+
+Revocation cannot depend solely on a revocation message reaching every worker. A disconnected worker may never receive one.
+
+The safe rule is:
+
+$$ \neg\operatorname{CurrentStanding}(x,k,t) \Rightarrow \neg\operatorname{NewCommit}(x,k,t) $$
+
+This requires limited-duration authority, revalidation, leases, epochs, bounded capabilities, or some functionally equivalent mechanism. The particular implementation is replaceable; the invariant is not.
+
+If current authority cannot be established, the system must preserve non-commitment. Uncertainty about permission is not permission.
+
+8. External workers must remain proposal-producing components
+
+External intelligence and compute may:
+
+receive purpose-limited inputs;
+reason;
+simulate;
+transform;
+recommend;
+prepare actions; and
+return evidence and candidate outputs.
+
+They cannot unilaterally:
+
+alter authoritative state;
+create or extend their own authority;
+convert output into commitment;
+declare their evidence authoritative;
+redefine the purpose for which data was disclosed; or
+transfer authority to another component.
+
+A worker can propose a transition. Only the sovereign boundary can admit it.
+
+9. Disclosure must be purpose-bound and capability-minimal
+
+An external worker may receive only the information and capabilities required for an authorized purpose.
+
+Formally, for disclosure \(d\):
+
+$$ \operatorname{PermitDisclosure}(d) \Rightarrow \operatorname{Necessary}(d,\text{purpose}) \land \operatorname{Authorized}(d,\text{purpose}) $$
+
+This does not require proving mathematically perfect minimality. It requires a boundary that treats disclosure as a governed act rather than an incidental consequence of task routing.
+
+10. Evidence and authoritative state require separate admission paths
+
+Evidence must be preservable without automatically modifying what the domain treats as true.
+
+The evidence record must distinguish:
+
+what was observed;
+its source and provenance;
+what was proposed;
+what information was available;
+which authority was asserted;
+what was admitted or refused;
+what was attempted;
+what consequence was reported; and
+what remains unverified.
+
+A valid record can prove that a claim was made without proving the claim.
+
+11. Recovery must restore constitutional control, not merely data
+
+A backup containing all state but controlled by the wrong authority does not recover the sovereign domain. Recovery must reconstruct:
+
+the logical actor;
+constitutional rules;
+authoritative state;
+authority and delegation relationships;
+provenance and transition history;
+unresolved or in-flight commitments;
+the means to revoke or supersede compromised control;
+the basis on which the recovered domain is recognized as continuous.
+
+Recovery is therefore a governed transition, not file restoration.
+
+12. Every replaceable root must have an authorized succession path
+
+If keys, credentials, devices and providers are genuinely replaceable, the constitution must define how control passes from an old root to a new one.
+
+No single replaceable artifact may be both:
+
+the sole proof of sovereign continuity; and
+incapable of replacement after loss or compromise.
+
+Otherwise the claim that the artifact is replaceable is false.
+
+13. Reconstruction must be deterministic enough to identify legitimate state
+
+After loss, surviving records may conflict. The domain therefore requires rules for determining:
+
+which transition sequence is valid;
+which commitments completed;
+which remain uncertain;
+which authority version governed each transition;
+which branches are unauthorized;
+where reconciliation or explicit human judgment is required.
+
+This need not guarantee one mechanically recoverable answer in every catastrophe. It must prevent silent invention of certainty. An unresolved state is itself authoritative information.
+
+3. Minimal boundaries
+
+Only four logical boundaries are necessary.
+
+Sovereign-state boundary
+
+Separates authoritative state and constitutional authority from replicas, evidence, proposals and infrastructure control.
+
+Disclosure boundary
+
+Determines what information or capability may leave the domain, for which purpose, under which scope and conditions.
+
+Admission boundary
+
+Evaluates candidate changes against current state, authority, purpose and conditions. It produces a decision, not merely a confidence score.
+
+Consequence boundary
+
+Prevents a proposal from becoming an external effect until the specific commitment is freshly admissible.
+
+These boundaries may inhabit one process or many machines. Their logical separation matters; their deployment topology does not.
+
+4. Minimal state transitions
+
+The smallest adequate transition system is:
+
+$$ \text{OBSERVED} \rightarrow \text{PROPOSED} \rightarrow \text{EVALUATED} \rightarrow \begin{cases} \text{ADMITTED}\\ \text{REVISE}\\ \text{CONTAINED}\\ \text{REFUSED}\\ \text{UNRESOLVED} \end{cases} $$
+
+An admitted consequential proposal then proceeds:
+
+$$ \text{ADMITTED} \rightarrow \text{REVALIDATED} \rightarrow \text{COMMITTED} \rightarrow \text{ATTEMPTED} \rightarrow \begin{cases} \text{CONFIRMED}\\ \text{FAILED}\\ \text{OUTCOME\ UNKNOWN} \end{cases} $$
+
+Important distinctions:
+
+Admitted means the transition is permitted.
+Committed means the domain has authorized that particular consequence.
+Attempted means execution was initiated.
+Confirmed means adequate evidence of the result was received.
+Outcome unknown must not be silently treated as either success or failure.
+A changed proposal, expired authority or altered context returns the act to evaluation.
+
+Constitutional and recovery changes require their own guarded transitions:
+
+$$ \text{CURRENT CONTROL} \rightarrow \text{SUCCESSION PROPOSED} \rightarrow \text{CONTINUITY VERIFIED} \rightarrow \text{NEW CONTROL ACTIVE} \rightarrow \text{OLD CONTROL SUPERSEDED} $$
+5. The simplest satisfying architecture
+
+The path of least resistance is not a vast sovereign operating system. It is a small logical kernel with five responsibilities:
+
+maintain canonical state and its version;
+resolve current authority and delegation;
+admit or refuse proposed transitions;
+issue narrowly bound commitments for consequences;
+preserve enough ordered evidence and recovery material to reconstruct control.
+
+Models, agents, applications and cloud services remain stateless or replaceable workers wherever possible. They receive scoped views and return proposals plus provenance. A consequence executor accepts only a currently valid, purpose-bound commitment. Evidence is appended independently of whether the asserted result is admitted into authoritative state.
+
+The kernel itself need not be a single machine or program. “Kernel” names the minimal constitutional function. Its implementation may be replicated or migrated, provided no replica independently promotes itself to authoritative status.
+
+6. What cannot be eliminated
+
+Several tempting simplifications fail:
+
+Identity as a key: key loss destroys the actor; key theft transfers the actor.
+Authority as authentication: a valid login says nothing about current scope, purpose or revocation.
+Authority embedded in workers: replacing the worker changes or destroys governance.
+A ledger as truth: tamper-evidence preserves statements, including false ones.
+Approval only at task creation: authority may change before consequence.
+Revocation by notification alone: offline components retain apparently valid authority indefinitely.
+Backups as recovery: data can be restored under illegitimate control.
+One trusted provider: provider continuity becomes actor continuity.
+Human review as a universal remedy: a reviewer without current standing, adequate information and an actual power to prevent commitment is ceremonial furniture.
+7. Irreducible principle
+
+Everything reduces to one rule:
+
+No possession, computation, representation, credential, infrastructure role or prior permission may become authoritative state or real-world consequence without a currently admissible transition of the continuing sovereign domain.
+
+From that rule follow the necessary separations between actor and artifact, evidence and truth, proposal and decision, authentication and authority, authorization and current standing, execution and confirmed outcome, backup and recovery.
+
+That is the smallest world in which components may disappear while the actor remains.

@@ -1,0 +1,76 @@
+﻿a02e118b02103838aac5ec075c7038e73b857464
+2026-08-26 09:07:33 +0200
+Nj├Ñl Gaute Solland
+Remove reversible protected-term fingerprints from public validator
+
+diff --git a/scripts/validate_publication.py b/scripts/validate_publication.py
+index ca71c3a..6910c70 100644
+--- a/scripts/validate_publication.py
++++ b/scripts/validate_publication.py
+@@ -1,9 +1,14 @@
+ #!/usr/bin/env python3
+-"""Fail-closed validation for the public PEACE protocol surface."""
++"""Fail-closed validation for the public PEACE protocol surface.
++
++This public validator checks only public protocol integrity and generic secret
++hygiene. Protected research/IP policy belongs in a private pre-publication gate;
++the public repository must not contain a catalogue or reversible fingerprints of
++what is meant to remain private.
++"""
+ 
+ from __future__ import annotations
+ 
+-import hashlib
+ import json
+ import re
+ import sys
+@@ -66,18 +71,6 @@ FORBIDDEN_TRACKED_PATTERNS = [
+     re.compile(r"sk-[A-Za-z0-9]{20,}"),
+ ]
+ 
+-# Fingerprints of non-public research terms. Plaintext is intentionally not
+-# stored in the public repository because the deny-list itself is a disclosure.
+-FORBIDDEN_PUBLIC_FINGERPRINTS = {
+-    "3561d53051473e933b9de2249bb1767cf0db610c203292ca42ddc4f9d0be886e",
+-    "ab333e01db1da01e1dbea9989c6e74c274fb41ac56885eeca952166eef121cc2",
+-    "3ffd4b2b6ed0d796acc12916bb3058f258ad8ea2c5a33ab26a696495c600bc1b",
+-    "761f71aa605a59dcded7e11d09e4444afa7d1a3d168a1ab9434ac56351c65bf7",
+-    "c840b57925eb3f793b9c0f64a43d89b827d46283718ec3cb46c9b7346b20fe40",
+-    "df1a25e40e75579073eefe2a100d405e151c478ae379de5cb01ed4f1e47b0d05",
+-    "b8407edf5a5ab99d2ec79b05dc82b04b465b358d957d9da76be54668ba069640",
+-}
+-
+ TEXT_SUFFIXES = {".md", ".txt", ".json", ".yaml", ".yml", ".py", ".toml"}
+ 
+ 
+@@ -105,21 +98,6 @@ def iter_text_files():
+             continue
+ 
+ 
+-def normalized_tokens(text: str) -> list[str]:
+-    return re.findall(r"[a-z0-9]+", text.lower())
+-
+-
+-def contains_forbidden_fingerprint(text: str) -> bool:
+-    tokens = normalized_tokens(text)
+-    for width in (1, 2, 3):
+-        for idx in range(0, len(tokens) - width + 1):
+-            candidate = " ".join(tokens[idx : idx + width])
+-            digest = hashlib.sha256(candidate.encode("utf-8")).hexdigest()
+-            if digest in FORBIDDEN_PUBLIC_FINGERPRINTS:
+-                return True
+-    return False
+-
+-
+ def check_required_files() -> None:
+     for path in REQUIRED_FILES:
+         if not (ROOT / path).is_file():
+@@ -164,8 +142,6 @@ def check_publication_hygiene() -> None:
+         for pattern in FORBIDDEN_TRACKED_PATTERNS:
+             if pattern.search(text):
+                 fail(f"possible credential/private key material found in {rel}")
+-        if rel != "scripts/validate_publication.py" and contains_forbidden_fingerprint(text):
+-            fail(f"non-public research surface leaked into public tree: {rel}")
+ 
+ 
+ def main() -> None:

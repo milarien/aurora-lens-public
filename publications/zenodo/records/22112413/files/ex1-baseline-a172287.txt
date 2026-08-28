@@ -1,0 +1,11 @@
+﻿a172287450d7a07a58d4668c23d0c2466b2fd70c
+2026-08-19 12:11:29 +0200
+Nj├Ñl Gaute Solland
+Merge pull request #5 from nsolland/cleanup/public-facing-repo
+
+ .github/workflows/validate.yml  |  24 ++----
+ PUBLICATION_PLAN.md             | 177 ----------------------------------------
+ PUBLICATION_STATUS.md           |  64 ---------------
+ README.md                       |  72 +++++++---------
+ scripts/validate_publication.py |  17 +---
+ 5 files changed, 37 insertions(+), 317 deletions(-)

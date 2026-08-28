@@ -1,0 +1,48 @@
+This document defines the world a system must make possible. It deliberately does not prescribe an implementation, programming language, vendor, operating system, cryptographic stack, model, device, storage engine, or runtime architecture. Imagine a world where a person or organisation continuously changes phones, AI models, agents, clouds, devices, runtimes, services and compute providers. Any of them may fail, disappear, be replaced, become compromised, or become unavailable at any time. The sovereign domain must nevertheless remain the same logical actor and retain control of identity, authority, authoritative state, rights, relationships, delegations, governance, history and recovery path. External intelligence and compute may receive only what is needed for a specific purpose. They may reason, calculate, simulate, recommend and propose. Possessing data, producing a plan, performing computation, authenticating successfully, routing a task, hosting state or being selected as a provider must never by itself grant authority over the sovereign domain. Some proposals may lead to real-world consequences. Between proposal and consequence, state, authority, delegation, scope, purpose, permissions, revocation status and external conditions may change. Evidence of what was observed, proposed, authorized, attempted and produced must survive replacement or loss of any particular worker, device, model, runtime or provider. Evidence may be valid and tamper-evident without automatically becoming authoritative state or truth. Every implementation artifact is replaceable, including programming language, runtime, device, provider, model, credential and cryptographic key. Replacing such artifacts must not by itself replace the actor or transfer the source of authority to the replacement artifact. Loss of a replaceable component may reduce capability. It must not destroy constitutional control of the operative domain. Given only these conditions: What must necessarily be true for this world to remain sovereign, safe and reconstructible? Derive the smallest set of invariants, boundaries and state transitions that makes the world possible. Prefer the path of least resistance: the simplest architecture that satisfies all conditions without relying on a particular programming language, operating system, vendor, model, device, credential scheme or existing implementation.
+
+
+The sovereign domain is a logical actor whose constitutional control is independent of every replaceable artifact.
+Its continuity, safety and reconstructibility rest on a small set of invariants, hard boundaries and governed state transitions. These are forced by the conditions; nothing weaker satisfies them all.
+1. Core Invariants (must never be broken)
+
+Logical identity is primary and non-transferable.There exists a single, persistent logical actor $S$. Every physical device, key, credential, model, runtime or provider is only an instrument of $S$. Possession or successful authentication by any instrument never confers the identity of $S$.
+Authority is distinct from capability, data possession and computation.Authority is the right to change authoritative state, issue or revoke delegations, and bind consequences. Capability (compute, storage, routing, model inference) and data possession are orthogonal. Successful authentication, hosting of state, production of a plan, or selection as a provider never, by themselves, grant authority.
+Authoritative state is singular and versioned.There is exactly one current authoritative state of $S$ (identity attributes, rights, relationships, delegations, governance rules, history pointers). All other copies are either caches, proposals or evidence. Authoritative state changes only through governed transitions.
+Evidence is append-only, tamper-evident and non-authoritative.Every observation, proposal, authorization decision, attempt and produced artifact is recorded as evidence. Evidence can be independently verified as authentic and unaltered, yet remains distinct from authoritative state. It never automatically becomes truth or control.
+Recovery path is constitutional and external to any single instrument.The means to reconstruct $S$’s identity, authoritative state and history after total loss of any set of devices, keys, providers or models is itself part of the sovereign domain and is not dependent on any particular replaceable artifact.
+Scope and purpose are explicit and ephemeral.Any external intelligence or compute receives only the minimal data and permissions required for a declared purpose, for a bounded time, under a revocable delegation. The purpose and scope are part of the evidence.
+
+These six invariants are the smallest set that simultaneously satisfy continuity of the logical actor, non-transfer of authority under replacement or compromise, survival of history, and reconstructibility.
+2. Hard Boundaries
+
+Instrument boundary.Every device, model, runtime, cloud, key or credential is an instrument. Instruments may hold temporary capabilities or cached state; they never hold the source of authority or the recovery path.
+Proposal–consequence boundary.Between any proposal (plan, recommendation, computation) and a real-world consequence there is an explicit authorization transition. During that interval, state, authority, scope, revocation status and external conditions may change. The transition itself is recorded as evidence and may succeed, fail or be aborted.
+Evidence–authority boundary.Tamper-evident evidence can be inspected, verified and used for audit or reconstruction, but it does not become authoritative state until an explicit, governed transition incorporates selected parts of it.
+Delegation boundary.Any grant of capability or limited authority is a first-class, revocable, scoped object inside the authoritative state. Delegations cannot outlive their recorded conditions or the continued existence of $S$’s constitutional control.
+
+These boundaries ensure that failure, compromise or replacement of any external component cannot silently seize control or erase the recovery path.
+3. Minimal State Transitions
+Only four transition kinds are required:
+
+Authorize$S$ (or a currently valid delegation) decides that a proposed action is permitted under current state, scope and conditions. The decision and the resulting change (if any) to authoritative state are recorded as evidence. Authorization is never implied by computation or data possession.
+Delegate / Revoke$S$ creates or withdraws a scoped, time-bounded grant of capability or limited authority. Both the grant and the revocation are part of authoritative state and leave evidence.
+Incorporate evidenceSelected, verified evidence is promoted into authoritative state (or history). This is an explicit transition, never automatic.
+RecoverUsing the constitutional recovery path, a new set of instruments is bound to $S$ and the latest consistent authoritative state is restored. The recovery itself produces evidence and does not require any previously used device, key or provider.
+
+All other operations (reasoning, simulation, caching, routing, model inference) are non-authoritative and may be performed by any instrument under a current delegation. They produce evidence but never change the authoritative state by themselves.
+4. Why this is the simplest architecture that works
+Any weaker design violates at least one condition:
+
+If authority can be transferred by possession of a key or by successful authentication, replacement or compromise of that artifact replaces the actor.
+If evidence is automatically authoritative, history can be poisoned by a compromised instrument.
+If recovery depends on a particular device, model or provider, loss of that component destroys constitutional control.
+If proposals can produce consequences without an intervening authorization transition, changes in state or revocation between proposal and effect cannot be respected.
+
+The design above relies on none of the forbidden particulars (language, OS, vendor, cryptographic scheme, storage engine, model, device). It only requires that:
+
+a logical actor can be distinguished from its instruments,
+authoritative state can be versioned and protected by a recovery path that is itself part of the domain,
+evidence can be made tamper-evident, and
+transitions between proposal, authorization and consequence can be made explicit and recorded.
+
+That is the minimal necessary structure. Everything else—particular cryptographic primitives, consensus mechanisms, storage formats, or policy languages—is an implementation choice that can be replaced without altering the sovereignty of $S$.

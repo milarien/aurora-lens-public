@@ -1,0 +1,28 @@
+Aurora-Lens Private-File Hash Manifest
+Prepared: 27 August 2026
+Author and custodian: Margaret Stokes
+
+Scope
+-----
+This manifest records SHA-256 fingerprints for six retained copies identified by the applicant as filed Australian provisional specifications, one private offline verification bundle, and one private development note. The underlying files are not included in the public repository.
+
+A hash permits a later-produced file to be tested for byte identity with the fingerprint recorded here. A hash alone does not establish the file's contents, filing date, legal status, authorship, or correspondence with a patent-office copy. Those propositions require the relevant document and filing record.
+
+Entries
+-------
+01 | AU 2025905835 | Aurora Provisional Patent Specification 01.pdf | SHA-256 6055316a0f3b59893fdacfd0cdba885486d441c14cae21817daa166798b84a6c
+02 | AU 2025905860 | PEF_Specification.pdf | SHA-256 471aa6cb6904c1057597706d63befcf880629c403c487e03dd3d4d4b46b2e200
+03 | AU 2025905885 | Provisional Patent Autonomous Compositional Reasoning Architecture.pdf | SHA-256 7e261d3c285cb0251258ca0d0c33328fe45949f31c35b733664c7f728c92894c
+04 | AU 2025906132 | Aurora-PEF_Provisional_2025.pdf | SHA-256 027ce5d54105f904e314b09add629b87e1461b2d80e3053ced998eac3d59f1ab
+05 | AU 2025906680 | Aurora Provisional Patent Specification.pdf | SHA-256 c3814c7cc9d5fe05d00a9ea8f4d7ea4a517287556396b87b3b19faf46e490bc6
+06 | AU 2026905969 | PP 6 Systems and Methods for Integrated Admissibility.pdf | SHA-256 48f9ad11d77a3f3bfc016a50b739cce5590f1cee649b90c6ed56a38f6800ca86
+07 | No patent application | aurora-lens-offline-verification.zip | SHA-256 d21d4ffe22512430425e613598c5e422a1e10f00427e28d32367f6e631e09855
+08 | Private development note | coding spec.txt | SHA-256 6624927eb733b0cf4ddf1ac6db7850a96c0618fd5a43f2a9cb69d6db2161ddc5
+
+Verification scope
+------------------
+The seventh entry is a private offline verification bundle. It is not described as a source-code snapshot and is not associated with a patent application number.
+
+The eighth entry is a private working note. The present filesystem copy was created on 19 August 2026 and retains a last-write timestamp of 12 December 2025. That local timestamp is corroborative metadata only. It is not an independently trusted timestamp and does not establish public availability, a patent-priority date, or the precise date on which the underlying concepts were first formed.
+
+The public date of this manifest is established by the eventual repository commit or other public deposit containing it, not merely by the preparation date written above.
