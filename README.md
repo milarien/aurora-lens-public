@@ -18,6 +18,8 @@ This repository is a canonical public index and preservation corpus, not an inde
 
 ## Start here
 
+**Current architecture:** [CURRENT_ARCHITECTURE.md](architecture/CURRENT_ARCHITECTURE.md)
+
 - [Core invariants](architecture/CORE-INVARIANTS.md): the shortest statement of the architecture.
 - [Canonical architecture map](architecture/Aurora_Lens_Canonical_Architecture_Map.md): commitment surfaces, authority, unresolved state, outcomes, persistence, and audit.
 - [Runtime map](architecture/AURORA_LENS_RUNTIME_MAP.md): the public component separation and runtime vocabulary.
