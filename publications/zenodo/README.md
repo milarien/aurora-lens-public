@@ -1,6 +1,6 @@
 # Aurora-Lens Publication Corpus
 
-This archive contains the exact files currently deposited in nineteen Zenodo records associated with Margaret Stokes and the Aurora-Lens research record, reconstructed on 27 August 2026.
+This archive contains the exact files currently deposited in the Zenodo records associated with Margaret Stokes and the Aurora-Lens research record that are preserved here, reconstructed on 27 August 2026. The publication register reconciled through 31 August 2026 contains twenty distinct works.
 
 ## Organisation
 

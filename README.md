@@ -23,12 +23,12 @@ This repository is a canonical public index and preservation corpus, not an inde
 - [Core invariants](architecture/CORE-INVARIANTS.md): the shortest statement of the architecture.
 - [Canonical architecture map](architecture/Aurora_Lens_Canonical_Architecture_Map.md): commitment surfaces, authority, unresolved state, outcomes, persistence, and audit.
 - [Runtime map](architecture/AURORA_LENS_RUNTIME_MAP.md): the public component separation and runtime vocabulary.
-- [Publication catalogue](publications/zenodo/PUBLICATION-CATALOGUE.md): nineteen current Zenodo records and their deposited files.
+- [Publication catalogue](publications/zenodo/PUBLICATION-CATALOGUE.md): twenty distinct works and their deposited files.
 - [Patent portfolio](patents/PATENT-PORTFOLIO.md): nine filings, with provisionals, the withdrawn PCT application, and pending complete or nonprovisional applications distinguished.
 - [Public provenance timeline](provenance/PROVENANCE-TIMELINE.md): event dates separated from later public deposits.
 - [Private-file hash manifest](provenance/EVIDENCE-MANIFEST.txt): fingerprints only; the underlying private files are not present.
 
-The public canonical statement is deposited in [Zenodo record 21930519](https://doi.org/10.5281/zenodo.21930519). The complete current publication corpus is preserved under `publications/zenodo/records/`, retaining the exact deposited filenames, metadata, and checksums for nineteen records and thirty-nine payload files.
+The public canonical statement is deposited in [Zenodo record 21930519](https://doi.org/10.5281/zenodo.21930519). The records preserved under `publications/zenodo/records/` retain the exact deposited filenames, metadata, and checksums.
 
 ## Repository structure
 

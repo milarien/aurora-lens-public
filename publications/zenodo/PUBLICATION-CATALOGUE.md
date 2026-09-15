@@ -2,7 +2,8 @@
 
 Margaret Stokes  
 ORCID: 0009-0004-6422-4174  
-Catalogue reconstructed: 27 August 2026
+Catalogue reconstructed: 27 August 2026  
+Current through: 31 August 2026
 
 ## Scope and method
 
@@ -10,7 +11,7 @@ This catalogue covers the public research, architectural, applied-governance and
 
 The catalogue was reconstructed from the Zenodo API using the author's ORCID and creator-name variants, then cross-checked against SSRN, OSF, PhilArchive, GitHub, milamba.com and aurora-lens.ai. It does not rely upon Margaret Stokes's local Downloads folder as the publication register.
 
-Nineteen current Zenodo records were identified. Two records have multiple Zenodo versions. Mirrors on SSRN, OSF and PhilArchive are listed separately and are not treated as additional publications.
+Twenty distinct works were identified. Two records have multiple Zenodo versions. Mirrors on SSRN, OSF and PhilArchive are listed separately and are not treated as additional publications.
 
 ## A. Foundational work
 
@@ -229,6 +230,12 @@ Nineteen current Zenodo records were identified. Two records have multiple Zenod
 - Licence: CC BY 4.0
 - Preservation scope: the complete current seventeen-file evidence bundle is preserved under `records/22112413/files/`.
 
+### 20. Record of Public Disclosure: milarien/Aurora-PEF, 4 to 30 December 2025
+
+- Type: Report
+- Publication and deposit date: 31 August 2026
+- DOI: https://doi.org/10.5281/zenodo.22182936
+
 ## Mirrors and duplicate records
 
 These are distribution mirrors, not additional works:
@@ -243,7 +250,7 @@ The mirrors are listed here for discovery and are not duplicated in the reposito
 
 ## Repository placement
 
-All nineteen current records are preserved under `publications/zenodo/records/`. Each record directory retains the exact deposited filename or filenames, the corresponding Zenodo metadata, and its `MD5SUMS` file.
+The records preserved under `publications/zenodo/records/` each retain the exact deposited filename or filenames, the corresponding Zenodo metadata, and its `MD5SUMS` file.
 
 ```text
 publications/zenodo/
@@ -261,7 +268,7 @@ Patent specifications, patent-office administrative documents, internal claim-su
 
 ## Catalogue reconstruction notes
 
-- The complete current Zenodo corpus contains nineteen relevant records.
+- The publication register reconciled through 31 August 2026 contains twenty distinct works.
 - DOI `10.5281/zenodo.21792941` is *The World Before the Word*. It is not the terminology-translation publication.
 - *A Terminology Translation Layer for AI Governance Architectures* is DOI `10.5281/zenodo.20356020` and was missed because its creator metadata is reversed.
 - *Epistemic Legitimacy* has two Zenodo versions. Version 2, DOI `10.5281/zenodo.19504665`, is the current file.
