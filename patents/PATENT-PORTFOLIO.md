@@ -1,12 +1,12 @@
 # Aurora-Lens Patent Portfolio
 
-**Status date:** 27 August 2026
+**Status date:** 15 September 2026
 
 This is a bibliographic filing record. It does not reproduce specifications, claims, filing receipts, administrative records, or internal priority analysis. No granted patent is asserted.
 
 Recent applications may not yet be publicly searchable. The source labels below distinguish public deposits from information confirmed from the applicant's retained filing records.
 
-| Application | Filing date | Title | Type and status at 27 August 2026 | Public basis for this entry |
+| Application | Filing date | Title | Type and status at 15 September 2026 | Public basis for this entry |
 |---|---:|---|---|---|
 | AU 2025905835 | 27 November 2025 | Aurora - Autonomous Conceptual Reasoning Architecture | Australian provisional application, filed | Applicant filing record; application number and date also recorded in deposited provenance material |
 | AU 2025905860 | 28 November 2025 | Systems and Methods for Implementing a Persistent Existence Frame (PEF) in Cognitive and Machine Reasoning Architectures | Australian provisional application, filed | Applicant filing record; application number and date also recorded in deposited provenance material |
