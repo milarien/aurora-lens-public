@@ -1,0 +1,47 @@
+Aurora-Lens — install (short)
+
+Prerequisites: Python 3.12 only (>=3.12,<3.13)
+
+Full setup guide (install, configure, proxy, operator web page):
+  README.md
+
+Quick install from this folder into an isolated virtual environment
+(non-editable — do not use pip install -e):
+  python -m venv .venv
+  .\.venv\Scripts\Activate.ps1
+  pip install -U pip
+  pip install ".[proxy]"
+
+On first start with the generated default config, Aurora-Lens automatically
+installs spaCy and the en_core_web_sm model if needed.
+
+Optional quality upgrade:
+  python -m spacy download en_core_web_sm
+
+Try without an API key:
+  python tools/run_demo.py
+
+Copy example config:
+  Copy-Item aurora-lens.yaml.example aurora-lens.yaml
+or:
+  aurora-lens init-config
+
+Set provider credential env var (example):
+  $env:OPENAI_API_KEY="your-key"
+
+Lifecycle commands:
+  aurora-lens start
+  aurora-lens status
+  aurora-lens stop
+
+Windows wrappers:
+  Start Aurora-Lens.bat
+  Status Aurora-Lens.bat
+  Stop Aurora-Lens.bat
+
+Operator web page (with proxy running):
+  http://127.0.0.1:<listen.port>/forensics
+  See docs/forensics-dashboard.md
+
+Licence:
+  Proprietary — see LICENSE, NOTICE, LICENSING.md, COMMERCIAL-LICENCE.md

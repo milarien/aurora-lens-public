@@ -1,0 +1,42 @@
+include aurora_lens_build_backend.py
+include release_guard.py
+include setup.py
+include LICENSE
+include LICENSING.md
+include NOTICE
+include README.md
+include PATENTS.md
+include PROVENANCE.md
+include SHA256SUMS.txt
+include INSTALL.txt
+include pyproject.toml
+include COMMERCIAL-LICENCE.md
+include aurora-lens.yaml.example
+include aurora-lens.production.example.yaml
+include run_aurora_lens.py
+include Dockerfile
+include docker-compose.yml
+include entrypoint.sh
+include requirements.txt
+include "Start Aurora-Lens.bat"
+include "Status Aurora-Lens.bat"
+include "Stop Aurora-Lens.bat"
+include START_TRIAL_WINDOWS.bat
+include START_TRIAL_MAC.sh
+recursive-include docs *.md *.html *.txt
+recursive-include tools *.py
+recursive-include examples *.yaml *.py *.md
+recursive-include patents *.pdf *.docx
+
+global-exclude *.pid
+global-exclude *.quarantine.*.json
+global-exclude audit*.jsonl
+global-exclude audit*.jsonl.pre_*
+global-exclude launcher.log
+global-exclude proxy.log
+prune logs
+prune state
+prune support
+prune tmp
+prune runtime
+prune sessions

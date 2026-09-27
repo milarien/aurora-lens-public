@@ -1,0 +1,3 @@
+httpx>=0.24
+
+# Runtime: optional `AURORA_LENS_RAG_RETRIEVAL_AWARE_REFERENTS` (see docs/rag-retrieval-aware-referents.md).

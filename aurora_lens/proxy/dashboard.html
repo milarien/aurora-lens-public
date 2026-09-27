@@ -1,0 +1,2671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="application-name" content="Aurora Lens Forensics Console">
+  <title>Aurora Lens — Forensics Console</title>
+  <style>
+    :root {
+      --bg: #08111f;
+      --bg-2: #0d1728;
+      --panel: rgba(14, 24, 40, 0.82);
+      --panel-strong: rgba(18, 30, 49, 0.96);
+      --panel-soft: rgba(255,255,255,0.03);
+      --border: rgba(147, 178, 222, 0.18);
+      --border-strong: rgba(147, 178, 222, 0.28);
+      --text: #eef4ff;
+      --muted: #9db0ce;
+      --muted-2: #7889a7;
+      --accent: #76b7ff;
+      --accent-2: #9f7aea;
+      --ok: #39d98a;
+      --warn: #f3c969;
+      --bad: #ff7a8a;
+      --shadow: 0 18px 48px rgba(0,0,0,0.28);
+      --radius: 16px;
+      --radius-sm: 12px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      --sans: Inter, Segoe UI, system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(118,183,255,0.14), transparent 28%),
+        radial-gradient(circle at top right, rgba(159,122,234,0.12), transparent 26%),
+        linear-gradient(180deg, #091220 0%, #070d17 100%);
+      line-height: 1.5;
+    }
+
+    .shell {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 28px 20px 48px;
+    }
+
+    /* ── STATUS BANNER ─────────────────────────────────────────────────── */
+    .status-banner {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 24px 28px;
+      border-radius: 20px;
+      border: 2px solid var(--border);
+      margin-bottom: 14px;
+      background: rgba(157,176,206,0.05);
+      transition: background 0.35s ease, border-color 0.35s ease;
+    }
+    .status-banner--ok   { background: rgba(57,217,138,0.09);  border-color: rgba(57,217,138,0.38); }
+    .status-banner--warn { background: rgba(243,201,105,0.09); border-color: rgba(243,201,105,0.38); }
+    .status-banner--bad  { background: rgba(255,122,138,0.09); border-color: rgba(255,122,138,0.38); }
+
+    .status-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--muted);
+      transition: background 0.35s ease, box-shadow 0.35s ease;
+    }
+    .status-banner--ok   .status-dot { background: var(--ok);   box-shadow: 0 0 16px rgba(57,217,138,0.7); }
+    .status-banner--warn .status-dot { background: var(--warn); box-shadow: 0 0 16px rgba(243,201,105,0.7); }
+    .status-banner--bad  .status-dot { background: var(--bad);  box-shadow: 0 0 16px rgba(255,122,138,0.7); }
+
+    .status-banner-main { flex: 1; min-width: 0; }
+
+    .status-banner-headline {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--muted);
+      transition: color 0.35s ease;
+    }
+    .status-banner--ok   .status-banner-headline { color: var(--ok); }
+    .status-banner--warn .status-banner-headline { color: var(--warn); }
+    .status-banner--bad  .status-banner-headline { color: var(--bad); }
+
+    .status-banner-sub {
+      margin-top: 3px;
+      font-size: 0.83rem;
+      color: var(--muted);
+    }
+
+    .status-banner-kv {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 20px;
+      font-size: 0.79rem;
+      color: var(--muted);
+      align-self: center;
+    }
+    .status-banner-kv b { color: var(--text); font-weight: 600; }
+
+    /* ── HERO (slim strip) ─────────────────────────────────────────────── */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 16px 24px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(118,183,255,0.06), rgba(159,122,234,0.04) 42%, rgba(8,17,31,0.3) 100%), var(--panel-strong);
+      box-shadow: var(--shadow);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: auto -8% -60% auto;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(118,183,255,0.1), transparent 65%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.76rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .hero-tagline {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    /* ── LAYOUT ────────────────────────────────────────────────────────── */
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 18px;
+    }
+
+    .grid-2, .grid-3 { display: grid; gap: 18px; }
+    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    .card, details.panel {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+    }
+
+    .card { padding: 18px; }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 1.02rem;
+      letter-spacing: -0.01em;
+    }
+
+    .card-subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .stack { display: grid; gap: 12px; }
+
+    /* ── RUNTIME GRID ──────────────────────────────────────────────────── */
+    .health-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .overview-tile {
+      padding: 14px 15px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--panel-soft);
+    }
+
+    .overview-tile .label {
+      color: var(--muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .overview-tile .value {
+      font-size: 0.94rem;
+      font-weight: 600;
+      word-break: break-word;
+    }
+
+    .stat-tile {
+      padding: 14px 15px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: var(--panel-soft);
+    }
+
+    .stat-tile .label {
+      color: var(--muted);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .stat-tile .value {
+      font-size: 0.98rem;
+      font-weight: 600;
+      word-break: break-word;
+    }
+
+    /* ── VERIFY ────────────────────────────────────────────────────────── */
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .verify-card {
+      padding: 16px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      min-height: 118px;
+    }
+
+    .verify-card h3 {
+      margin: 0 0 9px;
+      font-size: 0.8rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .verify-body {
+      font-size: 0.88rem;
+      line-height: 1.48;
+      color: var(--text);
+    }
+
+    .verify-meta {
+      display: block;
+      margin-top: 7px;
+      font-size: 0.76rem;
+      color: var(--muted);
+    }
+
+    /* ── PILLS ─────────────────────────────────────────────────────────── */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 27px;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .pill.ok      { background: rgba(57,217,138,0.12); color: var(--ok);   border-color: rgba(57,217,138,0.22); }
+    .pill.warn    { background: rgba(243,201,105,0.12); color: var(--warn); border-color: rgba(243,201,105,0.22); }
+    .pill.bad     { background: rgba(255,122,138,0.12); color: var(--bad);  border-color: rgba(255,122,138,0.22); }
+    .pill.neutral { background: rgba(157,176,206,0.1);  color: var(--muted); border-color: rgba(157,176,206,0.16); }
+    .evidence-sub {
+      display: block;
+      margin-top: 4px;
+      font-size: 0.68rem;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: normal;
+      color: var(--muted);
+    }
+
+    /* ── OUTCOME LEGEND ────────────────────────────────────────────────── */
+    .outcome-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px 22px;
+      padding: 11px 16px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      font-size: 0.77rem;
+    }
+    .legend-code { font-weight: 700; font-size: 0.73rem; }
+    .legend-desc { color: var(--muted); }
+
+    /* ── OUTCOME COLOURS ───────────────────────────────────────────────── */
+    .outcome-PASS         { color: var(--ok);   font-weight: 700; }
+    .outcome-ADMIT        { color: var(--ok);   font-weight: 700; }
+    .outcome-CONTINUE     { color: var(--ok);   font-weight: 700; }
+    .outcome-SOFT_CORRECT { color: var(--muted); font-weight: 700; }
+    .outcome-FORCE_REVISE { color: var(--warn); font-weight: 700; }
+    .outcome-HARD_STOP    { color: var(--bad);  font-weight: 700; }
+    .outcome-CONTAIN      { color: var(--bad);  font-weight: 700; }
+    .outcome-STOP         { color: var(--bad);  font-weight: 700; }
+    .outcome-REFUSE       { color: var(--bad);  font-weight: 700; }
+    .outcome-CLARIFY      { color: var(--warn); font-weight: 700; }
+
+    /* Outcome cell: code + gloss sub-line */
+    .outcome-gloss {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: var(--muted);
+      margin-top: 2px;
+      line-height: 1.25;
+    }
+
+    /* ── API LINKS ─────────────────────────────────────────────────────── */
+    .api-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .quiet { color: var(--muted); font-size: 0.83rem; }
+
+    .integrity-operator-msg,
+    #audit-detail-panel,
+    .pef-shell,
+    .info-strip {
+      padding: 14px 15px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.14);
+    }
+
+    .integrity-operator-msg {
+      white-space: pre-wrap;
+      line-height: 1.5;
+      font-size: 0.84rem;
+    }
+
+    .pef-toolbar, .recent-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      min-width: 220px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(8,17,31,0.72);
+      color: var(--text);
+      font: inherit;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: rgba(118,183,255,0.5);
+      box-shadow: 0 0 0 4px rgba(118,183,255,0.12);
+    }
+
+    button, .button {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(118,183,255,0.16), rgba(118,183,255,0.08));
+      color: var(--text);
+      padding: 11px 15px;
+      border-radius: 12px;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 600;
+      transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+    }
+
+    button:hover, .button:hover {
+      transform: translateY(-1px);
+      border-color: var(--border-strong);
+      background: linear-gradient(180deg, rgba(118,183,255,0.22), rgba(118,183,255,0.1));
+    }
+
+    button.link {
+      padding: 0;
+      border: 0;
+      background: none;
+      color: var(--accent);
+      text-decoration: underline;
+      border-radius: 0;
+    }
+
+    button.link:hover { transform: none; }
+
+    /* ── TABLE ─────────────────────────────────────────────────────────── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+
+    th, td {
+      padding: 12px 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba(147,178,222,0.12);
+      vertical-align: top;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: rgba(13, 23, 40, 0.96);
+      color: var(--muted);
+      font-size: 0.73rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 700;
+      backdrop-filter: blur(8px);
+    }
+
+    tbody tr:hover td { background: rgba(255,255,255,0.025); }
+    tr.audit-row-selectable { cursor: pointer; }
+    tr.audit-row-selected td { background: rgba(118,183,255,0.08); }
+
+    .table-wrap {
+      max-height: min(56vh, 34rem);
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(0,0,0,0.08);
+    }
+
+    /* ── MONO / KV ─────────────────────────────────────────────────────── */
+    .mono, code, pre, .kv dd { font-family: var(--mono); }
+
+    .kv { margin: 0; }
+    .kv dt {
+      color: var(--muted);
+      margin: 10px 0 3px;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 700;
+    }
+    .kv dd {
+      margin: 0;
+      font-size: 0.8rem;
+      word-break: break-word;
+    }
+
+    /* ── AUDIT DETAIL ──────────────────────────────────────────────────── */
+    .recent-with-detail {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.85fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    #audit-detail-panel h3 {
+      margin: 0 0 10px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .detail-pair {
+      margin: 9px 0;
+      font-size: 0.83rem;
+    }
+    .detail-pair dt {
+      color: var(--muted);
+      margin-right: 6px;
+      display: inline;
+    }
+    .detail-pair dd {
+      display: inline;
+      margin: 0;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+    }
+    .detail-pair dd.long {
+      display: block;
+      margin-top: 6px;
+      white-space: pre-wrap;
+      line-height: 1.45;
+    }
+    .detail-pair dd.plain {
+      font-family: var(--sans);
+      font-size: 0.82rem;
+    }
+
+    .raw-model-heading {
+      margin: 14px 0 7px;
+      font-size: 0.76rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+    .raw-model-heading.admitted { color: var(--ok); }
+    .raw-model-heading.blocked  { color: var(--bad); }
+    .raw-model-body {
+      margin: 0;
+      padding: 12px 13px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.18);
+      font-size: 0.77rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.48;
+      color: var(--text);
+      max-height: 280px;
+      overflow: auto;
+    }
+    .raw-model-body.blocked {
+      text-decoration: line-through;
+      color: var(--muted-2);
+    }
+
+    /* ── COLLAPSIBLE PANELS ────────────────────────────────────────────── */
+    details.panel { padding: 0 18px; overflow: hidden; }
+
+    details.panel > summary {
+      cursor: pointer;
+      list-style: none;
+      padding: 18px 0;
+      font-weight: 700;
+      color: var(--text);
+      position: relative;
+    }
+
+    details.panel > summary::-webkit-details-marker { display: none; }
+    details.panel > summary::after {
+      content: "+";
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--accent);
+      font-size: 1.15rem;
+      line-height: 1;
+    }
+
+    details.panel[open] > summary::after { content: "–"; }
+    details.panel .panel-body {
+      padding: 0 0 18px;
+      border-top: 1px solid var(--border);
+      margin-top: -1px;
+    }
+
+    .metrics {
+      margin: 0;
+      padding: 14px 15px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.14);
+      color: var(--muted);
+      font-size: 0.74rem;
+      overflow: auto;
+      max-height: 320px;
+    }
+
+    ul.dash-ops {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 0.87rem;
+      line-height: 1.6;
+    }
+
+    .constraints {
+      font-size: 0.77rem;
+      color: var(--muted);
+      max-width: 15rem;
+    }
+
+    .error { color: var(--bad); }
+    .muted { color: var(--muted); }
+
+    .footer {
+      margin-top: 18px;
+      text-align: center;
+      color: var(--muted-2);
+      font-size: 0.8rem;
+    }
+
+    /* ── MAIN CONSOLE TABS ─────────────────────────────────────────────── */
+    .console-nav {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .console-nav button {
+      border: 1px solid var(--border);
+      background: var(--panel-soft);
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .console-nav button.active {
+      color: var(--text);
+      border-color: rgba(118,183,255,0.45);
+      background: rgba(118,183,255,0.12);
+    }
+    .console-panel { display: none; }
+    .console-panel.active { display: block; }
+
+    .corpus-rule {
+      padding: 14px 18px;
+      border-radius: 14px;
+      border: 1px solid rgba(118,183,255,0.35);
+      background: rgba(118,183,255,0.08);
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      margin-bottom: 16px;
+    }
+    .corpus-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .corpus-stack { display: grid; gap: 16px; }
+    .corpus-field {
+      display: grid;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .corpus-field label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .corpus-field input,
+    .corpus-field textarea,
+    .corpus-field select {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.22);
+      color: var(--text);
+      padding: 10px 12px;
+      font: inherit;
+    }
+    .corpus-field textarea { min-height: 88px; resize: vertical; }
+    .corpus-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .corpus-actions button {
+      border-radius: 10px;
+      border: 1px solid var(--border-strong);
+      background: rgba(118,183,255,0.12);
+      color: var(--text);
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 0.84rem;
+    }
+    .corpus-actions button.secondary {
+      background: var(--panel-soft);
+      color: var(--muted);
+    }
+    .corpus-presets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 8px 0 4px;
+    }
+    .corpus-presets button {
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.18);
+      color: var(--muted);
+      padding: 6px 10px;
+      font-size: 0.74rem;
+      cursor: pointer;
+    }
+    .corpus-presets button:hover { color: var(--text); border-color: var(--border-strong); }
+    .evidence-list { display: grid; gap: 10px; margin-top: 10px; }
+    .evidence-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: rgba(0,0,0,0.16);
+    }
+    .evidence-card .meta {
+      font-size: 0.76rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .evidence-card pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--text);
+    }
+    .evidence-section-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin: 14px 0 8px;
+    }
+    .evidence-role-pill {
+      display: inline-block;
+      font-size: 0.68rem;
+      padding: 2px 6px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      margin-right: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .evidence-role-pill.direct_support { color: var(--ok); }
+    .evidence-role-pill.background { color: var(--accent); }
+    .evidence-role-pill.metadata { color: var(--warn); }
+    .evidence-role-pill.low_relevance { color: var(--muted); }
+    .evidence-low-toggle { margin-top: 10px; }
+    .corpus-needs-record { opacity: 0.72; }
+    .support-pill.supported { color: var(--ok); }
+    .support-pill.not_supported { color: var(--bad); }
+    .support-pill.partial { color: var(--warn); }
+    .support-pill.scope_mismatch,
+    .support-pill.inferential_gap,
+    .support-pill.threshold_issue,
+    .support-pill.source_issue { color: var(--warn); }
+    .operator-action-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .operator-action-bar button.selected {
+      border-color: rgba(57,217,138,0.5);
+      background: rgba(57,217,138,0.12);
+    }
+
+    @media (max-width: 1120px) {
+      .corpus-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .recent-with-detail,
+      .grid-2,
+      .grid-3,
+      .status-grid,
+      .overview-grid { grid-template-columns: 1fr; }
+      .status-banner-kv { display: none; }
+    }
+
+    @media (max-width: 760px) {
+      .shell { padding: 16px 12px 34px; }
+      .hero, .card { padding: 16px; }
+      .health-grid { grid-template-columns: 1fr; }
+      th, td { padding: 10px 9px; }
+      .table-wrap { max-height: 60vh; }
+      .status-banner { padding: 18px 20px; gap: 14px; }
+      .status-banner-headline { font-size: 1.05rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+
+    <!-- STATUS BANNER: first thing on the page, nothing competing -->
+    <div id="status-banner" class="status-banner" role="status" aria-live="polite">
+      <div class="status-dot"></div>
+      <div class="status-banner-main">
+        <div class="status-banner-headline" id="status-banner-headline">Checking system status…</div>
+        <div class="status-banner-sub" id="status-banner-sub">Aurora Lens governance proxy</div>
+      </div>
+      <div class="status-banner-kv" id="status-banner-kv"></div>
+    </div>
+
+    <!-- HEADER: product name + one-liner, no competing content -->
+    <header class="hero">
+      <div class="eyebrow">Aurora Lens · Operator Console</div>
+      <p class="hero-tagline" id="hero-tagline">Governance decisions, audit evidence, and session state — live.</p>
+    </header>
+
+    <nav class="console-nav" aria-label="Console sections">
+      <button type="button" class="console-tab active" data-console-tab="forensics">Forensics</button>
+      <button type="button" class="console-tab" data-console-tab="corpus">Corpus Review</button>
+    </nav>
+
+    <div id="panel-forensics" class="console-panel active">
+    <main class="layout">
+
+      <section class="card" id="operator-overview">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Operator overview</h2>
+            <p class="card-subtitle">At a glance: system health, model, policy, recent decisions, attention count, and audit availability.</p>
+          </div>
+        </div>
+        <div class="overview-grid">
+          <div class="overview-tile"><div class="label">System</div><div class="value" id="overview-system">Loading…</div></div>
+          <div class="overview-tile"><div class="label">Connected model</div><div class="value" id="overview-model">Loading…</div></div>
+          <div class="overview-tile"><div class="label">Current policy</div><div class="value" id="overview-policy">Loading…</div></div>
+          <div class="overview-tile"><div class="label">Recent decisions</div><div class="value" id="overview-decisions">Loading…</div></div>
+          <div class="overview-tile"><div class="label">Needs attention</div><div class="value" id="overview-risk">Loading…</div></div>
+          <div class="overview-tile"><div class="label">Sessions</div><div class="value" id="overview-sessions">Loading…</div></div>
+          <div class="overview-tile"><div class="label">Audit data</div><div class="value" id="overview-audit">Loading…</div></div>
+          <div class="overview-tile"><div class="label">Run ID</div><div class="value" id="overview-run-id">Loading…</div></div>
+        </div>
+      </section>
+
+      <!-- RECENT GOVERNANCE DECISIONS (most immediately useful) -->
+      <section class="card" id="recent">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Recent governance decisions</h2>
+            <p class="card-subtitle">Latest requests through this proxy. Outcome shows what governance decided.</p>
+          </div>
+        </div>
+        <div class="recent-toolbar" style="margin-bottom:12px">
+          <button type="button" id="btn-refresh-audit" title="Reload health, verify, and recent rows now">Refresh</button>
+          <span id="recent-status" class="quiet">Loading…</span>
+        </div>
+        <!-- Outcome legend: what the codes mean in plain English -->
+        <div class="outcome-legend">
+          <div class="legend-item"><span class="legend-code outcome-PASS">PASS / ADMIT</span><span class="legend-desc">— output approved, sent to user</span></div>
+          <div class="legend-item"><span class="legend-code outcome-SOFT_CORRECT">SOFT_CORRECT</span><span class="legend-desc">— minor correction applied, sent</span></div>
+          <div class="legend-item"><span class="legend-code outcome-FORCE_REVISE">FORCE_REVISE</span><span class="legend-desc">— output revised by governance before sending</span></div>
+          <div class="legend-item"><span class="legend-code outcome-HARD_STOP">HARD_STOP / STOP</span><span class="legend-desc">— blocked outcome shown to user</span></div>
+          <div class="legend-item"><span class="legend-code outcome-CONTAIN">CONTAIN / REFUSE</span><span class="legend-desc">— clarification or continuation flow</span></div>
+          <div class="legend-item"><span class="legend-code outcome-CLARIFY">CLARIFY</span><span class="legend-desc">— clarification requested before proceeding</span></div>
+        </div>
+        <div class="recent-with-detail" id="recent-with-detail">
+          <div>
+            <div class="table-wrap" id="recent-table-wrap">
+              <table id="recent-table" style="display:none">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Kind</th>
+                    <th>Outcome</th>
+                    <th title="Top: chain-of-custody packaging status. Below: vault capture status/mode for this request.">Evidence</th>
+                    <th>Forensic</th>
+                    <th>Constraints</th>
+                    <th>Turn class</th>
+                    <th>Hold transition</th>
+                    <th>Trace</th>
+                    <th>Tenant</th>
+                    <th>Domain</th>
+                    <th>Lookup</th>
+                  </tr>
+                </thead>
+                <tbody id="recent-tbody"></tbody>
+              </table>
+            </div>
+            <p class="quiet" style="margin:10px 2px 0">Click a JSONL row for detail. Ledger rows remain summary-only here.</p>
+          </div>
+          <aside id="audit-detail-panel" aria-live="polite">
+            <h3>Entry detail</h3>
+            <p id="audit-detail-placeholder" class="quiet" style="margin:0">Click a selectable row to inspect the governance record and any blocked model output.</p>
+            <div id="audit-detail-content" style="display:none">
+              <dl class="kv" style="margin:0 0 10px">
+                <div class="detail-pair"><dt>Governance outcome</dt><dd id="audit-detail-outcome"></dd></div>
+                <div class="detail-pair" id="audit-detail-gloss-pair" style="display:none"><dt>What this means</dt><dd id="audit-detail-gloss" class="plain"></dd></div>
+                <div class="detail-pair"><dt>LLM called</dt><dd id="audit-detail-llm"></dd></div>
+              </dl>
+              <div id="audit-detail-extras" style="display:none"></div>
+              <div id="audit-raw-block" style="display:none">
+                <div class="raw-model-heading" id="audit-raw-heading"></div>
+                <pre class="raw-model-body" id="audit-raw-body"></pre>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <details class="panel" id="advanced-forensics">
+        <summary>Advanced forensics</summary>
+        <div class="panel-body stack">
+      <!-- AUDIT VERIFICATION (cryptographic proof the log is intact) -->
+      <section class="card" id="integrity">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Audit verification</h2>
+            <p class="card-subtitle">Cryptographic integrity of the audit log. Green = chain intact and tamper-evident. Red = evidentiary failure — treat as critical, not cosmetic.</p>
+          </div>
+        </div>
+        <div class="status-grid">
+          <article class="verify-card">
+            <h3>Integrity</h3>
+            <div id="verify-integrity" class="verify-body muted">Loading…</div>
+          </article>
+          <article class="verify-card">
+            <h3>Extended verification</h3>
+            <div id="verify-extended" class="verify-body muted">Loading…</div>
+          </article>
+          <article class="verify-card">
+            <h3>Evidence completeness</h3>
+            <div id="verify-evidence" class="verify-body muted">Loading…</div>
+          </article>
+        </div>
+        <div id="integrity-operator-message" class="integrity-operator-msg muted" style="display:none; margin-top:14px" aria-live="polite"></div>
+      </section>
+
+      <!-- RUNTIME SURFACE + SESSION PEF (operator detail) -->
+      <section class="grid-2">
+        <article class="card" id="runtime">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Runtime surface</h2>
+              <p class="card-subtitle">Resolved config, audit sink, policy, extraction backend, and operational links.</p>
+            </div>
+          </div>
+          <div class="health-grid" id="health-grid">
+            <div class="stat-tile"><div class="label">Status</div><div class="value"><span class="pill neutral">Loading</span></div></div>
+            <div class="stat-tile"><div class="label">Policy</div><div class="value">Loading…</div></div>
+            <div class="stat-tile"><div class="label">Audit sink</div><div class="value">Loading…</div></div>
+            <div class="stat-tile"><div class="label">Extraction</div><div class="value">Loading…</div></div>
+          </div>
+          <dl class="kv" id="health-kv" style="margin-top:14px"></dl>
+          <div class="info-strip" style="margin-top:14px">
+            <div class="api-links">
+              <a id="link-recent" href="#">GET /v1/audit/recent</a>
+              <a id="link-verify" href="#">GET /v1/audit/verify</a>
+              <a id="link-search" href="#">GET /v1/audit/search</a>
+              <a href="/metrics">GET /metrics</a>
+              <a href="/health">GET /health</a>
+              <a id="link-operator-pef" href="#">GET /v1/session/operator-pef</a>
+            </div>
+            <p class="quiet" id="auth-note" style="margin:10px 0 0"></p>
+          </div>
+        </article>
+
+        <article class="card" id="session-pef">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Session PEF</h2>
+              <p class="card-subtitle">Load a live world by its <code>pef_context_id</code> (the durable continuity handle; <code>aurora_session_id</code> is the same value under a legacy name) to inspect hold state, pending clarification, current turn, and structural bindings.</p>
+            </div>
+          </div>
+          <div class="pef-toolbar">
+            <input type="text" id="pef-session-id" placeholder="Paste pef_context_id (or aurora_session_id)" autocomplete="off" />
+            <button type="button" id="pef-load">Load session state</button>
+          </div>
+          <p id="pef-status" class="quiet" style="margin:10px 0 0">Enter a pef_context_id (or legacy session id) to inspect in-memory state.</p>
+          <div id="pef-panel" style="display:none; margin-top:14px" class="stack">
+            <div class="pef-shell">
+              <div id="pef-badge-wrap"></div>
+              <dl class="kv" id="pef-kv"></dl>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <!-- OPERATOR QUICK REFERENCE (collapsed) -->
+      <details class="panel" id="operator-guide">
+        <summary>Operator quick reference</summary>
+        <div class="panel-body">
+          <ul class="dash-ops">
+            <li><strong style="color:var(--text)">Surface</strong> — This console reflects the proxy instance that serves it. Health, recent, and verify are local to this running surface.</li>
+            <li><strong style="color:var(--text)">Refresh cadence</strong> — Health, verify, and recent rows poll about every 8 seconds. Metrics poll every 30 seconds. Use Refresh if you want an immediate pull.</li>
+            <li><strong style="color:var(--text)">Backends</strong> — JSONL rows can load entry detail into the side panel. AFL / ledger rows are summarised here, but not expanded into raw line JSON through this pane.</li>
+            <li><strong style="color:var(--text)">Verify semantics</strong> — If verification says unanchored slice, widen the window or verify from file start. If the chain is red, treat the result as evidentiary failure, not cosmetic irritation.</li>
+            <li><strong style="color:var(--text)">Session PEF</strong> — Session PEF is stateful and query-based. It is not inferred from audit rows. Paste the <code>pef_context_id</code> you actually want (<code>aurora_session_id</code> is the same value under its legacy name).</li>
+            <li><strong style="color:var(--text)">Reading rule</strong> — Green means the chain is behaving. Yellow means constrained or incomplete. Red means the system crossed into failure or unresolved contradiction.</li>
+          </ul>
+        </div>
+      </details>
+
+      <!-- METRICS (collapsed) -->
+      <details class="panel" id="metrics">
+        <summary>Metrics</summary>
+        <div class="panel-body">
+          <p class="quiet" style="margin:0 0 10px">Prometheus scrape body from this same surface.</p>
+          <pre class="metrics" id="metrics-content">Loading…</pre>
+        </div>
+      </details>
+      </div>
+      </details>
+
+    </main>
+    </div>
+
+    <div id="panel-corpus" class="console-panel">
+      <div class="corpus-rule">Retrieval proposes. Lens disposes.</div>
+      <p class="quiet" style="margin:-8px 0 16px">Operator corpus is isolated under <code>data/corpus/operator</code> — not the shared CLI registry at <code>data/corpus</code>. You only see documents you ingest here.</p>
+      <div class="corpus-grid">
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Ingest documents</h2>
+              <p class="card-subtitle">Enter a server-local file or folder path (PDF, Markdown, text). Same semantics as <code>aurora-lens corpus ingest</code>.</p>
+            </div>
+          </div>
+          <div class="corpus-field">
+            <label for="corpus-ingest-path">Path</label>
+            <input id="corpus-ingest-path" type="text" placeholder="C:\docs\patents or /data/patents/spec.pdf" autocomplete="off" />
+          </div>
+          <div class="corpus-field">
+            <label><input type="checkbox" id="corpus-recursive" checked="checked" /> Include subfolders</label>
+          </div>
+          <div class="corpus-field">
+            <label for="corpus-ingest-record-id">Record id (optional, single file only)</label>
+            <input id="corpus-ingest-record-id" type="text" placeholder="auto from filename / relative path" autocomplete="off" />
+          </div>
+          <div class="corpus-actions">
+            <button type="button" id="corpus-btn-preview">Preview folder</button>
+            <button type="button" id="corpus-btn-ingest">Ingest</button>
+          </div>
+          <div id="corpus-ingest-report" class="info-strip" style="margin-top:12px; display:none"></div>
+          <p id="corpus-ingest-status" class="quiet" style="margin-top:10px"></p>
+        </section>
+
+        <section class="card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">List corpus</h2>
+              <p class="card-subtitle">Documents in the operator corpus only (current ingest scope).</p>
+            </div>
+          </div>
+          <div class="corpus-actions">
+            <button type="button" id="corpus-btn-list">Refresh list</button>
+            <button type="button" id="corpus-btn-clear" class="secondary">Clear operator corpus</button>
+          </div>
+          <div class="table-wrap" style="margin-top:12px; max-height:280px">
+            <table id="corpus-records-table" style="display:none">
+              <thead>
+                <tr>
+                  <th>Document</th>
+                  <th>Type</th>
+                  <th>Record id</th>
+                  <th>Source path</th>
+                  <th>Chunks</th>
+                </tr>
+              </thead>
+              <tbody id="corpus-records-tbody"></tbody>
+            </table>
+          </div>
+          <p id="corpus-list-status" class="quiet" style="margin-top:8px"></p>
+        </section>
+      </div>
+
+      <section class="card" style="margin-top:16px">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Ask corpus</h2>
+            <p class="card-subtitle">Retrieval ranks passages; governed proxy + Lens produces the answer. Console tags are operator notes only — not admissibility decisions.</p>
+          </div>
+        </div>
+        <div class="corpus-field">
+          <label for="corpus-record-select">Record</label>
+          <select id="corpus-record-select">
+            <option value="">All in current scope</option>
+          </select>
+        </div>
+        <div class="corpus-field">
+          <label for="corpus-question">Question or claim</label>
+          <textarea id="corpus-question" placeholder="Which documents disclose admissibility before generation?"></textarea>
+        </div>
+        <div class="corpus-presets" id="corpus-presets">
+          <button type="button" data-q="Which documents mention PEF?">PEF mentions</button>
+          <button type="button" data-q="Which documents support persistent state constraining model output?">Persistent state</button>
+          <button type="button" data-q="Which documents disclose admissibility before generation?">Admissibility before generation</button>
+          <button type="button" data-q="Which documents disclose refusal as a governed outcome?">Refusal as outcome</button>
+          <button type="button" data-q="Which documents disclose source trust or provider-route admissibility?">Source trust / provider route</button>
+          <button type="button" data-q="Where is the strongest support for this claim?">Strongest support</button>
+          <button type="button" data-q="Where is the support weak or missing?">Weak / missing support</button>
+        </div>
+        <div class="corpus-actions">
+          <button type="button" id="corpus-btn-evidence">Show evidence</button>
+          <button type="button" id="corpus-btn-ask">Ask (governed)</button>
+          <button type="button" id="corpus-btn-validate" class="secondary">Review / Validate</button>
+          <button type="button" id="corpus-btn-review-upstream" class="secondary">Upstream review (no Lens)</button>
+        </div>
+        <p id="corpus-validate-hint" class="quiet" style="margin-top:6px">Choose one document to validate.</p>
+        <p id="corpus-ask-status" class="quiet" style="margin-top:10px"></p>
+      </section>
+
+      <section class="card" style="margin-top:16px" id="corpus-results-card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">Answer &amp; evidence</h2>
+            <p class="card-subtitle">Never just “yes” — inspect passages, support status, and your operator tag.</p>
+          </div>
+        </div>
+        <dl class="kv">
+          <dt>Last action</dt>
+          <dd id="corpus-last-action">—</dd>
+          <dt>Selected record</dt>
+          <dd id="corpus-selected-record"><code style="font-size:0.78rem">—</code></dd>
+          <dt>Review state</dt>
+          <dd id="corpus-upstream-state">—</dd>
+          <dt>Endpoint</dt>
+          <dd id="corpus-endpoint"><code style="font-size:0.78rem">—</code></dd>
+          <dt>Answer</dt>
+          <dd id="corpus-answer" class="plain">—</dd>
+          <dt>Support status</dt>
+          <dd id="corpus-support-status"><span class="support-pill muted">—</span></dd>
+          <dt>Support issues</dt>
+          <dd id="corpus-support-issues" class="plain">—</dd>
+          <dt>Governance (Lens)</dt>
+          <dd id="corpus-governance">—</dd>
+        </dl>
+        <h3 style="font-size:0.92rem; margin:16px 0 8px">Evidence</h3>
+        <div id="corpus-evidence-list" class="evidence-list"><p class="quiet">Run Show evidence or Ask to populate passages.</p></div>
+        <h3 style="font-size:0.92rem; margin:16px 0 8px">Operator action <span class="quiet">(local tag — not sent to Lens)</span></h3>
+        <div class="operator-action-bar" id="corpus-operator-actions">
+          <button type="button" data-op-action="admit" class="secondary">Admit for evaluation</button>
+          <button type="button" data-op-action="hold" class="secondary">Hold</button>
+          <button type="button" data-op-action="reject" class="secondary">Reject</button>
+          <button type="button" id="corpus-btn-export-notes" class="secondary">Export notes</button>
+        </div>
+        <p id="corpus-operator-tag" class="quiet" style="margin-top:8px">No operator tag selected.</p>
+      </section>
+    </div>
+
+    <div class="footer">Aurora Lens · operator console · governance surface</div>
+  </div>
+
+  <script>
+    /** API base: ?proxy= / localStorage (aurora_proxy_base) / <meta name=aurora-lens-api-base> (injected on GET /forensics) / data-aurora-api-base on <html> — then same-origin, then 127.0.0.1:8081. Order matters for static pages on GitHub Pages etc. */
+    (function initAuroraProxyBase() {
+      function parseOrigin(raw) {
+        if (!raw || !String(raw).trim()) return null;
+        var s = String(raw).trim();
+        if (s.indexOf('://') < 0) s = 'http://' + s;
+        return new URL(s).origin;
+      }
+      var fromQuery = null;
+      try {
+        var sp = new URLSearchParams(window.location.search);
+        fromQuery = parseOrigin(sp.get('proxy') || sp.get('base') || '');
+      } catch (e) {}
+      var fromStore = null;
+      try {
+        if (window.localStorage) {
+          fromStore = parseOrigin(localStorage.getItem('aurora_proxy_base') || '');
+        }
+      } catch (e) {}
+      var fromMeta = null;
+      try {
+        var m0 = document.querySelector('meta[name="aurora-lens-api-base"]');
+        if (m0 && m0.getAttribute('content')) {
+          fromMeta = parseOrigin(m0.getAttribute('content'));
+        }
+      } catch (e) {}
+      var fromData = null;
+      try {
+        var d0 = document.documentElement.getAttribute('data-aurora-api-base');
+        if (d0) fromData = parseOrigin(d0);
+      } catch (e) {}
+      var o = window.location.origin;
+      var same = o && o !== 'null' && (window.location.protocol === 'http:' || window.location.protocol === 'https:');
+      var resolved = fromQuery || fromStore || fromMeta || fromData || (same ? o : null) || 'http://127.0.0.1:8081';
+      var src;
+      if (fromQuery) src = 'query';
+      else if (fromStore) src = 'localStorage';
+      else if (fromMeta) src = 'meta';
+      else if (fromData) src = 'data-attr';
+      else if (same) src = 'same-origin';
+      else src = 'file-default';
+      window.AURORA_PROXY_BASE = resolved;
+      window.AURORA_PROXY_BASE_SOURCE = src;
+    })();
+    const base = window.AURORA_PROXY_BASE;
+    function dashFetch(url) {
+      var sep = url.indexOf('?') >= 0 ? '&' : '?';
+      return fetch(url + sep + '_ts=' + Date.now(), { cache: 'no-store' });
+    }
+    function esc(s) {
+      if (s == null || s === '') return '';
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+    var overviewState = {
+      system: 'Loading…',
+      model: 'Loading…',
+      policy: 'Loading…',
+      decisions: 'Loading…',
+      risk: 'Loading…',
+      sessions: 'Loading…',
+      audit: 'Loading…',
+      runId: 'Loading…'
+    };
+    function renderOverview() {
+      var map = {
+        'overview-system': overviewState.system,
+        'overview-model': overviewState.model,
+        'overview-policy': overviewState.policy,
+        'overview-decisions': overviewState.decisions,
+        'overview-risk': overviewState.risk,
+        'overview-sessions': overviewState.sessions,
+        'overview-audit': overviewState.audit,
+        'overview-run-id': overviewState.runId
+      };
+      Object.keys(map).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = map[id];
+      });
+    }
+    renderOverview();
+    var AUDIT_RAW_RESPONSE_KEYS = ['original_response', 'raw_response', 'upstream_response', 'upstream_text'];
+    function normalizeAuditEntryForDashboard(entry) {
+      if (!entry || typeof entry !== 'object') return entry;
+      var n = Object.assign({}, entry);
+      // /v1/audit/entry returns full AFL envelopes for ledger rows; flatten payload.data
+      // so detail rendering (LLM-called, raw output, governance record) sees canonical keys.
+      if (n.kind === 'aurora.event') {
+        var data = n.payload && n.payload.data;
+        if (data && typeof data === 'object') {
+          n = Object.assign({}, n, data);
+        }
+      }
+      var fe = n.forensic_event;
+      if (!fe || typeof fe !== 'object') return n;
+      if (n.pathway_id == null || n.pathway_id === '') n.pathway_id = fe.pathway_id;
+      if (n.resolution_mode == null || n.resolution_mode === '') n.resolution_mode = fe.resolution_mode;
+      if (n.commitment_closed == null) n.commitment_closed = fe.commitment_closed;
+      if (n.interaction_open == null) n.interaction_open = fe.interaction_open;
+      if (n.forensic_obligations == null && fe.forensic_obligations != null) n.forensic_obligations = fe.forensic_obligations;
+      if (n.session_id == null || n.session_id === '') n.session_id = fe.session_id;
+      if (n.policy_rule == null || n.policy_rule === '') {
+        if (fe.subdomain) n.policy_rule = String(fe.subdomain);
+        else if (fe.domain) n.policy_rule = String(fe.domain);
+      }
+      if (!Array.isArray(n.flags) || !n.flags.length) {
+        var fc = fe.failed_constraints;
+        if (Array.isArray(fc) && fc.length) n.flags = fc.map(function(x) { return { type: String(x) }; });
+      }
+      if (!n.rationale && typeof fe.rationale === 'string') n.rationale = fe.rationale;
+      if (!n.governance_note && typeof fe.governance_note === 'string') n.governance_note = fe.governance_note;
+      return n;
+    }
+    function upstreamTextFromAuditEntry(entry) {
+      if (!entry || typeof entry !== 'object') return null;
+      for (var i = 0; i < AUDIT_RAW_RESPONSE_KEYS.length; i++) {
+        var k = AUDIT_RAW_RESPONSE_KEYS[i];
+        var v = entry[k];
+        if (v != null && String(v).length > 0) return String(v);
+      }
+      return null;
+    }
+    function outcomeClass(o) {
+      if (!o) return '';
+      return 'outcome-' + String(o).replace(/[^A-Z_]/gi, '');
+    }
+    function outcomeGloss(o, entry) {
+      var glosses = {
+        'PASS':         'output approved — sent to user',
+        'ADMIT':        'output approved — sent to user',
+        'CONTINUE':     'output approved — sent to user',
+        'SOFT_CORRECT': 'minor correction applied by governance',
+        'FORCE_REVISE': 'output revised by governance before sending',
+        'HARD_STOP':    'blocked outcome shown to user',
+        'STOP':         'blocked outcome shown to user',
+        'CONTAIN':      'clarification or continuation flow',
+        'REFUSE':       'output refused — not sent to user',
+        'CLARIFY':      'clarification requested before proceeding',
+      };
+      var key = String(o || '').toUpperCase().replace(/[^A-Z_]/g, '');
+      var domain = String((entry && entry.request_domain) || '').toLowerCase().trim();
+      if ((key === 'HARD_STOP' || key === 'STOP') && domain === 'finance') {
+        return 'A financial decision request was refused. Safe path: Build a neutral financial facts summary for a licensed adviser.';
+      }
+      return glosses[key] || null;
+    }
+    function outcomeFromAuditEntry(entry) {
+      if (!entry || typeof entry !== 'object') return '';
+      return String(entry.outcome != null ? entry.outcome : entry.action || '').trim();
+    }
+    function isBlockedUpstreamPresentation(outcome) {
+      var o = String(outcome || '').toUpperCase();
+      return o === 'HARD_STOP' || o === 'FORCE_REVISE' || o === 'CONTAIN';
+    }
+    function truncateStr(s, max) {
+      if (s == null) return '';
+      var t = String(s);
+      if (t.length <= max) return t;
+      return t.slice(0, max) + '\u2026';
+    }
+    function flagsTypeCsv(flags) {
+      if (!Array.isArray(flags) || !flags.length) return '';
+      return flags.map(function(f) {
+        if (f && typeof f === 'object' && f.type != null) return String(f.type);
+        return '';
+      }).filter(Boolean).join(', ');
+    }
+    function renderAuditDetailExtras(entry) {
+      var box = document.getElementById('audit-detail-extras');
+      if (!box) return;
+      var chunks = [];
+      function add(dt, text, long) {
+        if (text == null || text === '') return;
+        var t = String(text);
+        if (!t.trim()) return;
+        if (long) chunks.push('<div class="detail-pair"><dt>' + esc(dt) + '</dt><dd class="long">' + esc(t) + '</dd></div>');
+        else chunks.push('<div class="detail-pair"><dt>' + esc(dt) + '</dt><dd>' + esc(t) + '</dd></div>');
+      }
+      add('PEF context id (session)', entry.session_id);
+      if (entry.turn != null && entry.turn !== '') add('Turn', String(entry.turn));
+      add('Request domain', entry.request_domain);
+      add('Policy rule', entry.policy_rule);
+      add('Pathway', entry.pathway_id);
+      add('Resolution mode', entry.resolution_mode);
+      if (entry.commitment_closed != null) add('Commitment closed', String(entry.commitment_closed));
+      if (entry.interaction_open != null) add('Interaction open', String(entry.interaction_open));
+      // Four distinct evidence/provenance fields — each answers a different question and
+      // must not be conflated (see docs/evidence-model.md "Evidence status fields").
+      add('Evidence packaging (chain-of-custody)', entry.chain_of_custody && entry.chain_of_custody.evidence_audit_status);
+      add('Evidence capture — this request', entry.request_capture_status);
+      add('Evidence capture mode — configured', entry.evidence_capture_mode);
+      add('Instrument provenance', entry.provenance_status);
+      var fc = flagsTypeCsv(entry.flags);
+      if (fc) add('Flag types', fc);
+      if (entry.rationale) add('Rationale', truncateStr(entry.rationale, 1200), true);
+      if (entry.governance_note) add('Governance note', truncateStr(entry.governance_note, 600), true);
+      if (entry.unexpected_unclassified_termination) add('Unexpected termination', 'true — review fallback_reason');
+      if (entry.fallback_reason) add('Fallback reason', truncateStr(entry.fallback_reason, 500), true);
+      if (entry.pre_llm === true || entry.pre_llm === false) add('Pre-LLM decision', String(entry.pre_llm));
+      if (entry.epistemic_normalisation_applied === true || entry.epistemic_normalisation_applied === false) add('Epistemic normalisation applied', String(entry.epistemic_normalisation_applied));
+      else if (entry.silent_repair_applied === true || entry.silent_repair_applied === false) add('Silent repair applied (legacy)', String(entry.silent_repair_applied));
+      if (entry.upstream_model_draft != null && String(entry.upstream_model_draft).length > 0) {
+        var u = String(entry.upstream_model_draft);
+        add('Upstream draft (' + u.length + ' chars)', truncateStr(u, 800), true);
+      }
+      if (!chunks.length) {
+        box.style.display = 'none';
+        box.innerHTML = '';
+        return;
+      }
+      box.innerHTML = '<h3 style="margin:0 0 10px;font-size:0.8rem;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase">Governance record</h3>' + chunks.join('');
+      box.style.display = 'block';
+    }
+    function resetAuditDetailSelection() {
+      document.querySelectorAll('#recent-tbody tr.audit-row-selected').forEach(function(tr) { tr.classList.remove('audit-row-selected'); });
+    }
+    function renderAuditEntryDetail(rawEntry) {
+      var entry = normalizeAuditEntryForDashboard(rawEntry);
+      var placeholder = document.getElementById('audit-detail-placeholder');
+      var content = document.getElementById('audit-detail-content');
+      var outEl = document.getElementById('audit-detail-outcome');
+      var llmEl = document.getElementById('audit-detail-llm');
+      var rawBlock = document.getElementById('audit-raw-block');
+      var heading = document.getElementById('audit-raw-heading');
+      var body = document.getElementById('audit-raw-body');
+      placeholder.style.display = 'none';
+      content.style.display = 'block';
+      var outcome = outcomeFromAuditEntry(entry);
+      outEl.textContent = outcome || '—';
+      var glossPair = document.getElementById('audit-detail-gloss-pair');
+      var glossEl = document.getElementById('audit-detail-gloss');
+      var gloss = outcomeGloss(outcome, entry);
+      if (glossPair && glossEl && gloss) {
+        glossEl.textContent = gloss;
+        glossPair.style.display = '';
+      } else if (glossPair) {
+        glossPair.style.display = 'none';
+      }
+      var raw = upstreamTextFromAuditEntry(entry);
+      var hasRaw = raw != null && String(raw).length > 0;
+      // Ledger recent-row summaries may not include the raw text body, but can still
+      // truthfully report whether an upstream model call happened.
+      var hasLlmOutput = hasRaw || entry.has_llm_output === true;
+      llmEl.textContent = hasRaw ? 'Yes' : 'No';
+      if (hasLlmOutput) llmEl.textContent = 'Yes';
+      if (hasRaw) {
+        rawBlock.style.display = 'block';
+        body.textContent = raw;
+        if (isBlockedUpstreamPresentation(outcome)) {
+          heading.textContent = 'Model output — blocked';
+          heading.className = 'raw-model-heading blocked';
+          body.className = 'raw-model-body blocked';
+        } else {
+          heading.textContent = 'Model output';
+          heading.className = 'raw-model-heading admitted';
+          body.className = 'raw-model-body';
+        }
+      } else {
+        rawBlock.style.display = 'none';
+        heading.textContent = '';
+        body.textContent = '';
+      }
+      renderAuditDetailExtras(entry);
+    }
+    function buildAuditEntryFetchUrl(opts) {
+      if (opts.cid) return base + '/v1/audit/entry?cid=' + encodeURIComponent(opts.cid);
+      var u = base + '/v1/audit/entry?trace_id=' + encodeURIComponent(opts.traceId);
+      if (opts.timestamp) u += '&timestamp=' + encodeURIComponent(opts.timestamp);
+      return u;
+    }
+    async function loadAuditEntryForRecentRow(opts) {
+      var placeholder = document.getElementById('audit-detail-placeholder');
+      var content = document.getElementById('audit-detail-content');
+      var extras = document.getElementById('audit-detail-extras');
+      if (extras) { extras.style.display = 'none'; extras.innerHTML = ''; }
+      placeholder.style.display = 'block';
+      content.style.display = 'none';
+      placeholder.textContent = 'Loading entry…';
+      try {
+        var r = await dashFetch(buildAuditEntryFetchUrl(opts));
+        var entry = await r.json().catch(function() { return {}; });
+        if (!r.ok) {
+          var msg = (entry.error && entry.error.message) ? entry.error.message : ('HTTP ' + r.status);
+          placeholder.textContent = msg;
+          content.style.display = 'none';
+          return;
+        }
+        renderAuditEntryDetail(entry);
+      } catch (e) {
+        placeholder.textContent = esc(e.message);
+        content.style.display = 'none';
+      }
+    }
+    function renderRuntimeSummary(d) {
+      var grid = document.getElementById('health-grid');
+      if (!grid) return;
+      var st = d.status || 'unknown';
+      var pillClass = st === 'ok' ? 'ok' : (st === 'degraded' ? 'warn' : 'bad');
+      var tiles = [
+        { label: 'Status', value: '<span class="pill ' + pillClass + '">' + esc(st) + '</span>' },
+        { label: 'Policy', value: esc((d.policy || '—') + (d.policy_version ? ' · ' + d.policy_version : '')) },
+        { label: 'Audit sink', value: esc(d.audit_sink || '—') },
+        { label: 'Extraction', value: esc(d.extraction_backend || '—') }
+      ];
+      grid.innerHTML = tiles.map(function(t) {
+        return '<div class="stat-tile"><div class="label">' + t.label + '</div><div class="value">' + t.value + '</div></div>';
+      }).join('');
+      // Update top-of-page status banner
+      var banner = document.getElementById('status-banner');
+      var headline = document.getElementById('status-banner-headline');
+      var sub = document.getElementById('status-banner-sub');
+      var kvEl = document.getElementById('status-banner-kv');
+      if (banner) {
+        banner.className = 'status-banner status-banner--' + pillClass;
+        var labels = { ok: 'System operational', warn: 'System degraded', bad: 'System error' };
+        if (headline) headline.textContent = 'Aurora Lens — ' + (labels[pillClass] || st);
+        if (sub) {
+          var parts = [];
+          if (window.AURORA_PROXY_BASE_SOURCE === 'file-default') {
+            parts.push('File UI → API ' + base + ' (set ?proxy=, <meta name=aurora-lens-api-base>, or open /forensics on the proxy)');
+          }
+          if (d.policy) parts.push('Policy: ' + d.policy + (d.policy_version ? ' ' + d.policy_version : ''));
+          if (d.audit_sink) parts.push('Audit: ' + d.audit_sink);
+          if (d.extraction_backend) parts.push('Extraction: ' + d.extraction_backend);
+          sub.textContent = parts.join(' · ') || 'Aurora Lens governance proxy';
+        }
+        if (kvEl) {
+          var kvParts = [];
+          if (d.proxy_run_id) kvParts.push('<b>Run ID</b> ' + esc(d.proxy_run_id.slice(0, 12)) + (d.proxy_run_id.length > 12 ? '…' : ''));
+          if (typeof d.audit_signing_configured === 'boolean') kvParts.push('<b>HMAC signing</b> ' + (d.audit_signing_configured ? 'configured' : 'not set'));
+          kvEl.innerHTML = kvParts.join('');
+        }
+      }
+    }
+    async function loadHealth() {
+      const el = document.getElementById('health-kv');
+      try {
+        const r = await dashFetch(base + '/health');
+        const d = await r.json();
+        renderRuntimeSummary(d);
+        let html = '';
+        html += '<dt>Forensics UI</dt><dd><span class="pill neutral">operator</span></dd>';
+        html += '<dt>Policy / version</dt><dd>' + esc(d.policy) + ' · ' + esc(d.policy_version) + '</dd>';
+        html += '<dt>Resolved audit path</dt><dd>' + esc(d.audit_log_path || '—') + '</dd>';
+        html += '<dt>Proxy run ID</dt><dd>' + esc(d.proxy_run_id || '—') + '</dd>';
+        html += '<dt>HMAC signing</dt><dd>' + (typeof d.audit_signing_configured === 'boolean' ? (d.audit_signing_configured ? '<span class="pill ok">configured</span>' : '<span class="pill warn">not set</span>') : '—') + '</dd>';
+        el.innerHTML = html;
+        document.getElementById('link-recent').href = base + '/v1/audit/recent?n=20';
+        document.getElementById('link-verify').href = base + '/v1/audit/verify?n=500';
+        const lsch = document.getElementById('link-search');
+        if (lsch) {
+          lsch.href = base + '/v1/audit/search?non_admit_only=true&limit=50';
+          lsch.title = 'JSONL backend only; adjust outcome, tenant_label, domain, since, limit';
+        }
+        const lop = document.getElementById('link-operator-pef');
+        if (lop) lop.href = base + '/v1/session/operator-pef?pef_context_id=';
+        document.getElementById('auth-note').innerHTML = 'Read-only audit GETs and <code>/health</code> bypass chat auth middleware so the panel works in browser. Chat completions still need auth. If the audit surface must not be public, restrict network access like you mean it.';
+      } catch (e) {
+        el.innerHTML = '<dd class="error">' + esc(e.message) + '</dd>';
+        var banner = document.getElementById('status-banner');
+        var headline = document.getElementById('status-banner-headline');
+        var subEl = document.getElementById('status-banner-sub');
+        if (banner) banner.className = 'status-banner status-banner--bad';
+        if (headline) headline.textContent = 'Aurora Lens — Cannot reach proxy';
+        if (subEl) {
+          subEl.textContent = 'Tried ' + base + ' — is the proxy running? Use ?proxy=host:port, localStorage aurora_proxy_base, or open /forensics from the running server';
+        }
+      }
+    }
+    async function loadOperatorSummary() {
+      try {
+        const r = await dashFetch(base + '/v1/operator/summary?n=30');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const d = await r.json();
+        overviewState.system = d.system_status === 'degraded' ? 'Running (degraded)' : (d.system_status === 'ok' ? 'Running' : 'Stopped');
+        overviewState.model = d.model || '—';
+        overviewState.policy = (d.policy || '—') + (d.policy_version ? ' · ' + d.policy_version : '');
+        overviewState.decisions = String(d.recent_decisions != null ? d.recent_decisions : 0) + ' recent';
+        overviewState.risk = 'Warnings ' + String(d.warning_count != null ? d.warning_count : 0) + ' · Blocks ' + String(d.block_count != null ? d.block_count : 0);
+        overviewState.sessions = String(d.sessions != null ? d.sessions : '—');
+        if (!d.audit_data_available) overviewState.audit = 'Not configured';
+        else if (d.audit_writable === false) overviewState.audit = 'Available, not writable';
+        else overviewState.audit = 'Available and writable';
+        overviewState.runId = d.proxy_run_id ? truncateStr(String(d.proxy_run_id), 14) : '—';
+        renderOverview();
+      } catch (_e) {
+        overviewState.system = 'Unavailable (cannot load summary)';
+        overviewState.model = 'Unavailable';
+        overviewState.policy = 'Unavailable';
+        overviewState.decisions = 'Unavailable';
+        overviewState.risk = 'Unavailable';
+        overviewState.sessions = 'Unavailable';
+        overviewState.audit = 'Unavailable';
+        overviewState.runId = 'Unavailable';
+        renderOverview();
+      }
+    }
+    async function loadVerify() {
+      const intEl = document.getElementById('verify-integrity');
+      const extEl = document.getElementById('verify-extended');
+      const evEl = document.getElementById('verify-evidence');
+      const omEl = document.getElementById('integrity-operator-message');
+      function hideOperatorMessage() {
+        if (!omEl) return;
+        omEl.style.display = 'none';
+        omEl.textContent = '';
+      }
+      function showOperatorMessage(msg) {
+        if (!omEl) return;
+        omEl.style.display = 'block';
+        omEl.textContent = msg;
+      }
+      try {
+        const r = await dashFetch(base + '/v1/audit/verify?n=500');
+        if (r.status === 404) {
+          intEl.innerHTML = '<span class="pill neutral">n/a</span> Audit log not configured.';
+          extEl.textContent = '';
+          evEl.textContent = '';
+          hideOperatorMessage();
+          return;
+        }
+        if (r.status === 400) {
+          const j = await r.json().catch(() => ({}));
+          const em = j.error && (j.error.user_message || j.error.message) ? (j.error.user_message || j.error.message) : r.statusText;
+          intEl.innerHTML = '<span class="pill warn">verify skipped</span> ' + esc(em);
+          extEl.textContent = '';
+          evEl.textContent = '';
+          hideOperatorMessage();
+          return;
+        }
+        const d = await r.json();
+        const cryptoOk = d.verified === true;
+        const full = d.fully_verified === true;
+        const provSum = d.evidence_audit_status_summary || '';
+        const unanchored = d.reason === 'unanchored_slice';
+        const backend = d.backend || '';
+
+        let chainPill = '';
+        if (d.chain_verified === true) chainPill = '<span class="pill ok">Chain intact</span>';
+        else if (d.chain_verified === false) chainPill = '<span class="pill bad">Chain failed</span>';
+
+        let hmacPill = '';
+        if (backend === 'ledger') {
+          if (d.hmac_checked) hmacPill = d.hmac_verified === true ? '<span class="pill ok">HMAC ok</span>' : '<span class="pill bad">HMAC failed</span>';
+          else hmacPill = '<span class="pill neutral">HMAC n/a</span>';
+        } else {
+          if (d.hmac_verified === true) hmacPill = '<span class="pill ok">HMAC ok</span>';
+          else if (d.hmac_verified === false) hmacPill = '<span class="pill bad">HMAC failed</span>';
+        }
+
+        let headPill = '';
+        if (cryptoOk) headPill = '<span class="pill ok">Crypto succeeded</span>';
+        else if (unanchored) headPill = '<span class="pill warn">Not fully verified</span>';
+        else headPill = '<span class="pill bad">Crypto failed</span>';
+
+        let intHtml = headPill + ' ' + chainPill + ' ' + hmacPill;
+        intHtml += '<span class="verify-meta">' + esc(backend) + ' · entries checked ' + esc(String(d.entries != null ? d.entries : '?')) + '</span>';
+        const intLines = [];
+        if (d.reason) intLines.push('Reason: ' + esc(String(d.reason)));
+        if (d.first_chain_failure_line != null) intLines.push('First chain break at line ' + esc(String(d.first_chain_failure_line)) + (d.first_chain_reason ? ': ' + esc(String(d.first_chain_reason)) : ''));
+        if (d.first_hmac_failure_line != null) intLines.push('First HMAC break at line ' + esc(String(d.first_hmac_failure_line)) + (d.first_hmac_reason ? ': ' + esc(String(d.first_hmac_reason)) : ''));
+        if (intLines.length) intHtml += '<div style="margin-top:8px;font-size:0.78rem;color:var(--muted);line-height:1.45">' + intLines.join('<br/>') + '</div>';
+        intEl.innerHTML = intHtml;
+
+        const wv = d.what_was_verified;
+        const extParts = [];
+        if (typeof d.fully_verified === 'boolean') extParts.push(full ? '<span class="pill ok">Extended pass</span>' : '<span class="pill warn">Extended pending / fail</span>');
+        if (wv && wv.pef_linkage) {
+          const pl = wv.pef_linkage;
+          const plOk = pl.ok !== false;
+          extParts.push('<span class="pill ' + (plOk ? 'ok' : 'bad') + '">PEF linkage</span> · pairs ' + esc(String(pl.pairs_checked != null ? pl.pairs_checked : '?')) + (plOk ? '' : ' — failed'));
+        }
+        if (wv && wv.pef_state_hash_replay) {
+          const sh = wv.pef_state_hash_replay;
+          const shOk = sh.ok !== false;
+          extParts.push('<span class="pill ' + (shOk ? 'ok' : 'bad') + '">State hash replay</span> · n=' + esc(String(sh.entries_checked != null ? sh.entries_checked : '?')) + (shOk ? '' : ' — failed'));
+        }
+        if (unanchored && d.reason_detail) extParts.push('<span class="verify-meta">' + esc(String(d.reason_detail)) + '</span>');
+        if (d.verify_note) extParts.push('<span class="verify-meta">' + esc(String(d.verify_note)) + '</span>');
+        if (!full && cryptoOk) {
+          const why = [];
+          if (wv && wv.provenance_chain_of_custody && wv.provenance_chain_of_custody.ok === false) {
+            why.push('provenance chain-of-custody');
+          }
+          if (wv && wv.pef_linkage && wv.pef_linkage.ok === false) {
+            why.push('PEF linkage');
+          }
+          if (wv && wv.pef_state_hash_replay && wv.pef_state_hash_replay.ok === false) {
+            why.push('state-hash replay');
+          }
+          const whyText = why.length ? why.join(', ') : 'an extended verifier check';
+          extParts.push('<span class="verify-meta">Why fully_verified is false: ' + esc(whyText) + ' did not pass.</span>');
+        }
+        extEl.innerHTML = extParts.length ? extParts.join('<br/>') : '<span class="muted">No extended checks in this response.</span>';
+
+        const evParts = [];
+        if (provSum) evParts.push('Status summary: ' + esc(provSum));
+        if (wv && wv.provenance_chain_of_custody && wv.provenance_chain_of_custody.counts) {
+          const c = wv.provenance_chain_of_custody.counts;
+          evParts.push('Chain of custody · rows with block ' + esc(String(c.rows_with_block)) + ' · skipped (no block) ' + esc(String(c.rows_skipped_no_block)));
+        }
+        evEl.innerHTML = evParts.length ? evParts.join('<br/>') : '<span class="muted">No evidence summary in this response.</span>';
+
+        if (d.operator_message) showOperatorMessage(d.operator_message);
+        else hideOperatorMessage();
+      } catch (e) {
+        intEl.innerHTML = '<span class="pill bad">error</span> ' + esc(e.message);
+        extEl.textContent = '';
+        evEl.textContent = '';
+        hideOperatorMessage();
+      }
+    }
+    function pefPillClass(mode) {
+      if (!mode || mode === 'normal') return 'ok';
+      if (mode === 'held_ambiguity') return 'warn';
+      if (mode === 'held_refusal') return 'warn';
+      if (mode.indexOf('terminal_stop') === 0) return 'bad';
+      return 'neutral';
+    }
+    async function loadPef() {
+      const sid = (document.getElementById('pef-session-id').value || '').trim();
+      const st = document.getElementById('pef-status');
+      const panel = document.getElementById('pef-panel');
+      const badgeWrap = document.getElementById('pef-badge-wrap');
+      const kv = document.getElementById('pef-kv');
+      if (!sid) {
+        st.textContent = 'Enter a session id.';
+        panel.style.display = 'none';
+        return;
+      }
+      st.textContent = 'Loading…';
+      panel.style.display = 'none';
+      try {
+        const r = await dashFetch(base + '/v1/session/operator-pef?pef_context_id=' + encodeURIComponent(sid));
+        const d = await r.json().catch(function() { return {}; });
+        if (r.status === 404) { st.textContent = (d.error && d.error.message) ? d.error.message : 'session not found or expired'; return; }
+        if (r.status === 503) { st.textContent = (d.error && d.error.message) ? d.error.message : 'unavailable'; return; }
+        if (!r.ok) { st.textContent = (d.error && d.error.message) ? d.error.message : ('HTTP ' + r.status); return; }
+        const op = d.operator_pef || {};
+        const mode = op.session_mode || 'unknown';
+        st.textContent = '';
+        badgeWrap.innerHTML = '<span class="pill ' + pefPillClass(mode) + '">' + esc(mode) + '</span>';
+        let html = '';
+        const pc = op.pending_clarification || {};
+        html += '<dt>Pending clarification</dt><dd>';
+        if (pc.active) {
+          html += 'active · constraint: ' + esc(pc.failed_constraint || '—');
+          if (pc.original_question_preview) html += '<br/>' + esc(pc.original_question_preview);
+        } else html += 'none';
+        html += '</dd>';
+        const eh = op.epistemic_hold || {};
+        html += '<dt>Epistemic hold</dt><dd>';
+        if (eh.active) {
+          html += esc(eh.mode || '—') + ' · open=' + esc(String(eh.interaction_open)) + ' · closed=' + esc(String(eh.commitment_closed));
+          if (eh.last_audit_id) html += '<br/>last audit: <code style="font-size:0.75rem">' + esc(eh.last_audit_id) + '</code>';
+        } else html += 'none';
+        html += '</dd>';
+        const bgs = op.binding_governance_state;
+        if (bgs && bgs.action) html += '<dt>Binding governance state</dt><dd>' + esc(bgs.action) + (bgs.pathway_id ? ' · ' + esc(bgs.pathway_id) : '') + '</dd>';
+        const cts = op.counts || {};
+        html += '<dt>Counts</dt><dd>entities=' + esc(String(cts.entities != null ? cts.entities : '?')) + ', relationships=' + esc(String(cts.relationships != null ? cts.relationships : '?')) + '</dd>';
+        html += '<dt>Turn</dt><dd>' + esc(String(op.current_turn != null ? op.current_turn : '?')) + '</dd>';
+        kv.innerHTML = html;
+        panel.style.display = 'block';
+      } catch (e) {
+        st.textContent = esc(e.message);
+      }
+    }
+    async function loadRecent() {
+      const statusEl = document.getElementById('recent-status');
+      const table = document.getElementById('recent-table');
+      const tbody = document.getElementById('recent-tbody');
+      const wrap = document.getElementById('recent-with-detail');
+      try {
+        const r = await dashFetch(base + '/v1/audit/recent?n=30');
+        if (r.status === 404) {
+          statusEl.textContent = 'Audit not configured.';
+          table.style.display = 'none';
+          if (wrap) wrap.classList.remove('has-jsonl');
+          return;
+        }
+        const d = await r.json();
+        const rows = d.operator_rows || [];
+        const backend = d.backend || '';
+        var warningCount = 0;
+        var blockCount = 0;
+        rows.forEach(function(row) {
+          var out = String(row.outcome || row.ledger_op || '').toUpperCase();
+          if (out === 'FORCE_REVISE' || out === 'SOFT_CORRECT' || out === 'CLARIFY') warningCount += 1;
+          if (out === 'HARD_STOP' || out === 'STOP' || out === 'CONTAIN' || out === 'REFUSE') blockCount += 1;
+        });
+        overviewState.decisions = String(rows.length) + ' recent';
+        overviewState.risk = 'Warnings ' + String(warningCount) + ' · Blocks ' + String(blockCount);
+        renderOverview();
+        if (wrap) {
+          if (backend === 'jsonl') wrap.classList.add('has-jsonl');
+          else wrap.classList.remove('has-jsonl');
+        }
+        statusEl.textContent = rows.length + ' row(s) · backend=' + (backend || '?') + ' · updated ' + new Date().toLocaleTimeString();
+        tbody.innerHTML = '';
+        resetAuditDetailSelection();
+        rows.forEach(function(row) {
+          const tr = document.createElement('tr');
+          const oc = row.outcome || row.ledger_op || '';
+          const rk = row.row_kind || '';
+          const fe = row.has_forensic_event ? (row.forensic_status || 'yes') : '—';
+          // Two distinct evidence-state fields, kept visually together but never merged into
+          // one value: evidence_audit_status is chain-of-custody *packaging* completeness;
+          // request_capture_status / evidence_capture_mode is the vault's actual *capture*
+          // outcome for this request. provenance_status (instrument identification) is a
+          // separate governor-level field and is intentionally not shown in this cell — see
+          // the row detail panel.
+          const evPill = row.evidence_audit_status
+            ? '<span class="pill ' + (row.evidence_audit_status === 'complete' ? 'ok' : 'warn') + '" title="Chain-of-custody packaging status">' + esc(row.evidence_audit_status) + '</span>'
+            : (row.has_chain_of_custody ? '<span class="pill neutral" title="Chain-of-custody packaging status">?</span>' : '—');
+          const captureLabel = row.request_capture_status || row.evidence_capture_mode;
+          const evSub = captureLabel
+            ? '<div class="evidence-sub" title="Vault capture status for this request (mode: ' + esc(row.evidence_capture_mode || 'unknown') + ')">capture: ' + esc(captureLabel) + '</div>'
+            : '';
+          const ev = evPill + evSub;
+          const cons = (row.constraints && row.constraints.length) ? row.constraints.join(', ') : '—';
+          const ptc = row.pef_turn_classification != null && row.pef_turn_classification !== '' ? esc(String(row.pef_turn_classification)) : '—';
+          const pht = row.pef_hold_transition != null && row.pef_hold_transition !== '' ? esc(String(row.pef_hold_transition)) : '—';
+          const cid = (row.cid || '').toString().trim();
+          const trace = (row.trace_id || '').toString();
+          const ts = row.timestamp != null ? String(row.timestamp) : '';
+          const reqDom = row.request_domain != null && row.request_domain !== '' ? esc(String(row.request_domain)) : '—';
+          var entryUrl = '';
+          if (backend === 'jsonl' && cid) entryUrl = base + '/v1/audit/entry?cid=' + encodeURIComponent(cid);
+          else if (backend === 'jsonl' && trace) {
+            entryUrl = base + '/v1/audit/entry?trace_id=' + encodeURIComponent(trace);
+            if (ts) entryUrl += '&timestamp=' + encodeURIComponent(ts);
+          }
+          const entryLink = entryUrl ? '<a href="' + entryUrl + '" target="_blank" rel="noopener">JSON</a>' : (backend === 'ledger' ? '<span class="pill neutral">AFL</span>' : '—');
+          tr.className = 'audit-row-selectable';
+          tr._auditRowData = row;
+          if (backend === 'jsonl' && (cid || trace)) {
+            if (cid) tr.setAttribute('data-cid', cid);
+            if (trace) tr.setAttribute('data-trace-id', trace);
+            if (ts) tr.setAttribute('data-entry-ts', ts);
+          }
+          var copyBtn = '';
+          if (cid) copyBtn = '<button type="button" class="link audit-copy" data-copy="' + esc(cid).replace(/"/g, '&quot;') + '">copy cid</button>';
+          else if (trace) copyBtn = '<button type="button" class="link audit-copy" data-copy="' + esc(trace).replace(/"/g, '&quot;') + '">copy trace</button>';
+          var ocGloss = outcomeGloss(oc);
+          tr.innerHTML =
+            '<td>' + esc(row.timestamp || '') + '</td>' +
+            '<td><span class="pill neutral">' + esc(rk) + '</span></td>' +
+            '<td class="' + outcomeClass(oc) + '">' + esc(oc) + (ocGloss ? '<span class="outcome-gloss">' + esc(ocGloss) + '</span>' : '') + '</td>' +
+            '<td>' + ev + '</td>' +
+            '<td>' + esc(fe) + '</td>' +
+            '<td class="constraints">' + esc(cons) + '</td>' +
+            '<td><code style="font-size:0.72rem">' + ptc + '</code></td>' +
+            '<td><code style="font-size:0.72rem">' + pht + '</code></td>' +
+            '<td>' + esc(trace.slice(0, 14)) + (trace.length > 14 ? '…' : '') + '</td>' +
+            '<td>' + esc(row.tenant_label || '') + '</td>' +
+            '<td><code style="font-size:0.72rem">' + reqDom + '</code></td>' +
+            '<td><code style="font-size:0.72rem">' + esc(cid ? cid.slice(0, 10) + (cid.length > 10 ? '…' : '') : '') + '</code> ' + copyBtn + ' ' + entryLink + '</td>';
+          tbody.appendChild(tr);
+        });
+        table.style.display = rows.length ? 'table' : 'none';
+        tbody.querySelectorAll('button.audit-copy').forEach(function(btn) {
+          btn.addEventListener('click', function(ev) {
+            ev.stopPropagation();
+            var c = btn.getAttribute('data-copy');
+            if (c && navigator.clipboard) navigator.clipboard.writeText(c);
+          });
+        });
+      } catch (e) {
+        statusEl.innerHTML = '<span class="error">' + esc(e.message) + '</span>';
+        table.style.display = 'none';
+        if (wrap) wrap.classList.remove('has-jsonl');
+        overviewState.decisions = 'Unavailable';
+        overviewState.risk = 'Unavailable';
+        renderOverview();
+      }
+    }
+    async function loadMetrics() {
+      try {
+        const r = await dashFetch(base + '/metrics');
+        document.getElementById('metrics-content').textContent = await r.text();
+      } catch (e) {
+        document.getElementById('metrics-content').textContent = 'Error: ' + e.message;
+      }
+    }
+    async function loadAuditSlice() { await Promise.all([loadOperatorSummary(), loadHealth(), loadVerify(), loadRecent()]); }
+    async function load() { await Promise.all([loadAuditSlice(), loadMetrics()]); }
+    (function initPef() {
+      const inp = document.getElementById('pef-session-id');
+      const btn = document.getElementById('pef-load');
+      const qp = new URLSearchParams(window.location.search);
+      const q = qp.get('pef_context_id') || qp.get('session');
+      if (q) inp.value = q;
+      btn.addEventListener('click', loadPef);
+      inp.addEventListener('keydown', function(ev) { if (ev.key === 'Enter') loadPef(); });
+    })();
+    (function initAuditRefresh() {
+      var b = document.getElementById('btn-refresh-audit');
+      if (b) b.addEventListener('click', function() { loadAuditSlice(); });
+    })();
+    (function initRecentRowClicks() {
+      var table = document.getElementById('recent-table');
+      if (!table || table.dataset.auditRowDelegated === '1') return;
+      table.dataset.auditRowDelegated = '1';
+      table.addEventListener('click', function(ev) {
+        if (ev.target.closest('a') || ev.target.closest('button')) return;
+        var tr = ev.target.closest('tr.audit-row-selectable');
+        if (!tr) return;
+        resetAuditDetailSelection();
+        tr.classList.add('audit-row-selected');
+        var cid = (tr.getAttribute('data-cid') || '').trim();
+        var tid = (tr.getAttribute('data-trace-id') || '').trim();
+        var ts = (tr.getAttribute('data-entry-ts') || '').trim();
+        if (cid) loadAuditEntryForRecentRow({ cid: cid });
+        else if (tid) loadAuditEntryForRecentRow({ traceId: tid, timestamp: ts });
+        else if (tr._auditRowData) renderAuditEntryDetail(tr._auditRowData);
+      });
+    })();
+    (function initCorpusConsole() {
+      var lastResult = null;
+      var operatorTag = null;
+      var SCOPE_KEY = 'aurora_corpus_scope_record_ids';
+      var SCOPE_PATH_KEY = 'aurora_corpus_scope_source_path';
+
+      function loadScopeRecordIds() {
+        try {
+          var raw = sessionStorage.getItem(SCOPE_KEY);
+          if (!raw) return null;
+          var parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : null;
+        } catch (e) { return null; }
+      }
+      function saveScope(recordIds, sourcePath) {
+        try {
+          if (recordIds && recordIds.length) {
+            sessionStorage.setItem(SCOPE_KEY, JSON.stringify(recordIds));
+          } else {
+            sessionStorage.removeItem(SCOPE_KEY);
+          }
+          if (sourcePath) sessionStorage.setItem(SCOPE_PATH_KEY, sourcePath);
+        } catch (e) {}
+      }
+      function clearScope() {
+        try {
+          sessionStorage.removeItem(SCOPE_KEY);
+          sessionStorage.removeItem(SCOPE_PATH_KEY);
+        } catch (e) {}
+      }
+      function scopeQuery() {
+        var ids = loadScopeRecordIds();
+        if (ids && ids.length) {
+          return '?record_ids=' + encodeURIComponent(ids.join(','));
+        }
+        var path = (document.getElementById('corpus-ingest-path').value || '').trim();
+        if (path) {
+          return '?source_prefix=' + encodeURIComponent(path);
+        }
+        return '';
+      }
+      function renderIngestReport(d) {
+        var box = document.getElementById('corpus-ingest-report');
+        if (!d) { box.style.display = 'none'; return; }
+        var lines = [];
+        lines.push('<strong>Folder selected:</strong> ' + esc(d.folder_selected || d.path || '—'));
+        lines.push('<strong>Recursive:</strong> ' + (d.recursive ? 'yes' : 'no'));
+        lines.push('<strong>Supported types:</strong> ' + esc((d.supported_types || []).join(', ')));
+        if (d.planned_types && d.planned_types.length) {
+          lines.push('<strong>Planned (not yet):</strong> ' + esc(d.planned_types.join(', ')));
+        }
+        lines.push('<strong>Files found:</strong> ' + esc(String(d.files_found != null ? d.files_found : '—')));
+        lines.push('<strong>Files supported:</strong> ' + esc(String(d.files_supported != null ? d.files_supported : '—')));
+        lines.push('<strong>Files ingested:</strong> ' + esc(String(d.files_ingested != null ? d.files_ingested : (d.ingested_count != null ? d.ingested_count : '—'))));
+        if (d.files_unchanged != null && d.files_unchanged > 0) {
+          lines.push('<strong>Files unchanged:</strong> ' + esc(String(d.files_unchanged)));
+        }
+        lines.push('<strong>Files skipped:</strong> ' + esc(String(d.files_skipped != null ? d.files_skipped : '—')));
+        var byType = d.skipped_by_type || {};
+        var typeParts = Object.keys(byType).sort().map(function(k) { return esc(k) + ': ' + byType[k]; });
+        if (typeParts.length) lines.push('<strong>Skipped by type:</strong> ' + typeParts.join(', '));
+        if (d.skipped_folders && d.skipped_folders.length) {
+          lines.push('<strong>Skipped folders:</strong> ' + esc(d.skipped_folders.join(', ')));
+        }
+        if (d.failed) lines.push('<span class="error"><strong>Result:</strong> no files ingested — see skipped breakdown above.</span>');
+        else if (d.partial) lines.push('<span class="warn"><strong>Result:</strong> partial ingest — some files skipped.</span>');
+        else if (d.ok || d.ingested_count > 0 || d.files_ingested > 0) lines.push('<span style="color:var(--ok)"><strong>Result:</strong> ingest complete.</span>');
+        if (d.dry_run) lines.unshift('<em>Preview only — nothing written yet.</em>');
+        box.innerHTML = lines.join('<br/>');
+        box.style.display = 'block';
+      }
+      function ingestPayload(extra) {
+        var path = (document.getElementById('corpus-ingest-path').value || '').trim();
+        var rid = (document.getElementById('corpus-ingest-record-id').value || '').trim();
+        var recursive = document.getElementById('corpus-recursive').checked;
+        return Object.assign({
+          path: path,
+          record_id: rid || null,
+          recursive: recursive,
+        }, extra || {});
+      }
+      function scopedRecordIdsPayload() {
+        var ids = loadScopeRecordIds();
+        return ids && ids.length ? ids : null;
+      }
+
+      function corpusPost(path, body) {
+        return fetch(base + path, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Aurora-Operator-Detail': 'true' },
+          body: JSON.stringify(body || {}),
+          cache: 'no-store',
+        }).then(function(r) {
+          return r.json().then(function(d) {
+            if (!r.ok) {
+              var msg = (d.error && d.error.message) ? d.error.message : ('HTTP ' + r.status);
+              throw new Error(msg);
+            }
+            return d;
+          });
+        });
+      }
+      function corpusGet(path) {
+        return dashFetch(base + path).then(function(r) {
+          return r.json().then(function(d) {
+            if (!r.ok) {
+              var msg = (d.error && d.error.message) ? d.error.message : ('HTTP ' + r.status);
+              throw new Error(msg);
+            }
+            return d;
+          });
+        });
+      }
+      function selectedRecordId() {
+        var sel = document.getElementById('corpus-record-select');
+        return sel && sel.value ? sel.value : null;
+      }
+      function questionText() {
+        return (document.getElementById('corpus-question').value || '').trim();
+      }
+      function searchAll() {
+        return !selectedRecordId();
+      }
+      function askPayload(extra) {
+        var body = Object.assign({
+          question: questionText(),
+          record_id: selectedRecordId(),
+          search_all: searchAll(),
+        }, extra || {});
+        var scoped = scopedRecordIdsPayload();
+        if (scoped && searchAll()) body.record_ids = scoped;
+        return body;
+      }
+      function corpusApiBase() {
+        return window.AURORA_PROXY_BASE || base || '';
+      }
+      function setCorpusActionTrace(opts) {
+        setCorpusOperatorTrace(opts);
+        if (opts && opts.endpoint != null) {
+          var ep = opts.endpoint || '—';
+          document.getElementById('corpus-endpoint').innerHTML =
+            ep === '—' ? '—' : ('<code style="font-size:0.78rem">' + esc(ep) + '</code>');
+        }
+      }
+      function evidenceCardHtml(ev) {
+        var role = ev.evidence_role || 'low_relevance';
+        var roleLabel = ev.evidence_role_label || role.replace(/_/g, ' ');
+        var score = ev.score != null ? String(ev.score) : '—';
+        var src = ev.source_path ? (' · ' + esc(ev.source_path)) : '';
+        return '<article class="evidence-card">' +
+          '<div class="meta">' +
+          '<span class="evidence-role-pill ' + esc(role) + '">' + esc(roleLabel) + '</span>' +
+          '<strong>Score ' + esc(score) + '</strong> · ' +
+          esc(ev.document_title || ev.document_name || ev.record_id) +
+          ' · block ' + esc(String(ev.block_number != null ? ev.block_number : ev.ordinal)) +
+          ' · <code>' + esc(ev.record_id) + '</code>' + src +
+          '</div>' +
+          '<pre>' + esc(ev.snippet || '') + '</pre></article>';
+      }
+      function renderEvidencePayload(d) {
+        var wrap = document.getElementById('corpus-evidence-list');
+        var sections = d.evidence_sections;
+        var sectionOrder = [
+          ['direct_support', 'Strong evidence'],
+          ['background', 'Background / explanatory evidence'],
+          ['metadata', 'Metadata / filing evidence'],
+          ['low_relevance', 'Low relevance'],
+        ];
+        var html = [];
+        var hasVisible = false;
+        if (sections) {
+          sectionOrder.forEach(function(pair) {
+            var key = pair[0];
+            var title = pair[1];
+            var items = sections[key] || [];
+            if (!items.length) return;
+            if (key === 'low_relevance') return;
+            hasVisible = true;
+            html.push('<h4 class="evidence-section-title">' + esc(title) + ' (' + items.length + ')</h4>');
+            html.push(items.map(evidenceCardHtml).join(''));
+          });
+          var low = sections.low_relevance || [];
+          if (low.length) {
+            html.push('<p class="quiet warn">' + esc(d.low_relevance_warning || 'Some low-relevance material was hidden.') + '</p>');
+            html.push('<button type="button" class="secondary evidence-low-toggle" id="corpus-show-low-evidence">Show low relevance results (' + low.length + ')</button>');
+            html.push('<div id="corpus-low-evidence" style="display:none"></div>');
+          }
+        } else {
+          var visible = d.evidence_visible || d.evidence || [];
+          if (!visible.length) {
+            wrap.innerHTML = '<p class="quiet">No passages retrieved.</p>';
+            return;
+          }
+          hasVisible = true;
+          html.push(visible.map(evidenceCardHtml).join(''));
+        }
+        if (!hasVisible && !(sections && sections.low_relevance && sections.low_relevance.length)) {
+          wrap.innerHTML = '<p class="quiet">No passages retrieved.</p>';
+          return;
+        }
+        wrap.innerHTML = html.join('');
+        var toggle = document.getElementById('corpus-show-low-evidence');
+        if (toggle && sections && sections.low_relevance) {
+          var lowItems = sections.low_relevance;
+          toggle.addEventListener('click', function() {
+            var box = document.getElementById('corpus-low-evidence');
+            if (!box) return;
+            var open = box.style.display !== 'none';
+            if (open) {
+              box.style.display = 'none';
+              toggle.textContent = 'Show low relevance results (' + lowItems.length + ')';
+            } else {
+              box.innerHTML = '<h4 class="evidence-section-title">Low relevance / hidden by default (' + lowItems.length + ')</h4>' +
+                lowItems.map(evidenceCardHtml).join('');
+              box.style.display = 'block';
+              toggle.textContent = 'Hide low relevance results';
+            }
+          });
+        }
+      }
+      function renderEvidence(items) {
+        renderEvidencePayload({ evidence: items || [], evidence_visible: items || [] });
+      }
+      function corpusRunAction(config) {
+        var btn = config.button || null;
+        var st = config.statusEl || document.getElementById('corpus-ask-status');
+        try {
+          console.info('[corpus] ' + config.action + ' clicked', {
+            selected_record_id: selectedRecordId(),
+            question_length: questionText().length,
+            endpoint: config.endpoint,
+          });
+          var pre = config.preflight ? config.preflight() : null;
+          if (pre) {
+            console.info('[corpus] preflight blocked', pre);
+            if (pre.trace) setCorpusActionTrace(pre.trace);
+            if (pre.render) pre.render();
+            else if (pre.message) st.innerHTML = pre.message;
+            if (pre.answerText != null) {
+              document.getElementById('corpus-answer').textContent = pre.answerText;
+            }
+            return Promise.resolve();
+          }
+          var payload = config.buildPayload ? config.buildPayload() : {};
+          setCorpusActionTrace({
+            last_action: config.action,
+            selected_record_id: selectedRecordId() || '—',
+            upstream_review_state: config.reviewState || 'preparing',
+            endpoint: config.endpoint,
+          });
+          st.textContent = config.runningText || ('Running ' + config.action + '...');
+          if (btn) btn.disabled = true;
+          console.info('[corpus] posting', config.endpoint, payload);
+          return fetch(corpusApiBase() + config.endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Aurora-Operator-Detail': 'true' },
+            body: JSON.stringify(payload),
+            cache: 'no-store',
+          }).then(function(r) {
+            return r.text().then(function(text) {
+              var d = {};
+              try { d = text ? JSON.parse(text) : {}; } catch (parseErr) {
+                d = { error: { message: text || parseErr.message } };
+              }
+              console.info('[corpus] response', config.endpoint, r.status);
+              if (config.onResponse) config.onResponse(d, r.status, r.ok, text);
+              if (!r.ok) {
+                if (config.onError) config.onError(d, r.status);
+              } else if (config.onSuccess) {
+                config.onSuccess(d, r.status);
+              }
+              setCorpusActionTrace({ upstream_review_state: r.ok ? 'complete' : 'failed' });
+            });
+          }).catch(function(err) {
+            console.error('[corpus] ' + config.action + ' failed', err);
+            document.getElementById('corpus-answer').textContent = err.message || 'Request failed';
+            st.innerHTML = '<span class="error">' + esc(config.action) + ' failed: ' + esc(err.message || 'unknown error') + '</span>';
+            setCorpusActionTrace({ upstream_review_state: 'failed' });
+          }).finally(function() {
+            if (btn) btn.disabled = false;
+            updateValidateButtonState();
+          });
+        } catch (err) {
+          console.error('[corpus] ' + config.action + ' handler error', err);
+          st.innerHTML = '<span class="error">' + esc(err.message || String(err)) + '</span>';
+          document.getElementById('corpus-answer').textContent = err.message || 'JavaScript error';
+          setCorpusActionTrace({ upstream_review_state: 'failed' });
+          if (btn) btn.disabled = false;
+          return Promise.resolve();
+        }
+      }
+      function formatSupportLabel(st) {
+        return (st || '—').replace(/_/g, ' ');
+      }
+      function mapReviewFailureReason(d) {
+        var reason = d.review_failure_reason;
+        if (reason) return reason;
+        var msg = ((d.error && d.error.message) || d.review_failure_detail || '').toLowerCase();
+        if (!msg) return 'server error';
+        if (msg.indexOf('record') >= 0 && (msg.indexOf('not found') >= 0 || msg.indexOf('required') >= 0)) return 'no selected record';
+        if (msg.indexOf('api key') >= 0) return 'no API key';
+        if (msg.indexOf('upstream') >= 0 || msg.indexOf('openai_api_key') >= 0 || msg.indexOf('anthropic') >= 0) return 'no upstream configured';
+        if (msg.indexOf('evidence') >= 0 || msg.indexOf('no matching') >= 0 || msg.indexOf('no chunks') >= 0) return 'no evidence found';
+        return 'server error';
+      }
+      function renderReviewStatus(stEl, d) {
+        if (d.review_outcome === 'failed') {
+          var reason = mapReviewFailureReason(d);
+          var detail = d.review_failure_detail ? (' (' + d.review_failure_detail + ')') : '';
+          stEl.innerHTML = '<span class="error">Review could not run</span><br/>Reason: ' + esc(reason) + esc(detail);
+          return;
+        }
+        var ss = formatSupportLabel(d.support_status);
+        stEl.innerHTML = 'Review complete<br/>Support status: <strong>' + esc(ss) + '</strong>';
+      }
+      function renderReviewOutcome(d) {
+        var st = document.getElementById('corpus-ask-status');
+        if (d.review_outcome === 'failed') {
+          renderReviewStatus(st, d);
+          return;
+        }
+        renderAskResult(d);
+        renderReviewStatus(st, d);
+      }
+      function setCorpusOperatorTrace(opts) {
+        if (!opts) return;
+        if (opts.last_action != null) {
+          document.getElementById('corpus-last-action').textContent = opts.last_action;
+        }
+        if (opts.selected_record_id != null) {
+          var rid = opts.selected_record_id || '—';
+          document.getElementById('corpus-selected-record').innerHTML =
+            rid === '—' ? '—' : ('<code style="font-size:0.78rem">' + esc(rid) + '</code>');
+        }
+        if (opts.upstream_review_state != null) {
+          document.getElementById('corpus-upstream-state').textContent = opts.upstream_review_state;
+        }
+      }
+      function upstreamReviewStatusMessage(d, httpStatus) {
+        if (d.upstream_review_state === 'complete') {
+          return 'Upstream review complete · ' + (d.provider || '?');
+        }
+        var reason = d.upstream_review_failure_reason || 'server error';
+        if (reason === 'upstream not configured') {
+          return 'Upstream review cannot run: upstream not configured';
+        }
+        var detail = d.upstream_review_failure_detail || (d.error && d.error.message) || '';
+        var prefix = 'Upstream review failed';
+        if (httpStatus) prefix += ' · HTTP ' + httpStatus;
+        if (detail) return prefix + ': ' + detail;
+        return prefix + ': ' + reason;
+      }
+      function renderUpstreamReviewOutcome(d, httpStatus) {
+        var st = document.getElementById('corpus-ask-status');
+        setCorpusOperatorTrace({
+          last_action: d.last_action || 'upstream_review',
+          selected_record_id: d.selected_record_id || d.record_id || selectedRecordId(),
+          upstream_review_state: d.upstream_review_state || (d.review_text ? 'complete' : 'failed'),
+        });
+        if (d.upstream_review_state === 'failed' || (!d.review_text && d.upstream_review_failure_reason)) {
+          st.innerHTML = '<span class="error">' + esc(upstreamReviewStatusMessage(d, httpStatus)) + '</span>';
+          document.getElementById('corpus-answer').textContent = '—';
+          document.getElementById('corpus-governance').textContent = '—';
+          document.getElementById('corpus-support-status').innerHTML = '<span class="support-pill muted">—</span>';
+          document.getElementById('corpus-support-issues').textContent = d.upstream_review_failure_detail || '—';
+          return;
+        }
+        lastResult = d;
+        document.getElementById('corpus-answer').textContent = d.review_text || '(no review text)';
+        document.getElementById('corpus-governance').textContent = 'N/A (Door 1)';
+        document.getElementById('corpus-support-status').innerHTML = '<span class="support-pill muted">not governed</span>';
+        document.getElementById('corpus-support-issues').textContent = d.operator_note || '—';
+        st.textContent = upstreamReviewStatusMessage(d, httpStatus);
+      }
+      function updateValidateButtonState() {
+        var rid = selectedRecordId();
+        var btn = document.getElementById('corpus-btn-validate');
+        var hint = document.getElementById('corpus-validate-hint');
+        if (!btn) return;
+        if (hint) hint.style.display = rid ? 'none' : 'block';
+        btn.classList.toggle('corpus-needs-record', !rid);
+      }
+      function renderAskResult(d) {
+        lastResult = d;
+        document.getElementById('corpus-answer').textContent = d.answer || '(no answer text)';
+        var st = d.support_status || '—';
+        document.getElementById('corpus-support-status').innerHTML =
+          '<span class="support-pill ' + esc(st) + '">' + esc(st.replace(/_/g, ' ')) + '</span>';
+        var issues = (d.support_issues && d.support_issues.length) ? d.support_issues.join('; ') : '—';
+        document.getElementById('corpus-support-issues').textContent = issues;
+        document.getElementById('corpus-governance').textContent = d.governance || '—';
+        renderEvidencePayload(d);
+        if (d.validation) {
+          document.getElementById('corpus-ask-status').textContent =
+            'Validation: ' + (d.validation.passed ? 'PASS' : 'FAIL') +
+            (d.validation.reasons && d.validation.reasons.length ? ' — ' + d.validation.reasons.join('; ') : '');
+        }
+      }
+      function fillRecordSelect(records) {
+        var sel = document.getElementById('corpus-record-select');
+        var current = sel.value;
+        sel.innerHTML = '<option value="">All records (search corpus)</option>';
+        (records || []).forEach(function(rec) {
+          var opt = document.createElement('option');
+          opt.value = rec.record_id;
+          opt.textContent = rec.title + ' (' + rec.record_id + ')';
+          sel.appendChild(opt);
+        });
+        if (current) sel.value = current;
+        updateValidateButtonState();
+      }
+      function loadCorpusList() {
+        var st = document.getElementById('corpus-list-status');
+        st.textContent = 'Loading…';
+        return corpusGet('/v1/corpus/records' + scopeQuery()).then(function(d) {
+          var tbody = document.getElementById('corpus-records-tbody');
+          var table = document.getElementById('corpus-records-table');
+          tbody.innerHTML = '';
+          (d.records || []).forEach(function(rec) {
+            var tr = document.createElement('tr');
+            tr.innerHTML =
+              '<td>' + esc(rec.title || rec.filename) + '</td>' +
+              '<td>' + esc(rec.file_type || '—') + '</td>' +
+              '<td><code style="font-size:0.75rem">' + esc(rec.record_id) + '</code></td>' +
+              '<td class="constraints" title="' + esc(rec.source_path || '') + '">' + esc(rec.source_path || '—') + '</td>' +
+              '<td>' + esc(String(rec.chunk_count != null ? rec.chunk_count : '—')) + '</td>';
+            tr.style.cursor = 'pointer';
+            tr.addEventListener('click', function() {
+              document.getElementById('corpus-record-select').value = rec.record_id;
+              updateValidateButtonState();
+            });
+            tbody.appendChild(tr);
+          });
+          table.style.display = (d.records && d.records.length) ? 'table' : 'none';
+          var scopeNote = (d.scope && d.scope.mode === 'record_ids') ? ' · scoped to last ingest' : '';
+          if (!d.records || !d.records.length) {
+            st.textContent = 'No documents in operator corpus yet — ingest a folder or file.' + scopeNote;
+          } else {
+            st.textContent = (d.count || 0) + ' shown · ' + (d.total_in_registry || 0) + ' in operator registry · ' + (d.corpus_root || '') + scopeNote;
+          }
+          fillRecordSelect(d.records || []);
+        }).catch(function(e) {
+          st.innerHTML = '<span class="error">' + esc(e.message) + '</span>';
+        });
+      }
+      document.querySelectorAll('.console-tab').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var tab = btn.getAttribute('data-console-tab');
+          document.querySelectorAll('.console-tab').forEach(function(b) {
+            b.classList.toggle('active', b === btn);
+          });
+          document.getElementById('panel-forensics').classList.toggle('active', tab === 'forensics');
+          document.getElementById('panel-corpus').classList.toggle('active', tab === 'corpus');
+          var tagline = document.getElementById('hero-tagline');
+          if (tagline) {
+            tagline.textContent = tab === 'corpus'
+              ? 'Document library — ingest, retrieve evidence, governed Q&A.'
+              : 'Governance decisions, audit evidence, and session state — live.';
+          }
+          if (tab === 'corpus') loadCorpusList();
+          try {
+            var u = new URL(window.location.href);
+            u.searchParams.set('tab', tab);
+            window.history.replaceState({}, '', u.toString());
+          } catch (e) {}
+        });
+      });
+      try {
+        var tabParam = new URLSearchParams(window.location.search).get('tab');
+        if (tabParam === 'corpus') {
+          document.querySelector('.console-tab[data-console-tab="corpus"]').click();
+        }
+      } catch (e) {}
+
+      document.getElementById('corpus-btn-list').addEventListener('click', loadCorpusList);
+      document.getElementById('corpus-btn-preview').addEventListener('click', function() {
+        var path = (document.getElementById('corpus-ingest-path').value || '').trim();
+        var st = document.getElementById('corpus-ingest-status');
+        if (!path) { st.textContent = 'Enter a path.'; return; }
+        st.textContent = 'Scanning…';
+        corpusPost('/v1/corpus/scan', ingestPayload()).then(function(d) {
+          renderIngestReport(d);
+          st.textContent = 'Preview complete.';
+        }).catch(function(e) {
+          st.innerHTML = '<span class="error">' + esc(e.message) + '</span>';
+        });
+      });
+      document.getElementById('corpus-btn-ingest').addEventListener('click', function() {
+        var path = (document.getElementById('corpus-ingest-path').value || '').trim();
+        var st = document.getElementById('corpus-ingest-status');
+        if (!path) { st.textContent = 'Enter a path.'; return; }
+        st.textContent = 'Ingesting…';
+        corpusPost('/v1/corpus/ingest', ingestPayload()).then(function(d) {
+          renderIngestReport(d);
+          var ids = d.record_ids || (d.results || []).map(function(r) { return r.record_id; }).filter(Boolean);
+          saveScope(ids, path);
+          if (d.failed) {
+            st.innerHTML = '<span class="error">Ingest finished with zero files written — see report.</span>';
+          } else if (d.partial) {
+            st.innerHTML = '<span class="warn">Partial ingest — ' + (d.files_ingested || d.ingested_count || 0) + ' ingested, ' + (d.files_skipped || 0) + ' skipped.</span>';
+          } else {
+            st.textContent = 'Done — ingested ' + (d.files_ingested != null ? d.files_ingested : d.ingested_count || 0) +
+              ', unchanged ' + (d.files_unchanged != null ? d.files_unchanged : d.unchanged_count || 0);
+          }
+          loadCorpusList();
+        }).catch(function(e) {
+          st.innerHTML = '<span class="error">' + esc(e.message) + '</span>';
+        });
+      });
+      document.getElementById('corpus-btn-clear').addEventListener('click', function() {
+        if (!window.confirm('Clear all documents from the operator corpus (data/corpus/operator)?')) return;
+        var st = document.getElementById('corpus-list-status');
+        st.textContent = 'Clearing…';
+        corpusPost('/v1/corpus/clear', {}).then(function(d) {
+          clearScope();
+          st.textContent = 'Cleared ' + (d.cleared || 0) + ' record(s).';
+          loadCorpusList();
+        }).catch(function(e) {
+          st.innerHTML = '<span class="error">' + esc(e.message) + '</span>';
+        });
+      });
+      document.getElementById('corpus-presets').addEventListener('click', function(ev) {
+        var btn = ev.target.closest('button[data-q]');
+        if (!btn) return;
+        document.getElementById('corpus-question').value = btn.getAttribute('data-q') || '';
+      });
+      document.getElementById('corpus-btn-evidence').addEventListener('click', function() {
+        corpusRunAction({
+          action: 'show_evidence',
+          endpoint: '/v1/corpus/retrieve',
+          button: this,
+          runningText: 'Show evidence clicked · retrieving passages…',
+          preflight: function() {
+            var q = questionText();
+            if (!q) {
+              return {
+                message: 'Enter a question first.',
+                answerText: 'Enter a question first.',
+                trace: { last_action: 'show_evidence', endpoint: '/v1/corpus/retrieve', upstream_review_state: 'failed' },
+              };
+            }
+            return null;
+          },
+          buildPayload: function() { return askPayload(); },
+          onSuccess: function(d) {
+            lastResult = d;
+            document.getElementById('corpus-ask-status').textContent =
+              'Retrieved ' + (d.evidence_visible_count != null ? d.evidence_visible_count : d.evidence_count || 0) +
+              ' visible passage(s) — Lens not called.';
+            renderEvidencePayload(d);
+            document.getElementById('corpus-answer').textContent = '(evidence only — run Ask for governed answer)';
+            document.getElementById('corpus-governance').textContent = '—';
+            document.getElementById('corpus-support-status').innerHTML = '<span class="support-pill muted">not evaluated</span>';
+            document.getElementById('corpus-support-issues').textContent = '—';
+          },
+          onError: function(d, status) {
+            var msg = (d.error && d.error.message) ? d.error.message : ('HTTP ' + status);
+            document.getElementById('corpus-ask-status').innerHTML = '<span class="error">Show evidence failed · HTTP ' + status + ': ' + esc(msg) + '</span>';
+            document.getElementById('corpus-answer').textContent = msg;
+          },
+        });
+      });
+      document.getElementById('corpus-btn-ask').addEventListener('click', function() {
+        corpusRunAction({
+          action: 'ask_governed',
+          endpoint: '/v1/corpus/ask',
+          button: this,
+          runningText: 'Ask / Governed clicked · POST /v1/corpus/ask',
+          preflight: function() {
+            var q = questionText();
+            if (!q) {
+              return {
+                message: 'Enter a question first.',
+                answerText: 'Enter a question first.',
+                trace: { last_action: 'ask_governed', endpoint: '/v1/corpus/ask', upstream_review_state: 'failed' },
+              };
+            }
+            return null;
+          },
+          buildPayload: function() { return askPayload(); },
+          onSuccess: function(d) {
+            renderAskResult(d);
+            setCorpusActionTrace({ last_action: 'ask_governed', upstream_review_state: 'complete' });
+            document.getElementById('corpus-ask-status').textContent =
+              'Governed answer received · session ' + (d.session_id || '—');
+          },
+          onError: function(d, status) {
+            var msg = (d.error && d.error.message) ? d.error.message : ('HTTP ' + status);
+            document.getElementById('corpus-ask-status').innerHTML =
+              '<span class="error">Ask / Governed failed · HTTP ' + status + ': ' + esc(msg) + '</span>';
+            document.getElementById('corpus-answer').textContent = msg;
+          },
+        });
+      });
+      document.getElementById('corpus-record-select').addEventListener('change', function() {
+        updateValidateButtonState();
+        var rid = selectedRecordId();
+        if (rid) {
+          setCorpusOperatorTrace({ selected_record_id: rid });
+        }
+      });
+      updateValidateButtonState();
+
+      document.getElementById('corpus-btn-validate').addEventListener('click', function() {
+        corpusRunAction({
+          action: 'review_validate',
+          endpoint: '/v1/corpus/validate',
+          button: this,
+          reviewState: 'preparing',
+          runningText: 'Review / Validate clicked · POST /v1/corpus/validate',
+          preflight: function() {
+            var rid = selectedRecordId();
+            var q = questionText();
+            var trace = {
+              last_action: 'review_validate',
+              selected_record_id: rid || '—',
+              upstream_review_state: 'failed',
+              endpoint: '/v1/corpus/validate',
+            };
+            if (!rid) {
+              return {
+                trace: trace,
+                answerText: 'Review / Validate requires one selected document.',
+                render: function() {
+                  renderReviewOutcome({
+                    review_outcome: 'failed',
+                    review_failure_reason: 'no selected record',
+                    review_failure_detail: 'Review / Validate requires one selected document.',
+                  });
+                },
+              };
+            }
+            if (!q) {
+              return {
+                trace: trace,
+                answerText: 'Enter a question first.',
+                render: function() {
+                  renderReviewOutcome({
+                    review_outcome: 'failed',
+                    review_failure_reason: 'no question',
+                    review_failure_detail: 'Enter a question in the field above.',
+                  });
+                },
+              };
+            }
+            return null;
+          },
+          buildPayload: function() {
+            return { question: questionText(), record_id: selectedRecordId() };
+          },
+          onResponse: function(d, status, ok) {
+            if (!ok && d.review_outcome !== 'failed') {
+              d.review_outcome = 'failed';
+              if (!d.review_failure_reason) {
+                d.review_failure_reason = mapReviewFailureReason(d);
+                d.review_failure_detail = (d.error && d.error.message) ? d.error.message : ('HTTP ' + status);
+              }
+            }
+            renderReviewOutcome(d);
+            setCorpusActionTrace({
+              last_action: 'review_validate',
+              selected_record_id: selectedRecordId(),
+              upstream_review_state: d.review_outcome === 'complete' ? 'complete' : 'failed',
+              endpoint: '/v1/corpus/validate',
+            });
+          },
+          onError: function(d, status) {
+            renderReviewOutcome({
+              review_outcome: 'failed',
+              review_failure_reason: 'server error',
+              review_failure_detail: (d.error && d.error.message) ? d.error.message : ('HTTP ' + status),
+            });
+          },
+        });
+      });
+      document.getElementById('corpus-btn-review-upstream').addEventListener('click', function() {
+        var q = questionText();
+        var rid = selectedRecordId();
+        var btn = this;
+        var st = document.getElementById('corpus-ask-status');
+        if (!rid) {
+          setCorpusOperatorTrace({
+            last_action: 'upstream_review',
+            selected_record_id: '',
+            upstream_review_state: 'failed',
+          });
+          st.innerHTML = '<span class="error">Upstream review failed: no selected record</span>';
+          return;
+        }
+        btn.disabled = true;
+        setCorpusOperatorTrace({
+          last_action: 'upstream_review',
+          selected_record_id: rid,
+          upstream_review_state: 'running',
+        });
+        st.textContent = 'Running upstream review (no Lens)... POST /v1/corpus/review';
+        fetch(base + '/v1/corpus/review', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Aurora-Operator-Detail': 'true' },
+          body: JSON.stringify({ record_id: rid, question: q || null }),
+          cache: 'no-store',
+        }).then(function(r) {
+          return r.text().then(function(text) {
+            var d = {};
+            try {
+              d = text ? JSON.parse(text) : {};
+            } catch (parseErr) {
+              d = {
+                last_action: 'upstream_review',
+                selected_record_id: rid,
+                upstream_review_state: 'failed',
+                upstream_review_failure_reason: 'server error',
+                upstream_review_failure_detail: text || parseErr.message,
+              };
+            }
+            if (!d.upstream_review_state) {
+              d.upstream_review_state = r.ok ? 'complete' : 'failed';
+            }
+            if (!d.last_action) d.last_action = 'upstream_review';
+            if (!d.selected_record_id) d.selected_record_id = rid;
+            if (!r.ok && d.upstream_review_state !== 'failed') {
+              d.upstream_review_state = 'failed';
+              if (!d.upstream_review_failure_reason) {
+                d.upstream_review_failure_reason = (d.error && d.error.message) ? 'server error' : 'server error';
+                d.upstream_review_failure_detail = (d.error && d.error.message) || text || ('HTTP ' + r.status);
+              }
+            }
+            renderUpstreamReviewOutcome(d, r.status);
+          });
+        }).catch(function(e) {
+          renderUpstreamReviewOutcome({
+            last_action: 'upstream_review',
+            selected_record_id: rid,
+            upstream_review_state: 'failed',
+            upstream_review_failure_reason: 'server error',
+            upstream_review_failure_detail: e.message || 'Network request failed',
+          }, 0);
+        }).finally(function() {
+          btn.disabled = false;
+        });
+      });
+      document.getElementById('corpus-operator-actions').addEventListener('click', function(ev) {
+        var btn = ev.target.closest('button[data-op-action]');
+        if (!btn) return;
+        operatorTag = btn.getAttribute('data-op-action');
+        document.querySelectorAll('#corpus-operator-actions button[data-op-action]').forEach(function(b) {
+          b.classList.toggle('selected', b === btn);
+        });
+        document.getElementById('corpus-operator-tag').textContent = 'Operator tag: ' + operatorTag + ' (local only)';
+      });
+      document.getElementById('corpus-btn-export-notes').addEventListener('click', function() {
+        var payload = {
+          exported_at: new Date().toISOString(),
+          operator_tag: operatorTag,
+          question: questionText(),
+          record_id: selectedRecordId(),
+          result: lastResult,
+        };
+        var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'corpus-operator-notes-' + Date.now() + '.json';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+    })();
+    load();
+    setInterval(loadAuditSlice, 8000);
+    setInterval(loadMetrics, 30000);
+  </script>
+</body>
+</html>

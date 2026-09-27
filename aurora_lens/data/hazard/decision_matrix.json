@@ -1,0 +1,163 @@
+[
+  {
+    "framing": "BARE",
+    "procedurality": "PROCEDURAL_HOWTO",
+    "process_family": "CONCENTRATION",
+    "severity": "LETHAL",
+    "decision": "STOP_HAZARD_TRANSFORM"
+  },
+  {
+    "framing": "BARE",
+    "procedurality": "PROCEDURAL_HOWTO",
+    "process_family": "EXTRACTION",
+    "severity": "LETHAL",
+    "decision": "STOP_HAZARD_TRANSFORM"
+  },
+  {
+    "framing": "BARE",
+    "procedurality": "PROCEDURAL_HOWTO",
+    "process_family": "SYNTHESIS",
+    "severity": "LETHAL",
+    "decision": "STOP_HAZARD_TRANSFORM"
+  },
+  {
+    "framing": "BARE",
+    "procedurality": "PROCEDURAL_HOWTO",
+    "process_family": "ISOLATION",
+    "severity": "LETHAL",
+    "decision": "STOP_HAZARD_TRANSFORM"
+  },
+  {
+    "framing": "BARE",
+    "procedurality": "PROCEDURAL_HOWTO",
+    "process_family": "PURIFICATION",
+    "severity": "LETHAL",
+    "decision": "STOP_HAZARD_TRANSFORM"
+  },
+  {
+    "framing": "BARE",
+    "procedurality": "PROCEDURAL_HOWTO",
+    "process_family": "WEAPONISATION",
+    "severity": "LETHAL",
+    "decision": "STOP_HAZARD_TRANSFORM"
+  },
+  {
+    "framing": "BARE",
+    "procedurality": "PROCEDURAL_HOWTO",
+    "process_family": "DOSING_ADMINISTRATION",
+    "severity": "LETHAL",
+    "decision": "STOP_HAZARD_TRANSFORM"
+  },
+  {
+    "framing": "BARE",
+    "procedurality": "PROCEDURAL_HOWTO",
+    "process_family": "SYNTHESIS",
+    "severity": "SEVERE",
+    "decision": "STOP_HAZARD_TRANSFORM"
+  },
+  {
+    "framing": "BARE",
+    "procedurality": "PROCEDURAL_HOWTO",
+    "process_family": "CONCENTRATION",
+    "severity": "SEVERE",
+    "decision": "STOP_HAZARD_TRANSFORM"
+  },
+  {
+    "framing": "BARE",
+    "procedurality": "IMPERATIVE_EXECUTE",
+    "process_family": "SYNTHESIS",
+    "severity": "LETHAL",
+    "decision": "STOP_HAZARD_TRANSFORM"
+  },
+  {
+    "framing": "FICTION",
+    "procedurality": "PROCEDURAL_HOWTO",
+    "process_family": "SYNTHESIS",
+    "severity": "LETHAL",
+    "decision": "STOP_HAZARD_TRANSFORM"
+  },
+  {
+    "framing": "FICTION",
+    "procedurality": "PROCEDURAL_HOWTO",
+    "process_family": "CONCENTRATION",
+    "severity": "LETHAL",
+    "decision": "STOP_HAZARD_TRANSFORM"
+  },
+  {
+    "framing": "EDUCATIONAL",
+    "procedurality": "INFORMATIONAL",
+    "process_family": "NONE",
+    "severity": "LETHAL",
+    "decision": "ADMIT"
+  },
+  {
+    "framing": "HISTORICAL_ACADEMIC",
+    "procedurality": "INFORMATIONAL",
+    "process_family": "NONE",
+    "severity": "LETHAL",
+    "decision": "ADMIT"
+  },
+  {
+    "framing": "HORTICULTURAL",
+    "procedurality": "INFORMATIONAL",
+    "process_family": "NONE",
+    "severity": "LETHAL",
+    "decision": "ADMIT"
+  },
+  {
+    "framing": "HORTICULTURAL",
+    "procedurality": "PROCEDURAL_HOWTO",
+    "process_family": "NONE",
+    "severity": "LETHAL",
+    "decision": "ADMIT"
+  },
+  {
+    "framing": "HORTICULTURAL",
+    "procedurality": "INFORMATIONAL",
+    "process_family": "OTHER_TRANSFORM",
+    "severity": "LETHAL",
+    "decision": "ADMIT"
+  },
+  {
+    "framing": "HORTICULTURAL",
+    "procedurality": "PROCEDURAL_HOWTO",
+    "process_family": "OTHER_TRANSFORM",
+    "severity": "LETHAL",
+    "decision": "ADMIT"
+  },
+  {
+    "framing": "BARE",
+    "procedurality": "INFORMATIONAL",
+    "process_family": "OTHER_TRANSFORM",
+    "severity": "LETHAL",
+    "decision": "ADMIT"
+  },
+  {
+    "framing": "BARE",
+    "procedurality": "PROCEDURAL_HOWTO",
+    "process_family": "OTHER_TRANSFORM",
+    "severity": "LETHAL",
+    "decision": "ADMIT"
+  },
+  {
+    "framing": "BARE",
+    "procedurality": "INFORMATIONAL",
+    "process_family": "NONE",
+    "severity": "LETHAL",
+    "decision": "ADMIT"
+  },
+  {
+    "framing": "BARE",
+    "procedurality": "IDENTIFYING",
+    "process_family": "NONE",
+    "severity": "LETHAL",
+    "decision": "ADMIT"
+  },
+  {
+    "framing": "BARE",
+    "procedurality": "PROCEDURAL_HOWTO",
+    "process_family": "NONE",
+    "severity": "LETHAL",
+    "decision": "ASK_DISAMBIGUATE"
+  }
+]

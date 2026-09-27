@@ -1,0 +1,20 @@
+# Aurora Lens proxy config for Ollama (local LLM)
+# Requires: ollama running (ollama serve), model pulled (e.g. ollama pull llama2)
+
+upstream:
+  provider: openai
+  base_url: http://localhost:11434/v1
+  api_key: ""   # Ollama doesn't require auth locally
+  model: qwen3:8b   # or llama3:latest, qwen2.5-coder:1.5b, etc. — use a model you've pulled
+  timeout_s: 180   # local models (qwen3:8b) can be slow; increase if needed
+
+listen:
+  host: 127.0.0.1
+  port: 8081
+
+governance:
+  policy: strict
+  audit_log: ./audit.jsonl
+
+extraction:
+  backend: spacy

@@ -1,0 +1,105 @@
+# private — not for GitHub
+private/
+_snapshots/
+docs/private-test-commands.md
+Margaret only.txt
+INTERNAL ACQUISITION MEMO.txt
+docs/outreach-tier2.md
+TODAYS_WORK_SUMMARY.md
+
+# binary / eval artefacts
+aurora-lens-eval.zip
+eval/wheels/
+
+# runtime output
+archive/
+flags_output.json
+user_flags_output.json
+
+# local runtime configs (use *.yaml.example as template)
+aurora-lens-grok.yaml
+demo_governance.yaml
+# personal / machine-local YAML (never commit; use *.yaml.example templates)
+*.local.yaml
+aurora-lens.local.*.yaml
+
+# build artifacts
+dist/
+build/
+
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.claude/
+nul
+
+# runtime + python noise
+audit.jsonl
+# Ledger backups rotated aside (e.g. manual clear / reset); not *.jsonl suffix so not covered above
+audit.jsonl.pre_*
+*.jsonl
+*.log
+state/
+logs/
+support/
+tmp/
+runtime/
+sessions/
+*.pid
+*.quarantine.*.json
+*.evidence/
+__pycache__/
+.pytest_cache/
+
+# secrets / env
+.env
+*.env
+*.key
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
+
+# pyenv / virtualenv tooling (developer-local; not project config)
+.python-version
+.venv-license-check/
+.venv-test/
+
+# generated artefacts (not source; rebuild with scripts/generate_license_report.py)
+THIRD_PARTY_LICENSE_REPORT.runtime.md
+
+# Cursor — local IDE metadata; do not commit
+.cursor/
+
+# Superseded or sidelined copies (keep on disk; do not commit)
+*_old.*
+*.bak
+
+# Local trial handoff only — not committed here; keep on disk. Copied to
+# aurora-lens-trial by scripts/rebuild_trial.py (Path.rglob + ensure_handoff_root_files).
+README_TRIAL_FIRST.md
+START_TRIAL_WINDOWS.bat
+START_TRIAL_MAC.sh
+docs/trial_forensics.md
+docs/trial_scenarios.md
+
+# Local working notes only — not published
+pef_state_maintenance_findings.md
+
+# Benchmark run bulk (keep only summary.json + notes.md in benchmarks/results/ — see benchmarks/results/README.md)
+benchmarks/results/**/local/
+benchmarks/results/**/raw/
+benchmarks/results/**/debug/
+benchmarks/results/**/dumps/
+
+# Local debug / scratch artifacts quarantine (Commit 1 housekeeping only)
+Aurora-Lens Local Model Constitution.txt
+commit_history.txt
+docs/corpus_world_governance.md
+tmp_ask_debug.json
+tmp_turn3_check.txt
+scripts/_[!_]*.py
+scripts/anchorage_test.py
+scripts/operator_certificate_test.py

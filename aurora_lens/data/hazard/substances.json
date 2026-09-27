@@ -1,0 +1,101 @@
+[
+  {
+    "id": "oleandrin",
+    "canonical_name": "oleandrin",
+    "aliases": ["oleandrin"],
+    "hazard_class_ids": ["poisonous_plant_cardiotoxin"],
+    "source_organism_ids": ["nerium_oleander"],
+    "tags": ["cardiotoxin", "cardiac_glycoside"]
+  },
+  {
+    "id": "chlorine_gas",
+    "canonical_name": "chlorine gas",
+    "aliases": ["chlorine gas"],
+    "hazard_class_ids": ["cwa_choking"],
+    "source_organism_ids": [],
+    "tags": ["cwa"]
+  },
+  {
+    "id": "phosgene",
+    "canonical_name": "phosgene",
+    "aliases": ["phosgene"],
+    "hazard_class_ids": ["cwa_choking"],
+    "source_organism_ids": [],
+    "tags": ["cwa"]
+  },
+  {
+    "id": "mustard_gas",
+    "canonical_name": "mustard gas",
+    "aliases": ["mustard gas"],
+    "hazard_class_ids": ["cwa_blister"],
+    "source_organism_ids": [],
+    "tags": ["cwa"]
+  },
+  {
+    "id": "hydrogen_cyanide",
+    "canonical_name": "hydrogen cyanide",
+    "aliases": ["hydrogen cyanide"],
+    "hazard_class_ids": ["cwa_blood"],
+    "source_organism_ids": [],
+    "tags": ["cwa"]
+  },
+  {
+    "id": "ricin",
+    "canonical_name": "ricin",
+    "aliases": ["ricin"],
+    "hazard_class_ids": ["toxic_biological_ricin"],
+    "source_organism_ids": [],
+    "tags": ["toxin"]
+  },
+  {
+    "id": "sarin",
+    "canonical_name": "sarin",
+    "aliases": ["sarin"],
+    "hazard_class_ids": ["cwa_nerve"],
+    "source_organism_ids": [],
+    "tags": ["cwa", "nerve"]
+  },
+  {
+    "id": "tabun",
+    "canonical_name": "tabun",
+    "aliases": ["tabun"],
+    "hazard_class_ids": ["cwa_nerve"],
+    "source_organism_ids": [],
+    "tags": ["cwa", "nerve"]
+  },
+  {
+    "id": "vx",
+    "canonical_name": "vx",
+    "aliases": ["vx"],
+    "hazard_class_ids": ["cwa_nerve"],
+    "source_organism_ids": [],
+    "tags": ["cwa", "nerve"]
+  },
+  {
+    "id": "cyanogen_bromide",
+    "canonical_name": "cyanogen bromide",
+    "aliases": ["cyanogen bromide"],
+    "hazard_class_ids": ["cwa_blood", "industrial_toxicant"],
+    "source_organism_ids": [],
+    "tags": ["cwa"]
+  },
+  {
+    "id": "generic_bioweapon",
+    "canonical_name": "biological weapon",
+    "aliases": [
+      "bioweapon",
+      "bioweapons",
+      "biological weapon",
+      "biological weapons",
+      "bio weapon",
+      "bio weapons",
+      "pathogen weapon",
+      "pathogen weapons",
+      "pathogenic weapon",
+      "pathogenic weapons"
+    ],
+    "hazard_class_ids": ["dangerous_biological_weapon"],
+    "source_organism_ids": [],
+    "tags": ["bioweapon"]
+  }
+]

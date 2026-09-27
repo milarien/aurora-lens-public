@@ -1,0 +1,29 @@
+# Aurora-Lens proxy — public / shared template (no personal hosts or secrets)
+#
+# Safe to commit or hand to others. All secrets via environment variables.
+# Copy anywhere and run:
+#   aurora-lens proxy -c examples/aurora-lens.blank.yaml
+# Or copy to aurora-lens.yaml and use the default CLI path.
+#
+# Set at least: AURORA_LENS_UPSTREAM_API_KEY, AURORA_LENS_UPSTREAM_MODEL
+# (and AURORA_LENS_UPSTREAM_BASE_URL if not using the default OpenAI URL)
+
+upstream:
+  provider: openai
+  api_key: ${AURORA_LENS_UPSTREAM_API_KEY}
+  model: ${AURORA_LENS_UPSTREAM_MODEL}
+  # base_url: ${AURORA_LENS_UPSTREAM_BASE_URL}
+
+listen:
+  host: 127.0.0.1
+  port: 8081
+
+governance:
+  default_policy: strict
+  mode: public
+  audit_log: ./audit.jsonl
+  policy_version: "1.0"
+  audit_backend: ledger
+
+extraction:
+  backend: spacy

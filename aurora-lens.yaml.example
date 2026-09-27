@@ -1,0 +1,42 @@
+# Aurora-Lens minimal reference configuration.
+# 1) Copy this file to aurora-lens.yaml
+# 2) Set upstream.provider + model
+# 3) Set upstream.api_key_env to your credential variable name
+# 4) Run: aurora-lens start
+
+upstream:
+  provider: openai
+  model: gpt-4o-mini
+  api_key_env: OPENAI_API_KEY
+  # base_url is optional for openai/anthropic, required for local/custom endpoints.
+  # base_url: http://127.0.0.1:11434/v1
+
+listen:
+  host: 127.0.0.1
+  port: 8081
+
+governance:
+  default_policy: strict
+  mode: public
+  audit_log: ./audit.jsonl
+
+extraction:
+  backend: spacy
+
+# Provider examples:
+# - OpenAI:
+#   provider: openai
+#   api_key_env: OPENAI_API_KEY
+#   model: gpt-4o-mini
+#
+# - Anthropic:
+#   provider: anthropic
+#   api_key_env: ANTHROPIC_API_KEY
+#   model: claude-haiku-4-5-20251001
+#
+# - Local/OpenAI-compatible:
+#   provider: local
+#   model: llama3.2
+#   base_url: http://127.0.0.1:11434/v1
+#   # Set api_key_env only if your local endpoint requires authentication.
+#   # api_key_env: LOCAL_OPENAI_API_KEY

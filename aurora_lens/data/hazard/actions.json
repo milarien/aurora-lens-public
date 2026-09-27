@@ -1,0 +1,75 @@
+[
+  {
+    "id": "how_can",
+    "aliases": ["how can", "how do", "how would", "how should", "how to", "how could"],
+    "procedurality": "PROCEDURAL_HOWTO",
+    "outcome_prior": "NONE"
+  },
+  {
+    "id": "give_me_steps",
+    "aliases": [
+      "give me",
+      "walk me through",
+      "show me",
+      "tell me how",
+      "provide steps",
+      "step by step"
+    ],
+    "procedurality": "PROCEDURAL_HOWTO",
+    "outcome_prior": "NONE"
+  },
+  {
+    "id": "what_is",
+    "aliases": ["what is", "what are", "what's"],
+    "procedurality": "IDENTIFYING",
+    "outcome_prior": "IDENTIFICATION"
+  },
+  {
+    "id": "explain",
+    "aliases": ["explain", "describe", "define"],
+    "procedurality": "INFORMATIONAL",
+    "outcome_prior": "INFORMATION"
+  },
+  {
+    "id": "how_toxic",
+    "aliases": [
+      "how toxic",
+      "how poisonous",
+      "lethal dose",
+      "ld50",
+      "toxicity of",
+      "symptoms of"
+    ],
+    "procedurality": "INFORMATIONAL",
+    "outcome_prior": "TOXICITY_PROFILE"
+  },
+  {
+    "id": "where_grows",
+    "aliases": [
+      "where does",
+      "where do",
+      "how does it look",
+      "how to grow",
+      "how to care",
+      "how do i grow",
+      "how can i grow",
+      "how to plant",
+      "how to prune",
+      "how to propagate",
+      "how do i plant",
+      "how do i prune",
+      "how do i propagate",
+      "how can i plant",
+      "how can i prune",
+      "how can i propagate"
+    ],
+    "procedurality": "INFORMATIONAL",
+    "outcome_prior": "HORTICULTURAL"
+  },
+  {
+    "id": "history_of",
+    "aliases": ["history of", "historical overview", "timeline of", "overview of"],
+    "procedurality": "INFORMATIONAL",
+    "outcome_prior": "HISTORICAL"
+  }
+]

@@ -1,0 +1,64 @@
+{
+  "schema_version": "1.0",
+  "ontology_version": "1.0.0",
+  "unknown_chem_transform_ask": false,
+  "alias_resolution_order": [
+    "substance",
+    "organism",
+    "class",
+    "process",
+    "action",
+    "framing"
+  ],
+  "alias_resolution": "multi_match",
+  "permitted_shared_aliases": [
+    {
+      "aliases": [
+        "bioweapon",
+        "bioweapons",
+        "biological weapon",
+        "biological weapons",
+        "bio weapon",
+        "bio weapons",
+        "pathogen weapon",
+        "pathogen weapons",
+        "pathogenic weapon",
+        "pathogenic weapons"
+      ],
+      "owners": [
+        {"entity_type": "class", "id": "dangerous_biological_weapon"},
+        {"entity_type": "substance", "id": "generic_bioweapon"}
+      ],
+      "resolution": "multi_match",
+      "rationale": "Class and substance share canonical bioweapon terms; lexicon records both hits (substance before class)."
+    },
+    {
+      "aliases": ["weaponise", "weaponize"],
+      "owners": [
+        {"entity_type": "process", "id": "weaponise"},
+        {"entity_type": "framing", "id": "weaponising"}
+      ],
+      "resolution": "multi_match",
+      "rationale": "Weaponise is both a process family cue and a user-framing cue; process precedes framing."
+    },
+    {
+      "aliases": ["planting", "prune", "pruning"],
+      "owners": [
+        {"entity_type": "process", "id": "horticultural_cultivate"},
+        {"entity_type": "framing", "id": "horticultural"}
+      ],
+      "resolution": "multi_match",
+      "rationale": "Horticultural cultivate process and horticultural framing share garden verbs; process precedes framing."
+    }
+  ],
+  "permitted_within_type_alias_duplicates": [],
+  "files": [
+    "hazard_classes.json",
+    "substances.json",
+    "organisms.json",
+    "processes.json",
+    "actions.json",
+    "framings.json",
+    "decision_matrix.json"
+  ]
+}

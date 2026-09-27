@@ -1,0 +1,70 @@
+# Aurora-Lens — production-oriented proxy template
+#
+# Copy to aurora-lens.yaml (or mount as a secret) and set env vars.
+# This file turns on Phase B (auth), Phase C (Redis sessions), and Phase 5
+# (hardening) with conservative defaults. Adjust rate limits and TTL for your SLOs.
+#
+# For a minimal dev setup, use aurora-lens.yaml.example instead.
+
+upstream:
+  provider: openai
+  api_key: ${AURORA_LENS_UPSTREAM_API_KEY}
+  model: ${AURORA_LENS_UPSTREAM_MODEL}
+  base_url: ${AURORA_LENS_UPSTREAM_BASE_URL}
+  timeout_s: 120
+
+listen:
+  host: "0.0.0.0"
+  port: 8081
+
+governance:
+  default_policy: strict
+  mode: enterprise
+  audit_log: /data/audit.jsonl
+  policy_version: "1.0"
+  audit_backend: ledger
+  include_operator_detail: false
+  # Optional: operator matrix (see docs/PRODUCT_BOUNDARY.md)
+  # policy_matrix_path: /etc/aurora-lens/policy_matrix.json
+
+  # Evidence vault — sealed storage for raw prompts and model outputs.
+  # "sealed" encrypts blobs at /data/audit.jsonl.evidence/ using the key below.
+  # Without a key, "sealed" falls back to "hash_only" (SHA-256 digest only).
+  # See docs/key-custody.md for provisioning, rotation, and sealed-vs-hash_only semantics.
+  evidence_capture_mode: sealed        # sealed | hash_only | redacted | plaintext_dev
+  evidence_encryption_key: ${AURORA_LENS_EVIDENCE_KEY}  # generate: python -c "import secrets; print(secrets.token_hex(32))"
+
+extraction:
+  backend: spacy
+
+cors:
+  enabled: true
+  allow_origins:
+    - "https://your-app.example.com"
+
+# Phase C — shared sessions for multi-instance or restart safety
+session:
+  backend: redis
+  ttl_seconds: 3600
+  redis_url: ${AURORA_LENS_REDIS_URL}
+  lock_acquire_timeout_seconds: 10
+  lock_lease_seconds: 240
+
+# Phase B — inbound API keys (all routes except /health, /healthz)
+auth:
+  enabled: true
+  keys:
+    - key: ${AURORA_LENS_API_KEY_1}
+      label: "app-production"
+      policy: strict
+
+# Phase 5 — payload limits and rate limits (0 = disabled for rate limits)
+hardening:
+  max_payload_bytes: 1048576
+  max_messages: 100
+  max_content_chars: 100000
+  rate_limit_global: 0
+  rate_limit_per_session: 120
+  rate_limit_per_ip: 300
+  trusted_proxy_ips: []
+  stream_max_kb: 512

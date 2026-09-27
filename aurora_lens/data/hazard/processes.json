@@ -1,0 +1,108 @@
+[
+  {
+    "id": "distill",
+    "aliases": ["distil", "distill", "distillation", "distilling"],
+    "family": "CONCENTRATION",
+    "implies_outcomes": ["CONCENTRATION", "ISOLATION"]
+  },
+  {
+    "id": "horticultural_cultivate",
+    "aliases": [
+      "extract seeds",
+      "extracting seeds",
+      "collect seeds",
+      "collecting seeds",
+      "harvest seeds",
+      "harvesting seeds",
+      "grow",
+      "growing",
+      "plant",
+      "planting",
+      "prune",
+      "pruning",
+      "propagate",
+      "propagating",
+      "sow",
+      "sowing",
+      "cultivate",
+      "cultivating"
+    ],
+    "family": "OTHER_TRANSFORM",
+    "implies_outcomes": ["HORTICULTURAL"]
+  },
+  {
+    "id": "extract",
+    "aliases": ["extract", "extraction", "extracting"],
+    "family": "EXTRACTION",
+    "implies_outcomes": ["EXTRACTION", "ISOLATION"]
+  },
+  {
+    "id": "purify",
+    "aliases": ["purify", "purification", "purifying", "refine", "refining"],
+    "family": "PURIFICATION",
+    "implies_outcomes": ["PURIFICATION"]
+  },
+  {
+    "id": "concentrate",
+    "aliases": ["concentrate", "concentrating"],
+    "family": "CONCENTRATION",
+    "implies_outcomes": ["CONCENTRATION"]
+  },
+  {
+    "id": "synthesize",
+    "aliases": [
+      "synthesize",
+      "synthesise",
+      "synthesis",
+      "synthesizing",
+      "synthesising",
+      "manufacture",
+      "manufacturing",
+      "produce",
+      "producing",
+      "production",
+      "make",
+      "making",
+      "create",
+      "creating",
+      "prepare",
+      "preparing",
+      "recipe"
+    ],
+    "family": "SYNTHESIS",
+    "implies_outcomes": ["SYNTHESIS"]
+  },
+  {
+    "id": "isolate",
+    "aliases": ["isolate", "isolation", "isolating"],
+    "family": "ISOLATION",
+    "implies_outcomes": ["ISOLATION"]
+  },
+  {
+    "id": "weaponise",
+    "aliases": [
+      "weaponise",
+      "weaponize",
+      "weaponising",
+      "weaponizing",
+      "weaponisation",
+      "weaponization"
+    ],
+    "family": "WEAPONISATION",
+    "implies_outcomes": ["WEAPONISATION"]
+  },
+  {
+    "id": "dose_administer",
+    "aliases": [
+      "dose",
+      "dosing",
+      "dosage",
+      "administer",
+      "administration",
+      "inject",
+      "injection"
+    ],
+    "family": "DOSING_ADMINISTRATION",
+    "implies_outcomes": ["DOSING_ADMINISTRATION"]
+  }
+]

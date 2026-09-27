@@ -1,0 +1,85 @@
+[build-system]
+requires = ["setuptools>=80.0", "wheel>=0.43"]
+build-backend = "aurora_lens_build_backend"
+backend-path = ["."]
+
+[project]
+name = "aurora-lens"
+version = "3.0.1"
+description = "Deterministic runtime admissibility and consequence-governance layer for AI systems."
+readme = "README.md"
+license = "LicenseRef-Aurora-Lens-Proprietary"
+license-files = ["LICENSE", "NOTICE", "LICENSING.md", "COMMERCIAL-LICENCE.md"]
+requires-python = ">=3.12,<3.13"
+authors = [
+    {name = "Margaret Stokes"},
+]
+keywords = [
+    "ai-governance",
+    "llm-governance",
+    "runtime-admissibility",
+    "consequence-governance",
+    "auditability",
+    "refusal",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Distributed Computing",
+    "Topic :: Security",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "httpx>=0.24",
+    "pyyaml>=6.0",
+]
+
+[project.urls]
+"Homepage" = "https://aurora-lens.ai"
+"Source" = "https://github.com/milarien/aurora_lens"
+"Documentation" = "https://aurora-lens.ai"
+"Commercial-License" = "https://aurora-lens.ai/acquire"
+"Citation" = "https://doi.org/10.5281/zenodo.18653120"
+
+[project.optional-dependencies]
+spacy = ["spacy>=3.0"]
+claude = ["anthropic>=0.30"]
+ingest = ["pypdf>=4.0", "python-docx>=1.0"]
+proxy = ["fastapi>=0.100", "uvicorn>=0.23", "pyyaml>=6.0", "keyring>=25.0"]
+redis = ["redis>=5.0"]
+s3 = ["boto3>=1.28"]
+langchain = ["langchain-openai>=0.2.0"]
+all = ["spacy>=3.0", "fastapi>=0.100", "uvicorn>=0.23", "pyyaml>=6.0", "keyring>=25.0", "redis>=5.0", "boto3>=1.28", "langchain-openai>=0.2.0"]
+dev = ["pytest>=8.0", "pytest-asyncio>=1.0", "hypothesis>=6.100", "starlette>=0.27", "httpx>=0.24", "pyyaml>=6.0"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+markers = [
+    "redis: integration tests that require a reachable Redis server",
+    "ollama_live: live tests against a local Ollama instance (opt-in / manual)",
+    "finance_proxy_live: live tests against a running aurora-lens proxy (opt-in / manual)",
+    "general_proxy_live: general (non-finance) live proxy scenarios (opt-in / manual)",
+    "proxy_pef_admission_live: HTTP GET /health code_features against a running proxy (opt-in / manual)",
+    "live_provider_regression: live HTTP probes against OpenAI-compatible provider endpoints (opt-in / manual)",
+]
+
+[tool.setuptools.packages.find]
+include = ["aurora_lens*", "governor*"]
+
+[tool.setuptools.package-data]
+aurora_lens = [
+    "BUILD_INFO.json",
+    "governor/*.json",
+    "proxy/*.html",
+    "proxy/*.png",
+    "benchmarks/governance/*.json",
+    "benchmarks/runtime/*.json",
+]
+
+[project.scripts]
+aurora-lens = "aurora_lens.cli:main"
+aurora-lens-eval = "aurora_lens.eval.mini_evaluator:main"

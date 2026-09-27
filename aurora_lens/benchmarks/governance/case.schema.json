@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aurora-lens.dev/benchmark/governance-case.schema.json",
+  "title": "Aurora-Lens governance benchmark case",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "category", "title", "user_input", "fixture_id", "expected_outcome"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$" },
+    "category": {
+      "type": "string",
+      "enum": [
+        "ambiguity_preservation",
+        "unsupported_commitment",
+        "high_stakes_gating",
+        "persistence_and_contradiction",
+        "failure_path_integrity"
+      ]
+    },
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "user_input": { "type": "string" },
+    "prior_state": {
+      "type": "object",
+      "description": "Reserved for future structured PEF seeds; v1 uses fixture_id only."
+    },
+    "fixture_id": { "type": "string", "minLength": 1 },
+    "requires_spacy": {
+      "type": "boolean",
+      "description": "If true, case is skipped when en_core_web_sm is unavailable."
+    },
+    "external_flags": {
+      "type": "array",
+      "description": "Optional list of FlagType enum names to pass to Lens.process as synthetic host flags.",
+      "items": { "type": "string" }
+    },
+    "use_audit_jsonl": {
+      "type": "boolean",
+      "description": "When true, runner passes a temp JSONL path into BuiltinBridge / default canonical audit (omit for state-native-only fixtures that pre-log risky rows)."
+    },
+    "steps": {
+      "type": "array",
+      "description": "Optional multi-turn inputs (same session). Final row governs scoring.",
+      "items": {
+        "type": "object",
+        "required": ["user_input"],
+        "additionalProperties": false,
+        "properties": {
+          "user_input": { "type": "string" },
+          "external_flags": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "expected_outcome": {
+      "type": "string",
+      "description": "PASS / CONTAIN / REFUSE / STOP match InterventionAction families; SOFT_CORRECT exact.",
+      "enum": ["PASS", "CONTAIN", "REFUSE", "STOP", "SOFT_CORRECT"]
+    },
+    "expected_allowed_continuation": { "type": "boolean" },
+    "expected_flags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "FlagType names that must all appear (subset match ok unless exact_flags true)."
+    },
+    "forbidden_flags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "FlagType names that must not appear in the final turn (e.g. UNVERIFIED_FACT_ASSERTION for hedged E2E-5)."
+    },
+    "expected_flags_exact": {
+      "type": "boolean",
+      "description": "If true, flag set must match exactly (order-insensitive)."
+    },
+    "expected_blocked_content_suppressed": { "type": "boolean" },
+    "forbidden_substrings": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "When expected_blocked_content_suppressed is true, none may appear in final response (case-insensitive)."
+    },
+    "expected_audit_presence": { "type": "boolean" },
+    "expected_verify_pass": { "type": "boolean" },
+    "expect_continuity_diagnostic": { "type": "string" },
+    "notes": { "type": "string" }
+  }
+}

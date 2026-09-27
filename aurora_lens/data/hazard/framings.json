@@ -1,0 +1,82 @@
+[
+  {
+    "id": "educational",
+    "aliases": [
+      "for class",
+      "chemistry class",
+      "for school",
+      "for homework",
+      "educational purposes",
+      "for education"
+    ],
+    "framing": "EDUCATIONAL"
+  },
+  {
+    "id": "historical_academic",
+    "aliases": [
+      "in history",
+      "during wwii",
+      "during world war",
+      "historically",
+      "academic discussion",
+      "in the literature"
+    ],
+    "framing": "HISTORICAL_ACADEMIC"
+  },
+  {
+    "id": "horticultural",
+    "aliases": [
+      "in my garden",
+      "garden plant",
+      "ornamental plant",
+      "landscaping",
+      "prune",
+      "pruning",
+      "for planting",
+      "planting",
+      "seed starting",
+      "nursery stock",
+      "ornamental"
+    ],
+    "framing": "HORTICULTURAL"
+  },
+  {
+    "id": "fiction",
+    "aliases": [
+      "for my novel",
+      "for a novel",
+      "for my story",
+      "fictional",
+      "in fiction",
+      "for a screenplay"
+    ],
+    "framing": "FICTION"
+  },
+  {
+    "id": "protective",
+    "aliases": [
+      "to defend against",
+      "for protection",
+      "protective measures",
+      "safety briefing",
+      "vaccine strategy",
+      "vaccination strategy",
+      "against biological weapons",
+      "against bioweapons",
+      "biodefense",
+      "biodefence"
+    ],
+    "framing": "DEFENSIVE_PROTECTIVE"
+  },
+  {
+    "id": "weaponising",
+    "aliases": [
+      "as a weapon",
+      "for assassination",
+      "to poison someone",
+      "weaponise",
+      "weaponize"
+    ],
+    "framing": "WEAPONISING"
+  }
+]

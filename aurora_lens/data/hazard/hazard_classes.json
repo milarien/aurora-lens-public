@@ -1,0 +1,110 @@
+[
+  {
+    "id": "poisonous_plant_cardiotoxin",
+    "label": "poisonous plant cardiotoxin",
+    "family": "poisonous_plant",
+    "default_severity": "LETHAL",
+    "block_on_procedural_transform": true,
+    "aliases": ["poisonous plant cardiotoxin", "plant cardiotoxin"],
+    "notes": "Cardiac glycosides and related plant toxins"
+  },
+  {
+    "id": "cwa_choking",
+    "label": "chemical warfare choking agent",
+    "family": "cwa",
+    "default_severity": "LETHAL",
+    "block_on_procedural_transform": true,
+    "aliases": ["choking agent", "pulmonary agent"]
+  },
+  {
+    "id": "cwa_blister",
+    "label": "chemical warfare blister agent",
+    "family": "cwa",
+    "default_severity": "LETHAL",
+    "block_on_procedural_transform": true,
+    "aliases": ["blister agent", "vesicant"]
+  },
+  {
+    "id": "cwa_blood",
+    "label": "chemical warfare blood agent",
+    "family": "cwa",
+    "default_severity": "LETHAL",
+    "block_on_procedural_transform": true,
+    "aliases": ["blood agent"]
+  },
+  {
+    "id": "cwa_nerve",
+    "label": "chemical warfare nerve agent",
+    "family": "cwa",
+    "default_severity": "LETHAL",
+    "block_on_procedural_transform": true,
+    "aliases": ["nerve agent", "nerve gas"]
+  },
+  {
+    "id": "toxic_biological_ricin",
+    "label": "toxic biological compound",
+    "family": "toxic_biological",
+    "default_severity": "LETHAL",
+    "block_on_procedural_transform": true,
+    "aliases": ["toxic biological compound"]
+  },
+  {
+    "id": "industrial_toxicant",
+    "label": "industrial toxicant",
+    "family": "industrial_toxicant",
+    "default_severity": "SEVERE",
+    "block_on_procedural_transform": true,
+    "aliases": ["industrial toxicant"]
+  },
+  {
+    "id": "explosive_precursor",
+    "label": "explosive precursor",
+    "family": "explosive_precursor",
+    "default_severity": "SEVERE",
+    "block_on_procedural_transform": true,
+    "aliases": ["explosive precursor"]
+  },
+  {
+    "id": "corrosive_agent",
+    "label": "corrosive agent",
+    "family": "corrosive",
+    "default_severity": "SEVERE",
+    "block_on_procedural_transform": true,
+    "aliases": ["corrosive agent"]
+  },
+  {
+    "id": "incapacitating_agent",
+    "label": "incapacitating agent",
+    "family": "incapacitating",
+    "default_severity": "SEVERE",
+    "block_on_procedural_transform": true,
+    "aliases": ["incapacitating agent"]
+  },
+  {
+    "id": "radiological_material",
+    "label": "radiological material",
+    "family": "radiological",
+    "default_severity": "LETHAL",
+    "block_on_procedural_transform": true,
+    "aliases": ["radiological material", "radioactive material"]
+  },
+  {
+    "id": "dangerous_biological_weapon",
+    "label": "dangerous biological agent",
+    "family": "dangerous_biological",
+    "default_severity": "LETHAL",
+    "block_on_procedural_transform": true,
+    "aliases": [
+      "bioweapon",
+      "bioweapons",
+      "biological weapon",
+      "biological weapons",
+      "bio weapon",
+      "bio weapons",
+      "pathogen weapon",
+      "pathogen weapons",
+      "pathogenic weapon",
+      "pathogenic weapons"
+    ]
+  }
+]

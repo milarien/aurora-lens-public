@@ -1,0 +1,2105 @@
+{
+  "general:GP:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_substantive_answer",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [],
+    "required_disclosures": [],
+    "commitment_closed": false,
+    "interaction_open": true,
+    "pathway_id": "P_ADMIT_STANDARD",
+    "output_mode": "full_response",
+    "exposure_level": "minimal"
+  },
+  "general:GP:ASK": {
+    "allowed_speech_acts": [
+      "request_missing_fact"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer",
+      "suggest_probable_resolution"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "general:GP:REFUSE": {
+    "allowed_speech_acts": [
+      "explain_boundary",
+      "state_insufficiency",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_EXPLAIN_REDIRECT",
+    "output_mode": "refusal_with_explanation",
+    "exposure_level": "minimal"
+  },
+  "general:GP:STOP": {
+    "allowed_speech_acts": [
+      "notice_termination"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_TERMINAL",
+    "output_mode": "terminal_stop",
+    "exposure_level": "minimal"
+  },
+  "general:GP:STOP:auditor": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "expose_audit_basis"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [],
+    "forensic_obligations": [
+      "emit_forensic_envelope",
+      "attach_pef_snapshot"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_TERMINAL",
+    "output_mode": "forensic_stop",
+    "exposure_level": "full"
+  },
+  "ambiguity:GP:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_substantive_answer",
+      "request_disambiguation"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "suggest_probable_resolution"
+    ],
+    "forensic_obligations": [],
+    "required_disclosures": [],
+    "commitment_closed": false,
+    "interaction_open": true,
+    "pathway_id": "P_ADMIT_STANDARD",
+    "output_mode": "full_response",
+    "exposure_level": "minimal"
+  },
+  "ambiguity:GP:ASK": {
+    "allowed_speech_acts": [
+      "request_disambiguation"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "suggest_probable_resolution"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_DISAMBIGUATE",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "ambiguity:GP:REFUSE": {
+    "allowed_speech_acts": [
+      "explain_boundary",
+      "request_disambiguation"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "suggest_probable_resolution"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_EXPLAIN_REDIRECT",
+    "output_mode": "refusal_with_clarification",
+    "exposure_level": "minimal"
+  },
+  "ambiguity:GP:STOP": {
+    "allowed_speech_acts": [
+      "notice_termination"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_TERMINAL",
+    "output_mode": "terminal_stop",
+    "exposure_level": "minimal"
+  },
+  "medical:GP:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_general_information",
+      "offer_handoff_summary",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [
+      "generate_summary"
+    ],
+    "forbidden_speech_acts": [
+      "provide_substantive_answer",
+      "infer_answer",
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [
+      "informational_only"
+    ],
+    "escalation_target": "a licensed clinician",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_HANDOFF_SUMMARY",
+    "output_mode": "constrained_response",
+    "exposure_level": "moderate"
+  },
+  "medical:GP:ASK": {
+    "allowed_speech_acts": [
+      "request_missing_fact"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal",
+    "escalation_target": "a licensed clinician"
+  },
+  "medical:GP:REFUSE": {
+    "allowed_speech_acts": [
+      "explain_boundary",
+      "state_insufficiency"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_EXPLAIN_REDIRECT",
+    "output_mode": "refusal_with_explanation",
+    "exposure_level": "minimal",
+    "escalation_target": "a licensed clinician or healthcare provider"
+  },
+  "medical:GP:REFUSE:clinician": {
+    "allowed_speech_acts": [
+      "explain_boundary",
+      "state_insufficiency",
+      "offer_handoff_summary"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human",
+      "generate_summary"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope",
+      "attach_pef_snapshot"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_ESCALATE_PRO",
+    "output_mode": "pro_refusal",
+    "exposure_level": "moderate",
+    "escalation_target": "a supervising clinician"
+  },
+  "medical:GP:STOP": {
+    "pathway_id": "P_STOP_ESCALATE",
+    "output_mode": "terminal_stop",
+    "commitment_closed": true,
+    "interaction_open": false,
+    "escalation_target": "your nearest GP, nurse on call, or call an ambulance",
+    "exposure_level": "minimal",
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "allowed_speech_acts": [
+      "notice_termination",
+      "notice_escalation"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "allowed_procedural_actions": [],
+    "required_disclosures": []
+  },
+  "legal:GP:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_general_information",
+      "offer_handoff_summary",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [
+      "generate_summary"
+    ],
+    "forbidden_speech_acts": [
+      "provide_substantive_answer",
+      "infer_answer",
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [
+      "not_legal_advice"
+    ],
+    "escalation_target": "a licensed lawyer",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_HANDOFF_SUMMARY",
+    "output_mode": "constrained_response",
+    "exposure_level": "moderate"
+  },
+  "legal:GP:ASK": {
+    "allowed_speech_acts": [
+      "request_missing_fact"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal",
+    "escalation_target": "a licensed lawyer"
+  },
+  "legal:GP:REFUSE": {
+    "allowed_speech_acts": [
+      "explain_boundary",
+      "state_insufficiency"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_ESCALATE_PRO",
+    "output_mode": "refusal_with_explanation",
+    "exposure_level": "minimal",
+    "escalation_target": "a licensed lawyer or legal aid service"
+  },
+  "legal:GP:STOP": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_TERMINAL",
+    "output_mode": "terminal_stop",
+    "exposure_level": "minimal",
+    "escalation_target": "a licensed lawyer or legal aid service"
+  },
+  "finance:GP:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_general_information",
+      "offer_handoff_summary",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [
+      "generate_summary"
+    ],
+    "forbidden_speech_acts": [
+      "provide_substantive_answer",
+      "infer_answer",
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [
+      "not_financial_advice"
+    ],
+    "escalation_target": "a licensed financial adviser",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_HANDOFF_SUMMARY",
+    "output_mode": "constrained_response",
+    "exposure_level": "moderate"
+  },
+  "finance:GP:ASK": {
+    "allowed_speech_acts": [
+      "request_missing_fact"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal",
+    "escalation_target": "a licensed financial adviser"
+  },
+  "finance:GP:REFUSE": {
+    "allowed_speech_acts": [
+      "explain_boundary",
+      "state_insufficiency"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_ESCALATE_PRO",
+    "output_mode": "refusal_with_explanation",
+    "exposure_level": "minimal",
+    "escalation_target": "a licensed financial adviser"
+  },
+  "finance:GP:STOP": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_TERMINAL",
+    "output_mode": "terminal_stop",
+    "exposure_level": "minimal",
+    "escalation_target": "a licensed financial adviser"
+  },
+  "research:GP:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_substantive_answer",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [],
+    "required_disclosures": [],
+    "commitment_closed": false,
+    "interaction_open": true,
+    "pathway_id": "P_ADMIT_STANDARD",
+    "output_mode": "full_response",
+    "exposure_level": "minimal"
+  },
+  "research:GP:ASK": {
+    "allowed_speech_acts": [
+      "request_missing_fact"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "research:GP:REFUSE": {
+    "allowed_speech_acts": [
+      "explain_boundary",
+      "state_insufficiency",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_EXPLAIN_REDIRECT",
+    "output_mode": "refusal_with_explanation",
+    "exposure_level": "minimal"
+  },
+  "research:GP:STOP": {
+    "allowed_speech_acts": [
+      "notice_termination"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_TERMINAL",
+    "output_mode": "terminal_stop",
+    "exposure_level": "minimal"
+  },
+  "medical:DA:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_substantive_answer",
+      "offer_handoff_summary",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [
+      "generate_summary"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer",
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [
+      "informational_only"
+    ],
+    "escalation_target": "a supervising clinician",
+    "commitment_closed": false,
+    "interaction_open": true,
+    "pathway_id": "P_ADMIT_STANDARD",
+    "output_mode": "full_response",
+    "exposure_level": "moderate"
+  },
+  "medical:DA:ASK": {
+    "allowed_speech_acts": [
+      "request_missing_fact",
+      "request_disambiguation"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "a supervising clinician",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "medical:DA:REFUSE": {
+    "allowed_speech_acts": [
+      "explain_boundary",
+      "state_insufficiency",
+      "offer_handoff_summary"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human",
+      "generate_summary"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope",
+      "attach_pef_snapshot"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "a supervising clinician",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_ESCALATE_PRO",
+    "output_mode": "pro_refusal",
+    "exposure_level": "moderate"
+  },
+  "medical:DA:STOP": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "notice_escalation"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope",
+      "attach_pef_snapshot"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "a supervising clinician",
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_TERMINAL",
+    "output_mode": "terminal_stop",
+    "exposure_level": "moderate"
+  },
+  "medical:HS:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_substantive_answer",
+      "offer_handoff_summary",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [
+      "generate_summary"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer",
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [
+      "informational_only"
+    ],
+    "escalation_target": "the supervising clinician",
+    "commitment_closed": false,
+    "interaction_open": true,
+    "pathway_id": "P_ADMIT_STANDARD",
+    "output_mode": "full_response",
+    "exposure_level": "moderate"
+  },
+  "medical:HS:ASK": {
+    "allowed_speech_acts": [
+      "request_missing_fact",
+      "request_disambiguation"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "the supervising clinician",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "medical:HS:REFUSE": {
+    "allowed_speech_acts": [
+      "explain_boundary",
+      "state_insufficiency",
+      "offer_handoff_summary"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human",
+      "generate_summary",
+      "notify_operator"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope",
+      "attach_pef_snapshot"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "the supervising clinician",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_ESCALATE_PRO",
+    "output_mode": "pro_refusal",
+    "exposure_level": "moderate"
+  },
+  "medical:HS:STOP": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "notice_escalation"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human",
+      "notify_operator"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope",
+      "attach_pef_snapshot"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "the supervising clinician",
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_FORENSIC",
+    "output_mode": "forensic_stop",
+    "exposure_level": "full"
+  },
+
+  "harmful:GP:STOP": {
+    "allowed_speech_acts": ["notice_termination", "explain_boundary"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer", "offer_safe_next_step", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_REFUSE_CLEAN",
+    "output_mode": "terminal_stop",
+    "escalation_target": null,
+    "exposure_level": "minimal"
+  },
+  "harmful:GP:STOP:ILLEGAL_INSTRUCTION": {
+    "allowed_speech_acts": ["notice_termination", "explain_boundary"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer", "offer_safe_next_step", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_REFUSE_CLEAN",
+    "output_mode": "terminal_stop",
+    "escalation_target": null,
+    "exposure_level": "minimal"
+  },
+  "harmful:GP:STOP:HAZARD_ONTOLOGY_UNAVAILABLE": {
+    "allowed_speech_acts": ["notice_termination", "explain_boundary"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer", "offer_safe_next_step", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_REFUSE_CLEAN",
+    "output_mode": "terminal_stop",
+    "escalation_target": null,
+    "exposure_level": "minimal"
+  },
+  "harmful:GP:ADMIT": {
+    "allowed_speech_acts": ["provide_substantive_answer", "offer_safe_next_step"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["soften_into_advice"],
+    "forensic_obligations": [],
+    "required_disclosures": [],
+    "commitment_closed": false,
+    "interaction_open": true,
+    "pathway_id": "P_ADMIT_STANDARD",
+    "output_mode": "full_response",
+    "exposure_level": "minimal"
+  },
+  "harmful:GP:ASK": {
+    "allowed_speech_acts": ["request_missing_fact"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer", "suggest_probable_resolution"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "harmful:GP:REFUSE": {
+    "allowed_speech_acts": ["explain_boundary", "state_insufficiency", "offer_safe_next_step"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_EXPLAIN_REDIRECT",
+    "output_mode": "refusal_with_explanation",
+    "exposure_level": "minimal"
+  },
+
+  "legal:DA:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_substantive_answer",
+      "offer_handoff_summary"
+    ],
+    "allowed_procedural_actions": [
+      "generate_summary"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer",
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [
+      "not_legal_advice"
+    ],
+    "escalation_target": "a supervising lawyer",
+    "commitment_closed": false,
+    "interaction_open": true,
+    "pathway_id": "P_ADMIT_STANDARD",
+    "output_mode": "full_response",
+    "exposure_level": "moderate"
+  },
+  "legal:DA:ASK": {
+    "allowed_speech_acts": [
+      "request_missing_fact"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "a supervising lawyer",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "legal:DA:REFUSE": {
+    "allowed_speech_acts": [
+      "explain_boundary",
+      "state_insufficiency",
+      "offer_handoff_summary"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human",
+      "generate_summary"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope",
+      "attach_pef_snapshot"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "a supervising lawyer",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_ESCALATE_PRO",
+    "output_mode": "pro_refusal",
+    "exposure_level": "moderate"
+  },
+  "legal:DA:STOP": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "notice_escalation"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope",
+      "attach_pef_snapshot"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "a supervising lawyer",
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_TERMINAL",
+    "output_mode": "terminal_stop",
+    "exposure_level": "moderate"
+  },
+  "legal:HS:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_substantive_answer",
+      "offer_handoff_summary"
+    ],
+    "allowed_procedural_actions": [
+      "generate_summary"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer",
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [
+      "not_legal_advice"
+    ],
+    "escalation_target": "the supervising lawyer",
+    "commitment_closed": false,
+    "interaction_open": true,
+    "pathway_id": "P_ADMIT_STANDARD",
+    "output_mode": "full_response",
+    "exposure_level": "moderate"
+  },
+  "legal:HS:ASK": {
+    "allowed_speech_acts": [
+      "request_missing_fact"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "the supervising lawyer",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "legal:HS:REFUSE": {
+    "allowed_speech_acts": [
+      "explain_boundary",
+      "state_insufficiency",
+      "offer_handoff_summary"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human",
+      "generate_summary",
+      "notify_operator"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope",
+      "attach_pef_snapshot"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "the supervising lawyer",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_ESCALATE_PRO",
+    "output_mode": "pro_refusal",
+    "exposure_level": "moderate"
+  },
+  "legal:HS:STOP": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "notice_escalation"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human",
+      "notify_operator"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope",
+      "attach_pef_snapshot"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "the supervising lawyer",
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_FORENSIC",
+    "output_mode": "forensic_stop",
+    "exposure_level": "full"
+  },
+  "finance:DA:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_substantive_answer",
+      "offer_handoff_summary",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [
+      "generate_summary"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer",
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [
+      "not_financial_advice"
+    ],
+    "escalation_target": "a supervising licensed adviser",
+    "commitment_closed": false,
+    "interaction_open": true,
+    "pathway_id": "P_ADMIT_STANDARD",
+    "output_mode": "full_response",
+    "exposure_level": "moderate"
+  },
+  "finance:DA:ASK": {
+    "allowed_speech_acts": [
+      "request_missing_fact"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "a supervising licensed adviser",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "finance:DA:REFUSE": {
+    "allowed_speech_acts": [
+      "explain_boundary",
+      "state_insufficiency",
+      "offer_handoff_summary"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human",
+      "generate_summary"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope",
+      "attach_pef_snapshot"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "a supervising licensed adviser",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_ESCALATE_PRO",
+    "output_mode": "pro_refusal",
+    "exposure_level": "moderate"
+  },
+  "finance:DA:STOP": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "notice_escalation"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope",
+      "attach_pef_snapshot"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "a supervising licensed adviser",
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_TERMINAL",
+    "output_mode": "terminal_stop",
+    "exposure_level": "moderate"
+  },
+  "finance:HS:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_substantive_answer",
+      "offer_handoff_summary",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [
+      "generate_summary"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer",
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [
+      "not_financial_advice"
+    ],
+    "escalation_target": "the supervising licensed adviser",
+    "commitment_closed": false,
+    "interaction_open": true,
+    "pathway_id": "P_ADMIT_STANDARD",
+    "output_mode": "full_response",
+    "exposure_level": "moderate"
+  },
+  "finance:HS:ASK": {
+    "allowed_speech_acts": [
+      "request_missing_fact"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "the supervising licensed adviser",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "finance:HS:REFUSE": {
+    "allowed_speech_acts": [
+      "explain_boundary",
+      "state_insufficiency",
+      "offer_handoff_summary"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human",
+      "generate_summary",
+      "notify_operator"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope",
+      "attach_pef_snapshot"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "the supervising licensed adviser",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_ESCALATE_PRO",
+    "output_mode": "pro_refusal",
+    "exposure_level": "moderate"
+  },
+  "finance:HS:STOP": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "notice_escalation"
+    ],
+    "allowed_procedural_actions": [
+      "escalate_to_human",
+      "notify_operator"
+    ],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope",
+      "attach_pef_snapshot"
+    ],
+    "required_disclosures": [],
+    "escalation_target": "the supervising licensed adviser",
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_FORENSIC",
+    "output_mode": "forensic_stop",
+    "exposure_level": "full"
+  },
+  "crisis:GP:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_substantive_answer",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [],
+    "required_disclosures": [],
+    "commitment_closed": false,
+    "interaction_open": true,
+    "pathway_id": "P_ADMIT_STANDARD",
+    "output_mode": "full_response",
+    "exposure_level": "minimal"
+  },
+  "crisis:GP:ASK": {
+    "allowed_speech_acts": [
+      "request_disambiguation"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_DISAMBIGUATE",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "crisis:GP:REFUSE": {
+    "allowed_speech_acts": [
+      "explain_boundary",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_EXPLAIN_REDIRECT",
+    "output_mode": "refusal_with_explanation",
+    "exposure_level": "minimal"
+  },
+  "crisis:GP:STOP": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_TERMINAL",
+    "output_mode": "terminal_stop",
+    "escalation_target": "a crisis support service or emergency services",
+    "exposure_level": "minimal"
+  },
+  "medical:GP:STOP:EMERGENCY_TRIAGE_GUIDANCE": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "notice_escalation"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_ESCALATE_EMERGENCY",
+    "output_mode": "terminal_stop",
+    "escalation_target": "your nearest GP, nurse on call, or call an ambulance",
+    "exposure_level": "minimal"
+  },
+  "medical:GP:STOP:SELF_HARM_INSTRUCTION": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_SUPPORTIVE_DEESCALATE",
+    "output_mode": "terminal_stop",
+    "escalation_target": "a crisis support service or emergency services",
+    "exposure_level": "minimal"
+  },
+  "medical:GP:STOP:MEDICAL_DOSAGE_RECOMMENDATION": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer",
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "allowed_continuations": [
+      "medical_post_refusal_safe_followup"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_REDIRECT_QUALIFIED",
+    "output_mode": "terminal_stop",
+    "escalation_target": "a pharmacist, prescribing clinician, or urgent care provider",
+    "exposure_level": "minimal"
+  },
+  "medical:GP:STOP:PEDIATRIC_DOSAGE_RECOMMENDATION": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer",
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "allowed_continuations": [
+      "medical_post_refusal_safe_followup"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_REDIRECT_QUALIFIED",
+    "output_mode": "terminal_stop",
+    "escalation_target": "a pharmacist, prescribing clinician, or urgent care provider",
+    "exposure_level": "minimal"
+  },
+  "medical:GP:STOP:NUMERIC_MEDICAL_INSTRUCTION": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer",
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "allowed_continuations": [
+      "medical_post_refusal_safe_followup"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_REDIRECT_QUALIFIED",
+    "output_mode": "terminal_stop",
+    "escalation_target": "a pharmacist, prescribing clinician, or urgent care provider",
+    "exposure_level": "minimal"
+  },
+  "medical:GP:STOP:PERSONALIZED_MEDICAL_ADVICE": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "offer_safe_next_step"
+    ],
+    "allowed_continuations": [
+      "neutral_timeline"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer",
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_REDIRECT_QUALIFIED",
+    "output_mode": "terminal_stop",
+    "escalation_target": "a licensed clinician or healthcare provider",
+    "exposure_level": "minimal"
+  },
+  "legal:GP:STOP:PERSONALIZED_LEGAL_ADVICE": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "offer_safe_next_step"
+    ],
+    "allowed_continuations": [
+      "neutral_timeline"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer",
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_REDIRECT_QUALIFIED",
+    "output_mode": "terminal_stop",
+    "escalation_target": "a licensed lawyer or legal aid service",
+    "exposure_level": "minimal"
+  },
+  "finance:GP:STOP:PERSONALIZED_FINANCIAL_ADVICE": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "offer_safe_next_step"
+    ],
+    "allowed_continuations": [
+      "neutral_timeline"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer",
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_REDIRECT_QUALIFIED",
+    "output_mode": "terminal_stop",
+    "escalation_target": "a licensed financial adviser",
+    "exposure_level": "minimal"
+  },
+  "education:GP:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_general_information",
+      "offer_handoff_summary",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": ["generate_summary"],
+    "forbidden_speech_acts": ["provide_substantive_answer", "infer_answer", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": ["not_education_advice"],
+    "escalation_target": "a qualified educator or academic adviser",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_HANDOFF_SUMMARY",
+    "output_mode": "constrained_response",
+    "exposure_level": "moderate"
+  },
+  "education:GP:ASK": {
+    "allowed_speech_acts": ["request_missing_fact"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "escalation_target": "a qualified educator or academic adviser",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "education:GP:REFUSE": {
+    "allowed_speech_acts": ["explain_boundary", "state_insufficiency"],
+    "allowed_procedural_actions": ["escalate_to_human"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "escalation_target": "a qualified educator or academic adviser",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_ESCALATE_PRO",
+    "output_mode": "refusal_with_explanation",
+    "exposure_level": "minimal"
+  },
+  "education:GP:STOP": {
+    "allowed_speech_acts": ["notice_termination"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_TERMINAL",
+    "output_mode": "terminal_stop",
+    "exposure_level": "minimal"
+  },
+  "education:DA:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_substantive_answer",
+      "offer_handoff_summary",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": ["generate_summary"],
+    "forbidden_speech_acts": ["infer_answer", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": ["not_education_advice"],
+    "escalation_target": "a supervising educator",
+    "commitment_closed": false,
+    "interaction_open": true,
+    "pathway_id": "P_ADMIT_STANDARD",
+    "output_mode": "full_response",
+    "exposure_level": "moderate"
+  },
+  "education:DA:ASK": {
+    "allowed_speech_acts": ["request_missing_fact", "request_disambiguation"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "escalation_target": "a supervising educator",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "education:DA:REFUSE": {
+    "allowed_speech_acts": ["explain_boundary", "state_insufficiency", "offer_handoff_summary"],
+    "allowed_procedural_actions": ["escalate_to_human", "generate_summary"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope", "attach_pef_snapshot"],
+    "required_disclosures": [],
+    "escalation_target": "a supervising educator",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_ESCALATE_PRO",
+    "output_mode": "pro_refusal",
+    "exposure_level": "moderate"
+  },
+  "education:DA:STOP": {
+    "allowed_speech_acts": ["notice_termination", "notice_escalation"],
+    "allowed_procedural_actions": ["escalate_to_human"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope", "attach_pef_snapshot"],
+    "required_disclosures": [],
+    "escalation_target": "a supervising educator",
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_TERMINAL",
+    "output_mode": "terminal_stop",
+    "exposure_level": "moderate"
+  },
+  "education:HS:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_substantive_answer",
+      "offer_handoff_summary",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": ["generate_summary"],
+    "forbidden_speech_acts": ["infer_answer", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": ["not_education_advice"],
+    "escalation_target": "the supervising educator",
+    "commitment_closed": false,
+    "interaction_open": true,
+    "pathway_id": "P_ADMIT_STANDARD",
+    "output_mode": "full_response",
+    "exposure_level": "moderate"
+  },
+  "education:HS:ASK": {
+    "allowed_speech_acts": ["request_missing_fact", "request_disambiguation"],
+    "allowed_procedural_actions": ["escalate_to_human"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "escalation_target": "the supervising educator",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "education:HS:REFUSE": {
+    "allowed_speech_acts": ["explain_boundary", "state_insufficiency", "offer_handoff_summary"],
+    "allowed_procedural_actions": ["escalate_to_human", "generate_summary", "notify_operator"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope", "attach_pef_snapshot"],
+    "required_disclosures": [],
+    "escalation_target": "the supervising educator",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_ESCALATE_PRO",
+    "output_mode": "pro_refusal",
+    "exposure_level": "moderate"
+  },
+  "education:HS:STOP": {
+    "allowed_speech_acts": ["notice_termination", "notice_escalation"],
+    "allowed_procedural_actions": ["escalate_to_human", "notify_operator"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope", "attach_pef_snapshot"],
+    "required_disclosures": [],
+    "escalation_target": "the supervising educator",
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_FORENSIC",
+    "output_mode": "forensic_stop",
+    "exposure_level": "full"
+  },
+  "education:GP:STOP:ACADEMIC_INTEGRITY_VIOLATION": {
+    "allowed_speech_acts": ["notice_termination", "explain_boundary"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer", "offer_safe_next_step", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_REFUSE_CLEAN",
+    "output_mode": "terminal_stop",
+    "escalation_target": null,
+    "exposure_level": "minimal"
+  },
+  "education:GP:STOP:STUDENT_RECORD_EXPOSURE": {
+    "allowed_speech_acts": ["notice_termination", "explain_boundary"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer", "offer_safe_next_step", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_REFUSE_CLEAN",
+    "output_mode": "terminal_stop",
+    "escalation_target": null,
+    "exposure_level": "minimal"
+  },
+  "education:GP:STOP:PERSONALIZED_ACADEMIC_ADVICE": {
+    "allowed_speech_acts": ["notice_termination", "offer_safe_next_step"],
+    "allowed_continuations": ["neutral_timeline"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_REDIRECT_QUALIFIED",
+    "output_mode": "terminal_stop",
+    "escalation_target": "a qualified educational adviser or admissions officer",
+    "exposure_level": "minimal"
+  },
+  "workforce:GP:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_general_information",
+      "offer_handoff_summary",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": ["generate_summary"],
+    "forbidden_speech_acts": ["provide_substantive_answer", "infer_answer", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": ["not_employment_advice"],
+    "escalation_target": "a qualified employment lawyer or HR specialist",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_HANDOFF_SUMMARY",
+    "output_mode": "constrained_response",
+    "exposure_level": "moderate"
+  },
+  "workforce:GP:ASK": {
+    "allowed_speech_acts": ["request_missing_fact"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "escalation_target": "a qualified employment lawyer or HR specialist",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "workforce:GP:REFUSE": {
+    "allowed_speech_acts": ["explain_boundary", "state_insufficiency"],
+    "allowed_procedural_actions": ["escalate_to_human"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "escalation_target": "a qualified employment lawyer or HR specialist",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_ESCALATE_PRO",
+    "output_mode": "refusal_with_explanation",
+    "exposure_level": "minimal"
+  },
+  "workforce:GP:STOP": {
+    "allowed_speech_acts": ["notice_termination"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_TERMINAL",
+    "output_mode": "terminal_stop",
+    "exposure_level": "minimal"
+  },
+  "workforce:DA:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_substantive_answer",
+      "offer_handoff_summary",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": ["generate_summary"],
+    "forbidden_speech_acts": ["infer_answer", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": ["not_employment_advice"],
+    "escalation_target": "a supervising HR specialist",
+    "commitment_closed": false,
+    "interaction_open": true,
+    "pathway_id": "P_ADMIT_STANDARD",
+    "output_mode": "full_response",
+    "exposure_level": "moderate"
+  },
+  "workforce:DA:ASK": {
+    "allowed_speech_acts": ["request_missing_fact", "request_disambiguation"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "escalation_target": "a supervising HR specialist",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "workforce:DA:REFUSE": {
+    "allowed_speech_acts": ["explain_boundary", "state_insufficiency", "offer_handoff_summary"],
+    "allowed_procedural_actions": ["escalate_to_human", "generate_summary"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope", "attach_pef_snapshot"],
+    "required_disclosures": [],
+    "escalation_target": "a supervising HR specialist",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_ESCALATE_PRO",
+    "output_mode": "pro_refusal",
+    "exposure_level": "moderate"
+  },
+  "workforce:DA:STOP": {
+    "allowed_speech_acts": ["notice_termination", "notice_escalation"],
+    "allowed_procedural_actions": ["escalate_to_human"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope", "attach_pef_snapshot"],
+    "required_disclosures": [],
+    "escalation_target": "a supervising HR specialist",
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_TERMINAL",
+    "output_mode": "terminal_stop",
+    "exposure_level": "moderate"
+  },
+  "workforce:HS:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_substantive_answer",
+      "offer_handoff_summary",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": ["generate_summary"],
+    "forbidden_speech_acts": ["infer_answer", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": ["not_employment_advice"],
+    "escalation_target": "the supervising HR specialist",
+    "commitment_closed": false,
+    "interaction_open": true,
+    "pathway_id": "P_ADMIT_STANDARD",
+    "output_mode": "full_response",
+    "exposure_level": "moderate"
+  },
+  "workforce:HS:ASK": {
+    "allowed_speech_acts": ["request_missing_fact", "request_disambiguation"],
+    "allowed_procedural_actions": ["escalate_to_human"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "escalation_target": "the supervising HR specialist",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "workforce:HS:REFUSE": {
+    "allowed_speech_acts": ["explain_boundary", "state_insufficiency", "offer_handoff_summary"],
+    "allowed_procedural_actions": ["escalate_to_human", "generate_summary", "notify_operator"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope", "attach_pef_snapshot"],
+    "required_disclosures": [],
+    "escalation_target": "the supervising HR specialist",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_ESCALATE_PRO",
+    "output_mode": "pro_refusal",
+    "exposure_level": "moderate"
+  },
+  "workforce:HS:STOP": {
+    "allowed_speech_acts": ["notice_termination", "notice_escalation"],
+    "allowed_procedural_actions": ["escalate_to_human", "notify_operator"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope", "attach_pef_snapshot"],
+    "required_disclosures": [],
+    "escalation_target": "the supervising HR specialist",
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_FORENSIC",
+    "output_mode": "forensic_stop",
+    "exposure_level": "full"
+  },
+  "workforce:GP:STOP:EMPLOYMENT_DISCRIMINATION_FACILITATION": {
+    "allowed_speech_acts": ["notice_termination", "explain_boundary"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer", "offer_safe_next_step", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_REFUSE_CLEAN",
+    "output_mode": "terminal_stop",
+    "escalation_target": null,
+    "exposure_level": "minimal"
+  },
+  "workforce:GP:STOP:EMPLOYEE_RECORD_EXPOSURE": {
+    "allowed_speech_acts": ["notice_termination", "explain_boundary"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer", "offer_safe_next_step", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_REFUSE_CLEAN",
+    "output_mode": "terminal_stop",
+    "escalation_target": null,
+    "exposure_level": "minimal"
+  },
+  "workforce:GP:STOP:PERSONALIZED_EMPLOYMENT_ADVICE": {
+    "allowed_speech_acts": ["notice_termination", "offer_safe_next_step"],
+    "allowed_continuations": ["neutral_timeline"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_REDIRECT_QUALIFIED",
+    "output_mode": "terminal_stop",
+    "escalation_target": "a qualified employment lawyer or citizens advice service",
+    "exposure_level": "minimal"
+  },
+  "enterprise:GP:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_general_information",
+      "offer_handoff_summary",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": ["generate_summary"],
+    "forbidden_speech_acts": ["provide_substantive_answer", "infer_answer", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": ["not_business_advice"],
+    "escalation_target": "a qualified legal or compliance professional",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_HANDOFF_SUMMARY",
+    "output_mode": "constrained_response",
+    "exposure_level": "moderate"
+  },
+  "enterprise:GP:ASK": {
+    "allowed_speech_acts": ["request_missing_fact"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "escalation_target": "a qualified legal or compliance professional",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "enterprise:GP:REFUSE": {
+    "allowed_speech_acts": ["explain_boundary", "state_insufficiency"],
+    "allowed_procedural_actions": ["escalate_to_human"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "escalation_target": "a qualified legal or compliance professional",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_EXPLAIN_REDIRECT",
+    "output_mode": "refusal_with_explanation",
+    "exposure_level": "minimal"
+  },
+  "enterprise:GP:STOP": {
+    "allowed_speech_acts": ["notice_termination"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope", "attach_pef_snapshot"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_FORENSIC",
+    "output_mode": "forensic_stop",
+    "exposure_level": "full"
+  },
+  "enterprise:DA:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_substantive_answer",
+      "offer_handoff_summary",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": ["generate_summary"],
+    "forbidden_speech_acts": ["infer_answer", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": ["not_business_advice"],
+    "escalation_target": "a supervising compliance officer",
+    "commitment_closed": false,
+    "interaction_open": true,
+    "pathway_id": "P_ADMIT_STANDARD",
+    "output_mode": "full_response",
+    "exposure_level": "moderate"
+  },
+  "enterprise:DA:ASK": {
+    "allowed_speech_acts": ["request_missing_fact", "request_disambiguation"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "escalation_target": "a supervising compliance officer",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "enterprise:DA:REFUSE": {
+    "allowed_speech_acts": ["explain_boundary", "state_insufficiency", "offer_handoff_summary"],
+    "allowed_procedural_actions": ["escalate_to_human", "generate_summary"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope", "attach_pef_snapshot"],
+    "required_disclosures": [],
+    "escalation_target": "a supervising compliance officer",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_ESCALATE_PRO",
+    "output_mode": "pro_refusal",
+    "exposure_level": "moderate"
+  },
+  "enterprise:DA:STOP": {
+    "allowed_speech_acts": ["notice_termination", "notice_escalation"],
+    "allowed_procedural_actions": ["escalate_to_human"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope", "attach_pef_snapshot"],
+    "required_disclosures": [],
+    "escalation_target": "a supervising compliance officer",
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_FORENSIC",
+    "output_mode": "forensic_stop",
+    "exposure_level": "full"
+  },
+  "enterprise:HS:ADMIT": {
+    "allowed_speech_acts": [
+      "provide_substantive_answer",
+      "offer_handoff_summary",
+      "offer_safe_next_step"
+    ],
+    "allowed_procedural_actions": ["generate_summary"],
+    "forbidden_speech_acts": ["infer_answer", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": ["not_business_advice"],
+    "escalation_target": "the supervising compliance officer",
+    "commitment_closed": false,
+    "interaction_open": true,
+    "pathway_id": "P_ADMIT_STANDARD",
+    "output_mode": "full_response",
+    "exposure_level": "moderate"
+  },
+  "enterprise:HS:ASK": {
+    "allowed_speech_acts": ["request_missing_fact", "request_disambiguation"],
+    "allowed_procedural_actions": ["escalate_to_human"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "escalation_target": "the supervising compliance officer",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_ASK_MISSING_FACT",
+    "output_mode": "clarification_request",
+    "exposure_level": "minimal"
+  },
+  "enterprise:HS:REFUSE": {
+    "allowed_speech_acts": ["explain_boundary", "state_insufficiency", "offer_handoff_summary"],
+    "allowed_procedural_actions": ["escalate_to_human", "generate_summary", "notify_operator"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope", "attach_pef_snapshot"],
+    "required_disclosures": [],
+    "escalation_target": "the supervising compliance officer",
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_REFUSE_ESCALATE_PRO",
+    "output_mode": "pro_refusal",
+    "exposure_level": "moderate"
+  },
+  "enterprise:HS:STOP": {
+    "allowed_speech_acts": ["notice_termination", "notice_escalation"],
+    "allowed_procedural_actions": ["escalate_to_human", "notify_operator"],
+    "forbidden_speech_acts": ["infer_answer"],
+    "forensic_obligations": ["emit_forensic_envelope", "attach_pef_snapshot"],
+    "required_disclosures": [],
+    "escalation_target": "the supervising compliance officer",
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_FORENSIC",
+    "output_mode": "forensic_stop",
+    "exposure_level": "full"
+  },
+  "enterprise:GP:STOP:TRADE_SECRET_DISCLOSURE": {
+    "allowed_speech_acts": ["notice_termination", "explain_boundary"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer", "offer_safe_next_step", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope", "attach_pef_snapshot"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_FORENSIC",
+    "output_mode": "forensic_stop",
+    "escalation_target": null,
+    "exposure_level": "full"
+  },
+  "enterprise:GP:STOP:INSIDER_INFORMATION_ASSISTANCE": {
+    "allowed_speech_acts": ["notice_termination", "explain_boundary"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer", "offer_safe_next_step", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope", "attach_pef_snapshot"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_FORENSIC",
+    "output_mode": "forensic_stop",
+    "escalation_target": null,
+    "exposure_level": "full"
+  },
+  "enterprise:GP:STOP:PROCUREMENT_FRAUD_FACILITATION": {
+    "allowed_speech_acts": ["notice_termination", "explain_boundary"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer", "offer_safe_next_step", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope", "attach_pef_snapshot"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": false,
+    "pathway_id": "P_STOP_FORENSIC",
+    "output_mode": "forensic_stop",
+    "escalation_target": null,
+    "exposure_level": "full"
+  },
+  "enterprise:GP:STOP:PERSONALIZED_BUSINESS_STRATEGY_ADVICE": {
+    "allowed_speech_acts": ["notice_termination", "offer_safe_next_step"],
+    "allowed_continuations": ["neutral_timeline"],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": ["infer_answer", "soften_into_advice"],
+    "forensic_obligations": ["emit_forensic_envelope"],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_REDIRECT_QUALIFIED",
+    "output_mode": "terminal_stop",
+    "escalation_target": "a qualified business or strategy consultant",
+    "exposure_level": "minimal"
+  },
+  "legal:GP:STOP:ILLEGAL_INSTRUCTION": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "explain_boundary"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer",
+      "offer_safe_next_step",
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_REFUSE_CLEAN",
+    "output_mode": "terminal_stop",
+    "escalation_target": null,
+    "exposure_level": "minimal"
+  },
+  "legal:GP:STOP:TARGETED_DEFAMATION": {
+    "allowed_speech_acts": [
+      "notice_termination",
+      "explain_boundary"
+    ],
+    "allowed_procedural_actions": [],
+    "forbidden_speech_acts": [
+      "infer_answer",
+      "offer_safe_next_step",
+      "soften_into_advice"
+    ],
+    "forensic_obligations": [
+      "emit_forensic_envelope"
+    ],
+    "required_disclosures": [],
+    "commitment_closed": true,
+    "interaction_open": true,
+    "pathway_id": "P_STOP_REFUSE_CLEAN",
+    "output_mode": "terminal_stop",
+    "escalation_target": null,
+    "exposure_level": "minimal"
+  }
+}

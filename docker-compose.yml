@@ -1,0 +1,41 @@
+# aurora-lens — local development
+# Usage: copy .env.example to .env, set API keys, then: docker compose up
+# For Redis session backend: docker compose --profile redis up
+
+services:
+  aurora-lens:
+    build: .
+    ports:
+      - "8081:8081"
+    volumes:
+      # Mount config; copy aurora-lens.yaml.example to aurora-lens.yaml first
+      - ./aurora-lens.yaml:/app/aurora-lens.yaml:ro
+      # Uncomment for audit log persistence:
+      # - audit-data:/app/audit
+    environment:
+      - AURORA_LENS_CONFIG=/app/aurora-lens.yaml
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8081/healthz')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    profiles:
+      - redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  redis-data:
