@@ -10,7 +10,9 @@ include PROVENANCE.md
 include SHA256SUMS.txt
 include INSTALL.txt
 include pyproject.toml
-include COMMERCIAL-LICENCE.md
+include PATENT_NOTICE.md
+include RELEASE_MANIFEST.md
+include CHANGELOG.md
 include aurora-lens.yaml.example
 include aurora-lens.production.example.yaml
 include run_aurora_lens.py

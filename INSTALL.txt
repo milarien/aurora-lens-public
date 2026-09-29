@@ -44,4 +44,4 @@ Operator web page (with proxy running):
   See docs/forensics-dashboard.md
 
 Licence:
-  Proprietary — see LICENSE, NOTICE, LICENSING.md, COMMERCIAL-LICENCE.md
+  Proprietary — see LICENSE, NOTICE, LICENSING.md, PATENT_NOTICE.md

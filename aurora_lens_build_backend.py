@@ -14,7 +14,7 @@ from setuptools import build_meta as _setuptools_build_meta
 from release_guard import assert_clean_release_tree
 
 _ROOT = Path(__file__).resolve().parent
-_WHEEL_LICENSE_FILES = ("LICENSE", "NOTICE", "LICENSING.md", "COMMERCIAL-LICENCE.md")
+_WHEEL_LICENSE_FILES = ("LICENSE", "NOTICE", "LICENSING.md")
 
 
 def _read_project_version() -> str:

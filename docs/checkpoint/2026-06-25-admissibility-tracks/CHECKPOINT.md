@@ -100,8 +100,6 @@ Expected: `CHECKPOINT PASSED — Track A + B + C admissibility arc sealed (197 +
 | [`docs/CAPABILITY_STATUS.md`](../../CAPABILITY_STATUS.md) | Implemented / deferred checklist |
 | [`docs/SOVEREIGN_PROVIDER_REGISTRY_OVERVIEW.md`](../../SOVEREIGN_PROVIDER_REGISTRY_OVERVIEW.md) | Architecture (plain English) |
 | [`docs/DEMO_SOVEREIGN_FAILOVER.md`](../../DEMO_SOVEREIGN_FAILOVER.md) | Runnable proof + audit fields |
-| [`docs/BUYER_NOTE.md`](../../BUYER_NOTE.md) | External translation |
-
 ---
 
 ## Explicitly deferred (next-track boundary)

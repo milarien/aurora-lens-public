@@ -7,7 +7,7 @@ Copyright © 2025-2026 Margaret Stokes, except where a deposited work, third-par
 This is the public Aurora-Lens repository. It contains:
 
 - the proprietary Aurora-Lens runtime source and tests (see `LICENSE` and `LICENSING.md`);
-- filed patent specification PDFs and bibliographic patent-status records under `patents/`;
+- bibliographic patent-status records under `patents/` and [PATENT_NOTICE.md](PATENT_NOTICE.md) (public specification deposits are external);
 - exact public Zenodo deposits and repository-authored architecture, publication, and provenance documents.
 
 It does not contain filing receipts, internal claim-support analysis, private correspondence, or unpublished confidential evidence beyond what is explicitly published here.

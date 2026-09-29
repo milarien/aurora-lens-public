@@ -24,7 +24,9 @@ This repository is a canonical public index and preservation corpus, not an inde
 - [Canonical architecture map](architecture/Aurora_Lens_Canonical_Architecture_Map.md): commitment surfaces, authority, unresolved state, outcomes, persistence, and audit.
 - [Runtime map](architecture/AURORA_LENS_RUNTIME_MAP.md): the public component separation and runtime vocabulary.
 - [Publication catalogue](publications/zenodo/PUBLICATION-CATALOGUE.md): twenty distinct works in the current publication register.
-- [Patent portfolio](patents/PATENT-PORTFOLIO.md): nine filings, with provisionals, the withdrawn PCT application, and pending complete or nonprovisional applications distinguished.
+- [Patent notice](PATENT_NOTICE.md): public specification deposits (Zenodo, TDCommons, IP Australia OPI reference).
+- [Patent portfolio](patents/PATENT-PORTFOLIO.md): bibliographic filing table (no specifications in this tree).
+- [Release manifest](RELEASE_MANIFEST.md) and [changelog](CHANGELOG.md): what this public repository includes and excludes.
 - [Public provenance timeline](provenance/PROVENANCE-TIMELINE.md): event dates separated from later public deposits.
 - [Private-file hash manifest](provenance/EVIDENCE-MANIFEST.txt): fingerprints only; the underlying private files are not present.
 
@@ -35,7 +37,7 @@ The public canonical statement is deposited in [Zenodo record 21930519](https://
 ```text
 architecture/             Public invariants and architecture maps
 aurora_lens/              Proprietary runtime source (see LICENSE)
-patents/                  Bibliographic record and filed specification PDFs
+patents/                  Bibliographic patent-status record (specifications via PATENT_NOTICE.md)
 provenance/               Sourced chronology and private-file fingerprints
 publications/zenodo/      Exact current Zenodo deposits, metadata, and manifests
 tests/                    Automated tests
@@ -48,7 +50,7 @@ tools/                    Demo and chat helpers
 - Website: [aurora-lens.ai](https://aurora-lens.ai/)
 - Publications: [Zenodo catalogue](publications/zenodo/PUBLICATION-CATALOGUE.md)
 - ORCID: [0009-0004-6422-4174](https://orcid.org/0009-0004-6422-4174)
-- Commercial licensing or acquisition enquiries: margaret.stokes@aurora-lens.ai
+- Licensing enquiries: margaret.stokes@aurora-lens.ai
 
 Licensing varies by document and deposit. See [LICENSES.md](LICENSES.md), [LEGAL-NOTICE.md](LEGAL-NOTICE.md), and the metadata for each Zenodo record.
 
@@ -248,7 +250,7 @@ If you prefer a full Windows walkthrough (venv, PowerShell, browser): **`docs/se
 Aurora-Lens is proprietary software. All rights reserved.
 
 - **Terms:** see **`LICENSE`**, **`NOTICE`**, and **`LICENSING.md`**
-- **Commercial / evaluation rights:** only under a separate written agreement — see **`COMMERCIAL-LICENCE.md`**
+- **Commercial / evaluation rights:** only under a separate written agreement — contact **margaret.stokes@aurora-lens.ai**
 
 ```bash
 aurora-lens license
@@ -260,6 +262,9 @@ aurora-lens license
 
 | File | Purpose |
 |------|---------|
+| **`PATENT_NOTICE.md`** | Public patent deposits and IP Australia OPI reference |
+| **`RELEASE_MANIFEST.md`** | Included / excluded public material |
+| **`CHANGELOG.md`** | Repository release history |
 | **`INSTALL.txt`** | Short install reminder |
 | **`docs/config_reference.md`** | Configuration fields |
 | **`docs/setup-windows-proxy.md`** | Windows install and run |
