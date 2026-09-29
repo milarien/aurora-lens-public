@@ -1,5 +1,7 @@
 # How to use the document library and ask questions
 
+**Licensed use only.** These commands are for parties holding a written licence to run Aurora-Lens. They document how the runtime is operated; they do not grant permission to use the software. See [LICENSE](../LICENSE) and [README.md](../README.md).
+
 Use the **`aurora-lens corpus`** commands below. You do **not** need to know programming. Copy the commands, paste them in a terminal, and press Enter.
 
 ---
