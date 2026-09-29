@@ -2,6 +2,14 @@
 
 This repository contains material under several licences. There is no single licence covering every file.
 
+## Aurora-Lens runtime implementation
+
+The Aurora-Lens implementation is published for inspection under the [Aurora-Lens Proprietary Licence](LICENSE). **No licence is granted** to use, copy, modify, or distribute it except under a separate written agreement signed by Margaret Stokes.
+
+- `aurora_lens/` — runtime package (see [LICENSE](LICENSE))
+- `tests/`, `tools/`, `scripts/`, and `examples/` — accompanying implementation and verification material under the same [LICENSE](LICENSE)
+- Repository build and install metadata for the Software (for example `pyproject.toml`, `setup.py`, `MANIFEST.in`) — same [LICENSE](LICENSE)
+
 ## Repository-authored documents
 
 The following repository-level documents are copyright © 2025-2026 Margaret Stokes. All rights are reserved unless a later repository release expressly attaches a licence:

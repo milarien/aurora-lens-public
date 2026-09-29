@@ -10,7 +10,7 @@ Its central invariant is:
 
 Where admissibility is not established, Aurora-Lens preserves governed non-commitment rather than forcing resolution.
 
-This repository is the public Aurora-Lens record: architecture and publications, patent status, provenance, and the proprietary runtime source you can install and run from this tree.
+This repository is the public Aurora-Lens record: architecture and publications, patent status, provenance, and proprietary runtime source, published for inspection. Running it requires a separate written licence.
 
 This repository is a canonical public index and preservation corpus, not an independent timestamping authority. Historical priority and publication dates rest on the cited patent filings, Zenodo deposits and other external records.
 
@@ -50,13 +50,15 @@ tools/                    Demo and chat helpers
 - Website: [aurora-lens.ai](https://aurora-lens.ai/)
 - Publications: [Zenodo catalogue](publications/zenodo/PUBLICATION-CATALOGUE.md)
 - ORCID: [0009-0004-6422-4174](https://orcid.org/0009-0004-6422-4174)
-- Licensing enquiries: margaret.stokes@aurora-lens.ai
+- Licensing enquiries: [margaret.stokes.ai@gmail.com](mailto:margaret.stokes.ai@gmail.com)
 
 Licensing varies by document and deposit. See [LICENSES.md](LICENSES.md), [LEGAL-NOTICE.md](LEGAL-NOTICE.md), and the metadata for each Zenodo record.
 
 ---
 
-## Install and run (from this repository)
+## Running the runtime (licensed use only)
+
+These instructions are for parties holding a written licence to run Aurora-Lens. The commands are included for transparency; they do not grant permission to use the software.
 
 Aurora-Lens sits between your application and a language model. It checks each turn before output becomes consequence-bearing, records the decision in an audit log, and can expose an operator web page for health, audit review, and session inspection.
 
@@ -250,7 +252,7 @@ If you prefer a full Windows walkthrough (venv, PowerShell, browser): **`docs/se
 Aurora-Lens is proprietary software. All rights reserved.
 
 - **Terms:** see **`LICENSE`**, **`NOTICE`**, and **`LICENSING.md`**
-- **Commercial / evaluation rights:** only under a separate written agreement — contact **margaret.stokes@aurora-lens.ai**
+- **Commercial / evaluation rights:** only under a separate written agreement — contact **margaret.stokes.ai@gmail.com**
 
 ```bash
 aurora-lens license

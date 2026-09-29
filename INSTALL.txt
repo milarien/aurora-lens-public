@@ -1,5 +1,8 @@
 Aurora-Lens — install (short)
 
+For parties holding a written licence only. Runtime source is published for
+inspection; see LICENSE.
+
 Prerequisites: Python 3.12 only (>=3.12,<3.13)
 
 Full setup guide (install, configure, proxy, operator web page):

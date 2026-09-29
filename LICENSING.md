@@ -7,4 +7,4 @@ signed by Margaret Stokes.
 
 Copyright © 2025-2026 Margaret Stokes. All rights reserved.
 
-Commercial and evaluation enquiries: [contact@aurora-lens.ai](mailto:contact@aurora-lens.ai)
+Commercial and evaluation enquiries: [margaret.stokes.ai@gmail.com](mailto:margaret.stokes.ai@gmail.com)

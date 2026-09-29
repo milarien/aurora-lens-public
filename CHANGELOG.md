@@ -7,7 +7,7 @@ All notable changes to this public repository are documented here.
 ### Added
 
 - Public architecture, Zenodo publication corpus, and provenance records.
-- Installable Aurora-Lens runtime source, operator docs, demo entrypoint (`tools/run_demo.py`), and automated tests.
+- Aurora-Lens runtime source published for inspection (licensed use only), operator docs, demo entrypoint (`tools/run_demo.py`), and automated tests.
 - [PATENT_NOTICE.md](PATENT_NOTICE.md), [RELEASE_MANIFEST.md](RELEASE_MANIFEST.md), and checkpoint / closed-decision documentation under `docs/`.
 - Closed-decisions and product checkpoint docs referenced by eval manifests.
 

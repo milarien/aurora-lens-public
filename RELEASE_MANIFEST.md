@@ -10,7 +10,7 @@ This file states what this public tree intentionally includes and excludes.
 | Category | Location |
 |----------|----------|
 | README | [README.md](README.md) |
-| Source licence | [LICENSE](LICENSE) (proprietary source-available terms; see [LICENSING.md](LICENSING.md)) |
+| Source licence | [LICENSE](LICENSE) (published source, no licence granted; see [LICENSING.md](LICENSING.md)) |
 | Patent notice | [PATENT_NOTICE.md](PATENT_NOTICE.md) |
 | Citation metadata | [CITATION.cff](CITATION.cff) |
 | Release notes | [CHANGELOG.md](CHANGELOG.md) |
@@ -19,7 +19,7 @@ This file states what this public tree intentionally includes and excludes.
 | Public-behavior tests | [tests/](tests/) |
 | Hash / provenance notes | [provenance/EVIDENCE-MANIFEST.txt](provenance/EVIDENCE-MANIFEST.txt), [provenance/PROVENANCE-TIMELINE.md](provenance/PROVENANCE-TIMELINE.md) |
 | Publication corpus | [publications/zenodo/](publications/zenodo/) |
-| Runtime source (installable) | [aurora_lens/](aurora_lens/) under [LICENSE](LICENSE) |
+| Runtime source (published for inspection) | [aurora_lens/](aurora_lens/) under [LICENSE](LICENSE) |
 | Operator documentation | [docs/](docs/) (public operator and config guides) |
 
 Public patent links are listed in [PATENT_NOTICE.md](PATENT_NOTICE.md).
