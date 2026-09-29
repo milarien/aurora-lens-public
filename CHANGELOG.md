@@ -13,7 +13,7 @@ All notable changes to this public repository are documented here.
 
 ### Changed
 
-- README combines architecture index with install and run instructions.
+- README combines architecture index with runtime setup instructions (licensed use only).
 - Patent specifications are referenced via public deposits (Zenodo, TDCommons, IP Australia OPI) rather than bundled filing PDFs in this tree.
 
 ### Removed from public tree

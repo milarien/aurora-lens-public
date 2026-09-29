@@ -4,6 +4,14 @@ Aurora-Lens provenance is linked to the archived record:
 
 - [Aurora-Lens record on Zenodo](https://doi.org/10.5281/zenodo.22110554)
 
-This local public-release folder was assembled from the current clean proprietary Aurora-Lens source tree and verified filed patent specifications. It does not contain Git history from earlier repositories.
+This public GitHub repository combines architecture, the Zenodo publication corpus, bibliographic patent status, private-file fingerprints, and Aurora-Lens runtime source **published for inspection** under [LICENSE](LICENSE). It is not a complete export of private development history.
 
-File integrity is recorded in `SHA256SUMS.txt`. Each line contains a SHA-256 digest followed by the repository-relative path of a file. The manifest does not list itself.
+**Patent specifications** are not bundled here; public deposits are listed in [PATENT_NOTICE.md](PATENT_NOTICE.md).
+
+**File integrity**
+
+- Zenodo deposits under `publications/zenodo/`: see `MANIFEST.tsv`, per-record `MD5SUMS`, and `publications/zenodo/SHA256SUMS` for the assembled corpus.
+- Private retained copies (fingerprints only): [provenance/EVIDENCE-MANIFEST.txt](provenance/EVIDENCE-MANIFEST.txt).
+- Chronology: [provenance/PROVENANCE-TIMELINE.md](provenance/PROVENANCE-TIMELINE.md).
+
+There is no repository-root `SHA256SUMS.txt`; an earlier root manifest that included since-removed paths is obsolete.

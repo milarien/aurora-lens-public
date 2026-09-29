@@ -36,7 +36,7 @@ The public canonical statement is deposited in [Zenodo record 21930519](https://
 
 ```text
 architecture/             Public invariants and architecture maps
-aurora_lens/              Proprietary runtime source (see LICENSE)
+aurora_lens/              Runtime source (published for inspection; see LICENSE)
 patents/                  Bibliographic patent-status record (specifications via PATENT_NOTICE.md)
 provenance/               Sourced chronology and private-file fingerprints
 publications/zenodo/      Exact current Zenodo deposits, metadata, and manifests
@@ -267,9 +267,9 @@ aurora-lens license
 | **`PATENT_NOTICE.md`** | Public patent deposits and IP Australia OPI reference |
 | **`RELEASE_MANIFEST.md`** | Included / excluded public material |
 | **`CHANGELOG.md`** | Repository release history |
-| **`INSTALL.txt`** | Short install reminder |
+| **`INSTALL.txt`** | Short setup reminder (licensed use only) |
 | **`docs/config_reference.md`** | Configuration fields |
-| **`docs/setup-windows-proxy.md`** | Windows install and run |
+| **`docs/setup-windows-proxy.md`** | Windows setup (licensed use only) |
 | **`docs/forensics-dashboard.md`** | Operator web page |
 | **`docs/api.md`** | HTTP API (health, chat, audit) |
 | **`docs/corpus-guide.md`** | Document ingest and ask |

@@ -7,7 +7,6 @@ include NOTICE
 include README.md
 include PATENTS.md
 include PROVENANCE.md
-include SHA256SUMS.txt
 include INSTALL.txt
 include pyproject.toml
 include PATENT_NOTICE.md
@@ -28,7 +27,7 @@ include START_TRIAL_MAC.sh
 recursive-include docs *.md *.html *.txt
 recursive-include tools *.py
 recursive-include examples *.yaml *.py *.md
-recursive-include patents *.pdf *.docx
+recursive-include patents *.md
 
 global-exclude *.pid
 global-exclude *.quarantine.*.json

@@ -34,9 +34,11 @@ Public patent links are listed in [PATENT_NOTICE.md](PATENT_NOTICE.md).
 - Runtime audit logs, session exports, and user data
 - Local `.venv-test/` and other developer-only trees (gitignored)
 
-Production deployment is operator-local. Configure credentials via environment variables and local YAML; do not commit secrets.
+Running or deploying the runtime requires a separate written licence. Configure credentials via environment variables and local YAML; do not commit secrets.
 
-## Verification
+## Verification (licensed parties and maintainers)
+
+The commands below describe how this tree is validated; they do not grant permission to run the software.
 
 - Full automated suite: `pytest tests` (from an isolated virtual environment with `pip install ".[proxy,dev]"`).
 - Offline demo: `python tools/run_demo.py`

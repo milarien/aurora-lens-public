@@ -40,7 +40,7 @@ dependencies = [
 
 [project.urls]
 "Homepage" = "https://aurora-lens.ai"
-"Source" = "https://github.com/milarien/aurora_lens"
+"Source" = "https://github.com/milarien/aurora-lens-public"
 "Documentation" = "https://aurora-lens.ai"
 "Commercial-License" = "https://aurora-lens.ai/acquire"
 "Citation" = "https://doi.org/10.5281/zenodo.18653120"

@@ -1,5 +1,7 @@
 # Run Aurora-Lens (governed proxy) on Windows
 
+**Licensed use only.** These steps are for parties holding a written licence to run Aurora-Lens. They document how the runtime is operated; they do not grant permission to use the software. See [LICENSE](../LICENSE) and [README.md](../README.md).
+
 Plain step-by-step: put the project on the PC, install Python, configure Aurora-Lens, set your API key, start the proxy, open the browser.
 
 ---

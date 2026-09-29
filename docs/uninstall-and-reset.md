@@ -1,5 +1,7 @@
 # Uninstall and Reset (Windows-first)
 
+For parties holding a written licence to run Aurora-Lens. See [LICENSE](../LICENSE).
+
 Use this guide to stop Aurora-Lens, export diagnostics, and remove local runtime data.
 
 ## Stop and verify

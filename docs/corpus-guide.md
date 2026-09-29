@@ -74,7 +74,7 @@ aurora-lens corpus review --record-id my-policy
 
 ## More detail
 
-- **`README.md`** — install and run the proxy  
+- **`README.md`** — runtime setup (licensed use only) and proxy operation  
 - **`docs/api.md`** — HTTP routes for audit and chat  
 - **`docs/acceptance-phase17.md`** — realistic corpus acceptance pack
 
