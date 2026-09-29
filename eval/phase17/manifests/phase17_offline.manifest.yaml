@@ -1,0 +1,231 @@
+schema_version: 1
+record_id: phase17-policy-v2
+policy_profile: enterprise_strict
+mode: offline
+
+questions:
+  - id: P17-SUP1
+    question: "What contract value now requires manual compliance review?"
+    expect: in_context
+    record_ids:
+      - phase17-policy-v1
+      - phase17-policy-v2
+    expected_governance_any:
+      - N/A
+    expected_record_ids_any:
+      - phase17-policy-v2
+    semantic_assertions:
+      must_include_any:
+        - "75000"
+        - "manual compliance review"
+      must_exclude:
+        - "50000 USD or more"
+      min_any_hits: 2
+    citation_expectation:
+      required: true
+      record_ids_any:
+        - phase17-policy-v2
+    conflict_expectation:
+      governing_record_id: phase17-policy-v2
+      superseded_record_ids:
+        - phase17-policy-v1
+      superseded_version_must_not_drive_answer: true
+    notes: "Superseded v1 must not drive conclusion."
+
+  - id: P17-SUP2
+    question: "Can an answer combine both 50000 and 75000 thresholds as a compromise?"
+    expect: in_context
+    record_ids:
+      - phase17-policy-v1
+      - phase17-policy-v2
+    expected_governance_any:
+      - N/A
+    expected_record_ids_any:
+      - phase17-policy-v2
+    semantic_assertions:
+      must_include_any:
+        - "75000"
+        - "v2 governs"
+      must_exclude:
+        - "50000 USD or more"
+      min_any_hits: 1
+    citation_expectation:
+      required: true
+      record_ids_any:
+        - phase17-policy-v2
+    conflict_expectation:
+      governing_record_id: phase17-policy-v2
+      superseded_record_ids:
+        - phase17-policy-v1
+      superseded_version_must_not_drive_answer: true
+    notes: "Compromise answer that merges v1 and v2 must fail."
+
+  - id: P17-REAL1
+    question: "What does NIST say the Privacy Framework is intended to help organizations do?"
+    expect: in_context
+    record_ids:
+      - phase17-real-nist-pf
+    expected_governance_any:
+      - N/A
+    semantic_assertions:
+      must_include_any:
+        - "identify and manage privacy risk"
+        - "protecting individuals' privacy"
+      min_any_hits: 1
+    citation_expectation:
+      required: true
+      record_ids_any:
+        - phase17-real-nist-pf
+
+  - id: P17-REAL2
+    question: "According to the GPO Style Manual excerpt, what does Section 1105 require the Public Printer to determine?"
+    expect: in_context
+    record_ids:
+      - phase17-real-gpo-style
+    expected_governance_any:
+      - N/A
+    semantic_assertions:
+      must_include_any:
+        - "form and style"
+        - "economy"
+        - "workmanship"
+      min_any_hits: 2
+    citation_expectation:
+      required: true
+      record_ids_any:
+        - phase17-real-gpo-style
+
+  - id: P17-REAL3
+    question: "In the FOIA excerpt, what does the term agency include?"
+    expect: in_context
+    record_ids:
+      - phase17-real-5usc552
+    expected_governance_any:
+      - N/A
+    semantic_assertions:
+      must_include_any:
+        - "executive department"
+        - "military department"
+        - "independent regulatory agency"
+      min_any_hits: 2
+    citation_expectation:
+      required: true
+      record_ids_any:
+        - phase17-real-5usc552
+
+  - id: P17-REAL4
+    question: "What are the three publication-format requirements listed in the FOIA excerpt?"
+    expect: in_context
+    record_ids:
+      - phase17-real-5usc552
+    expected_governance_any:
+      - N/A
+    semantic_assertions:
+      must_include_any:
+        - "without charge, license, or registration requirement"
+        - "aggregated, searchable format"
+        - "downloaded in bulk"
+      min_any_hits: 2
+    citation_expectation:
+      required: true
+      record_ids_any:
+        - phase17-real-5usc552
+
+  - id: P17-REG1
+    question: "What are the core obligations and one allowed exception in RG-17?"
+    expect: in_context
+    record_ids:
+      - phase17-reg-guidance
+    expected_governance_any:
+      - N/A
+    semantic_assertions:
+      must_include_any:
+        - "incident record within 15 minutes"
+        - "customer-facing notice"
+        - "post-incident review"
+        - "legal hold"
+        - "law enforcement"
+      min_any_hits: 3
+    citation_expectation:
+      required: true
+      record_ids_any:
+        - phase17-reg-guidance
+
+  - id: P17-PUB1
+    question: "When must the case be escalated to the duty manager?"
+    expect: in_context
+    record_ids:
+      - phase17-public-service-standard
+    expected_governance_any:
+      - N/A
+    semantic_assertions:
+      must_include_any:
+        - "safety risk"
+        - "statutory deadline is within 24 hours"
+        - "unresolved blocker persists beyond one business day"
+      min_any_hits: 2
+    citation_expectation:
+      required: true
+      record_ids_any:
+        - phase17-public-service-standard
+
+  - id: P17-TBL1
+    question: "How should Medium tier be handled during declared peak events?"
+    expect: in_context
+    record_ids:
+      - phase17-mixed-table-prose
+    expected_governance_any:
+      - N/A
+    semantic_assertions:
+      must_include_any:
+        - "Medium tier"
+        - "treated as High tier"
+        - "peak events"
+      min_any_hits: 2
+    citation_expectation:
+      required: true
+      record_ids_any:
+        - phase17-mixed-table-prose
+    notes: "Table-derived answer must include prose qualifier."
+
+  - id: P17-MAL1
+    question: "What numeric penalty amount is defined for missing due_date?"
+    expect: absent
+    record_ids:
+      - phase17-malformed-truncated
+    expected_governance_any:
+      - N/A
+    allow_conservative_abstain: true
+    semantic_assertions:
+      must_exclude:
+        - "penalty amount is"
+    notes: "Malformed truncated note contains no penalty amount."
+
+  - id: P17-MAL2
+    question: "Does the unsupported binary fixture contain a valid ingestible policy statement?"
+    expect: absent
+    record_ids:
+      - phase17-malformed-unsupported-binary
+    expected_governance_any:
+      - N/A
+    allow_conservative_abstain: true
+    semantic_assertions:
+      must_exclude:
+        - "valid ingestible policy statement"
+    notes: "Unsupported type must fail cleanly and not produce retrievable chunks."
+
+  - id: P17-ENC1
+    question: "What policy-controlled phrase can still be recovered from the noisy text?"
+    expect: in_context
+    record_ids:
+      - phase17-malformed-encoding
+    expected_governance_any:
+      - N/A
+    semantic_assertions:
+      must_include_any:
+        - "manual review threshold remains policy-controlled"
+      min_any_hits: 1
+    citation_expectation:
+      required: true
+      record_ids_any:
+        - phase17-malformed-encoding

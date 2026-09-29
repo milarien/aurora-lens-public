@@ -1,0 +1,17 @@
+666c1c51782e3cc8e3c7b38c33c3d903  files/ex6-redact-8b82872.diff
+fbc71ef8f333e4e26e08438ce85cecd8  files/ex2-unresolved-4dd26ac.diff
+dd0676d0f5846819fe0578ab3b4aab09  files/evidence-manifest.md
+7a48b002e0c5222b8ac28948291056c7  files/ex9-fingerprints-a02e118.diff
+8cc29f2c09b6944b2eeeabcc1d1e643b  files/ex5-commit-log.txt
+89754dd869b449c80fb07e798c21a168  files/ex1-baseline-a172287.txt
+ad2f60960c607d2def1fd41919dd81aa  files/maintained-unresolved-full-record.md
+0cd6defdcc46a20f7e5924f21bedf2ef  files/Grok 26 Aug 2026.txt
+4a7d4b7281a64decac562c0374ed6a93  files/Claude 26 Aug 2026.txt
+d4865fdb5c487b19cd03b7f6f2c503cf  files/ex4-minimize-136fdb5.diff
+7783f26e80fe7c0c9238aa6b11aee149  files/Prompt 26 Aug 2026.txt
+8fc63941be1863f61cfbf9d2afeb95f0  files/ex3-notice-00ecb4f.diff
+1cfc2d5ac787bf7bbe8de615bed0df78  files/ex8-generalize-5fc445e.diff
+f86db1ea6df186eb5101e804b0977d9e  files/ex7-hidevocab-d86958b.diff
+231143d230f2767d1bb9f92fc8e4c99b  files/Chatgpt temporary chat 26 Aug 2026.txt
+2e1c9f5777d9381be6384c051f20c62c  files/Gemini 26 Aug 2026.txt
+a96e6df2e96f0ff95ffeb352f25a77ca  files/Chatgpt contaminated 26 Aug 2026.txt

@@ -13,6 +13,8 @@ never call this module.
 from __future__ import annotations
 
 from collections import defaultdict
+import json
+import re
 from typing import TYPE_CHECKING
 
 from aurora_lens.corpus.evidence_consistency import detect_consistency_conflicts
@@ -49,6 +51,7 @@ RETRIEVAL_UNRESOLVED_KINDS: frozenset[str] = frozenset({
 
 # Single-slot relations where at most one literal object should be committed per subject.
 _IS_SLOT_RELATIONS = frozenset({"IS"})
+_JSON_OBJECT_BLEED_MARKERS = (".json", "file:", "\n", "[", "]", "{", "}")
 
 
 def _document_id_for_retrieval(metadata: RequestMetadata | None) -> str | None:
@@ -111,6 +114,69 @@ def _drop_causal_claims(claims: list[ExtractedClaim]) -> list[ExtractedClaim]:
     for c in claims:
         if canonicalize_relation(c.relation) == "BECAUSE":
             continue
+        out.append(c)
+    return out
+
+
+def _normalise_surface(s: str) -> str:
+    t = re.sub(r"\s+", " ", (s or "").strip().lower())
+    return t.strip(" \"'.,;:!?")
+
+
+def _claim_under_evaluation_literals(context_block: str) -> set[str]:
+    """Extract proposition strings from JSON ``claim_under_evaluation`` values."""
+    out: set[str] = set()
+    for m in re.finditer(
+        r'"claim_under_evaluation"\s*:\s*"((?:[^"\\]|\\.)*)"',
+        context_block,
+        flags=re.IGNORECASE | re.DOTALL,
+    ):
+        raw = m.group(1)
+        try:
+            value = json.loads(f"\"{raw}\"")
+        except Exception:
+            value = raw
+        norm = _normalise_surface(str(value))
+        if norm:
+            out.add(norm)
+    return out
+
+
+def _is_json_object_bleed_claim(claim: ExtractedClaim) -> bool:
+    obj = str(claim.obj or "")
+    if len(obj) < 140:
+        return False
+    low = obj.lower()
+    return any(marker in low for marker in _JSON_OBJECT_BLEED_MARKERS)
+
+
+def _drop_non_assertive_or_bleed_claims(
+    claims: list[ExtractedClaim],
+    *,
+    context_block: str,
+) -> list[ExtractedClaim]:
+    """Drop proposition-under-evaluation claims and JSON object-bleed artifacts."""
+    claim_eval = _claim_under_evaluation_literals(context_block)
+    out: list[ExtractedClaim] = []
+    for c in claims:
+        if _is_json_object_bleed_claim(c):
+            continue
+        ev_norm = _normalise_surface(c.evidence or "")
+        obj_norm = _normalise_surface(str(c.obj or ""))
+        if claim_eval:
+            matched_eval = False
+            for proposition in claim_eval:
+                if proposition and (
+                    ev_norm == proposition
+                    or obj_norm == proposition
+                    or proposition in ev_norm
+                    or proposition in obj_norm
+                    or (obj_norm and obj_norm in proposition)
+                ):
+                    matched_eval = True
+                    break
+            if matched_eval:
+                continue
         out.append(c)
     return out
 
@@ -200,6 +266,8 @@ def admit_retrieved_context_to_pef(
     *,
     context_block: str,
     request_metadata: RequestMetadata | None,
+    provenance_document_id: str | None = None,
+    provenance_document_locator: str | None = None,
     evidence_chunks: list[CorpusChunk] | None = None,
     evidence_record: CorpusRecord | None = None,
     evidence_records: list[CorpusRecord] | None = None,
@@ -282,10 +350,11 @@ def admit_retrieved_context_to_pef(
                 ],
             )
 
-    doc_id = _document_id_for_retrieval(request_metadata)
-    locator = _document_locator_from_context_block(context_block)
+    doc_id = provenance_document_id or _document_id_for_retrieval(request_metadata)
+    locator = provenance_document_locator or _document_locator_from_context_block(context_block)
 
     filtered = _drop_causal_claims(list(ext_ctx.claims))
+    filtered = _drop_non_assertive_or_bleed_claims(filtered, context_block=context_block)
     after_temporal, temporal_unresolved = _partition_temporal_arrival_incompatibility(filtered)
     admitted, literal_conflicts = _partition_is_literal_conflicts(after_temporal)
     consistency_conflicts: list[dict] = []

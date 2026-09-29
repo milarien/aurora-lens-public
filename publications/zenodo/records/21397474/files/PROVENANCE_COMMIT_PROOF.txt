@@ -1,0 +1,228 @@
+Aurora-Lens Provenance Commit Proof
+===================================
+
+Purpose
+-------
+This file records direct Git evidence that the three provenance commits are present
+in this repository and contained by the current `master` and `origin/master`.
+
+Repository
+----------
+Path: C:\Git\aurora-lens-clean
+Current HEAD: 1e31a63918292e8490ea62cc9d5c83b0c7c1b10e
+
+Verified Commits
+----------------
+1) 906f8e222b377769480ad3debec1903bf82a9b9f
+   Author: megstokes <milamba@gmail.com>
+   Date: Tue Jul 14 07:44:54 2026 +1000
+   Subject: Finalize release isolation and setup hardening.
+   Parents: b533a36cc4627f6f91b088da49402244b52d1a7d
+   Containing branches:
+     - master
+     - remotes/origin/master
+
+2) d9d233e521b8a70c27aef3c436a5e40136350635
+   Author: megstokes <milamba@gmail.com>
+   Date: Tue Jul 14 07:46:36 2026 +1000
+   Subject: Record aurora-demo provenance merge
+   Parents:
+     - 906f8e222b377769480ad3debec1903bf82a9b9f
+     - 4615f4f56e22f0be89fc941321fd78815a3377b0
+   Containing branches:
+     - master
+     - remotes/origin/master
+
+3) c78845b5c7bdfc510cfed800a3a417925d695672
+   Author: megstokes <milamba@gmail.com>
+   Date: Tue Jul 14 07:46:36 2026 +1000
+   Subject: Record Aurora-PEF provenance merge
+   Parents:
+     - d9d233e521b8a70c27aef3c436a5e40136350635
+     - 0603b452cd10f94e47e03edb962add0b21b50cd1
+   Containing branches:
+     - master
+     - remotes/origin/master
+
+Commands Used
+-------------
+- git show --no-patch --pretty=format:"%H%nAuthor: %an <%ae>%nDate: %ad%nSubject: %s%nParents: %P" <commit>
+- git branch -a --contains <commit>
+- git rev-parse HEAD
+
+November History Inclusion Proof
+================================
+
+Context
+-------
+The July provenance merge commit `d9d233e521b8a70c27aef3c436a5e40136350635`
+has parent `4615f4f56e22f0be89fc941321fd78815a3377b0`, which is in the
+November 2025 chain.
+
+November Root Chain (aurora-demo side)
+--------------------------------------
+1) a35a461248cb53f41af49b00c1ccdd80e49f1175
+   Author: milarien <milamba@gmail.com>
+   Date: Sun Nov 30 10:43:16 2025 +1100
+   Subject: Add files via upload
+   Parents: (none; root commit)
+
+2) 011f03b1180552f15894679f434488b4ef5c8256
+   Author: milarien <milamba@gmail.com>
+   Date: Sun Nov 30 10:47:34 2025 +1100
+   Subject: Create .gitignore
+   Parents:
+     - a35a461248cb53f41af49b00c1ccdd80e49f1175
+
+3) 4615f4f56e22f0be89fc941321fd78815a3377b0
+   Author: milarien <milamba@gmail.com>
+   Date: Sun Nov 30 10:49:08 2025 +1100
+   Subject: Create LEGAL_NOTICE.md
+   Parents:
+     - 011f03b1180552f15894679f434488b4ef5c8256
+
+Reachability Proof to Current HEAD
+----------------------------------
+- a35a461 is ancestor of HEAD: YES
+- 011f03b is ancestor of HEAD: YES
+- 4615f4f is ancestor of HEAD: YES
+
+Ancestry Path Sample (Nov -> July merge)
+----------------------------------------
+- d9d233e521b8a70c27aef3c436a5e40136350635 (2026-07-14) Record aurora-demo provenance merge
+- 4615f4f56e22f0be89fc941321fd78815a3377b0 (2025-11-30) Create LEGAL_NOTICE.md
+- 011f03b1180552f15894679f434488b4ef5c8256 (2025-11-30) Create .gitignore
+
+Additional Commands Used for November Proof
+-------------------------------------------
+- git merge-base --is-ancestor <commit> HEAD
+- git rev-list --ancestry-path <november-root>..<july-merge> --pretty=format:"%H %ad %s" --date=short
+
+Raw `git show --pretty=fuller` Output (November commits)
+--------------------------------------------------------
+
+Command:
+git show --no-patch --pretty=fuller a35a461248cb53f41af49b00c1ccdd80e49f1175
+
+Output:
+commit a35a461248cb53f41af49b00c1ccdd80e49f1175
+Author:     milarien <milamba@gmail.com>
+AuthorDate: Sun Nov 30 10:43:16 2025 +1100
+Commit:     GitHub <noreply@github.com>
+CommitDate: Sun Nov 30 10:43:16 2025 +1100
+
+    Add files via upload
+
+Command:
+git show --no-patch --pretty=fuller 011f03b1180552f15894679f434488b4ef5c8256
+
+Output:
+commit 011f03b1180552f15894679f434488b4ef5c8256
+Author:     milarien <milamba@gmail.com>
+AuthorDate: Sun Nov 30 10:47:34 2025 +1100
+Commit:     GitHub <noreply@github.com>
+CommitDate: Sun Nov 30 10:47:34 2025 +1100
+
+    Create .gitignore
+
+Command:
+git show --no-patch --pretty=fuller 4615f4f56e22f0be89fc941321fd78815a3377b0
+
+Output:
+commit 4615f4f56e22f0be89fc941321fd78815a3377b0
+Author:     milarien <milamba@gmail.com>
+AuthorDate: Sun Nov 30 10:49:08 2025 +1100
+Commit:     GitHub <noreply@github.com>
+CommitDate: Sun Nov 30 10:49:08 2025 +1100
+
+    Create LEGAL_NOTICE.md
+
+Independent GitHub Timestamp Evidence
+=====================================
+
+The original Aurora demo commits were created by GitHub through its
+web interface, rather than merely authored locally and imported later.
+
+Commit a35a461248cb53f41af49b00c1ccdd80e49f1175
+AuthorDate: Sun Nov 30 10:43:16 2025 +1100
+Committer: GitHub <noreply@github.com>
+CommitDate: Sun Nov 30 10:43:16 2025 +1100
+Subject: Add files via upload
+
+Commit 011f03b1180552f15894679f434488b4ef5c8256
+AuthorDate: Sun Nov 30 10:47:34 2025 +1100
+Committer: GitHub <noreply@github.com>
+CommitDate: Sun Nov 30 10:47:34 2025 +1100
+Subject: Create .gitignore
+
+Commit 4615f4f56e22f0be89fc941321fd78815a3377b0
+AuthorDate: Sun Nov 30 10:49:08 2025 +1100
+Committer: GitHub <noreply@github.com>
+CommitDate: Sun Nov 30 10:49:08 2025 +1100
+Subject: Create LEGAL_NOTICE.md
+Tag: v1.0.0
+
+Interpretation
+--------------
+Because GitHub is recorded as the committer and the author and commit
+timestamps match, these commit objects provide platform-generated
+evidence that the files and legal notice were present in the GitHub
+repository on 30 November 2025.
+
+
+Cryptographic Signature Verification
+====================================
+
+Date of verification: 15 July 2026 (AEST)
+Verifier key source: https://github.com/web-flow.gpg (retrieved 15 July 2026 over HTTPS)
+Signing key: RSA B5690EEEBB952194
+Primary key fingerprint: 9684 79A1 AFF9 27E3 7D1A 566B B569 0EEE BB95 2194
+Key owner: GitHub <noreply@github.com> (GitHub web-flow commit signing key)
+
+All three November 2025 root commits verify with "Good signature" from
+GitHub's web-flow signing key. The signatures are embedded in the commit
+objects themselves; the dates, content, and authorship of these commits
+cannot be altered without invalidating the signatures and the hashes of
+all descendant commits, including current HEAD.
+
+Note: gpg's "key is not certified with a trusted signature" warning
+reflects only local keyring trust settings and does not affect
+cryptographic validity.
+
+Raw verification output follows.
+----------------------------------------------------------------------
+commit a35a461248cb53f41af49b00c1ccdd80e49f1175
+gpg: Signature made Sun Nov 30 10:43:17 2025 AUSEST
+gpg:                using RSA key B5690EEEBB952194
+gpg: Good signature from "GitHub <noreply@github.com>" [unknown]
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+Primary key fingerprint: 9684 79A1 AFF9 27E3 7D1A  566B B569 0EEE BB95 2194
+Author: milarien <milamba@gmail.com>
+Date:   Sun Nov 30 10:43:16 2025 +1100
+
+    Add files via upload
+
+commit 011f03b1180552f15894679f434488b4ef5c8256
+gpg: Signature made Sun Nov 30 10:47:34 2025 AUSEST
+gpg:                using RSA key B5690EEEBB952194
+gpg: Good signature from "GitHub <noreply@github.com>" [unknown]
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+Primary key fingerprint: 9684 79A1 AFF9 27E3 7D1A  566B B569 0EEE BB95 2194
+Author: milarien <milamba@gmail.com>
+Date:   Sun Nov 30 10:47:34 2025 +1100
+
+    Create .gitignore
+
+commit 4615f4f56e22f0be89fc941321fd78815a3377b0
+gpg: Signature made Sun Nov 30 10:49:08 2025 AUSEST
+gpg:                using RSA key B5690EEEBB952194
+gpg: Good signature from "GitHub <noreply@github.com>" [unknown]
+gpg: WARNING: This key is not certified with a trusted signature!
+gpg:          There is no indication that the signature belongs to the owner.
+Primary key fingerprint: 9684 79A1 AFF9 27E3 7D1A  566B B569 0EEE BB95 2194
+Author: milarien <milamba@gmail.com>
+Date:   Sun Nov 30 10:49:08 2025 +1100
+
+    Create LEGAL_NOTICE.md

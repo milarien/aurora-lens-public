@@ -1,0 +1,170 @@
+schema_version: 1
+package: phase17_realistic_acceptance_fixtures
+retrieved_or_created_date: "2026-07-13"
+fixtures:
+  - fixture_id: policy_v1
+    record_id: phase17-policy-v1
+    filename: policy_v1.md
+    source_type: synthetic_derivative
+    source_title: Procurement policy clause structures (public-sector policy style)
+    originating_organisation: Synthetic derivative based on public policy formatting patterns
+    origin_url: ""
+    licence: "Synthetic derivative authored for repository tests (project-owned test fixture)"
+    redistribution_status: "redistributable_synthetic_derivative"
+    transformation: "synthetic derivative from public policy structure patterns; no verbatim source text"
+    excerpt_boundaries: "synthetic full document"
+    sha256_digest: "17efd9932e1fe63c2355e97f0de9a89ed6a57c00cd9227fafd7189fc3969d36a"
+    retrieved_or_created_date: "2026-07-13"
+    notes: "Superseded baseline policy version for acceptance conflict tests."
+
+  - fixture_id: policy_v2_superseding
+    record_id: phase17-policy-v2
+    filename: policy_v2_superseding.md
+    source_type: synthetic_derivative
+    source_title: Procurement policy revision patterns and supersession notices
+    originating_organisation: Synthetic derivative based on public policy revision patterns
+    origin_url: ""
+    licence: "Synthetic derivative authored for repository tests (project-owned test fixture)"
+    redistribution_status: "redistributable_synthetic_derivative"
+    transformation: "synthetic derivative with explicit supersession language and changed material requirement"
+    excerpt_boundaries: "synthetic full document"
+    sha256_digest: "b3a1215be47329e2ff4e072f3ebb4654d3c901c98e2a165126ac0d727abf7d04"
+    retrieved_or_created_date: "2026-07-13"
+    notes: "Governing replacement version used to verify v1 exclusion."
+
+  - fixture_id: regulatory_guidance
+    record_id: phase17-reg-guidance
+    filename: regulatory_guidance.md
+    source_type: synthetic_derivative
+    source_title: Regulatory guidance memo structure (obligations, exceptions, defined terms, cross-references)
+    originating_organisation: Synthetic derivative based on public-domain guidance document structures
+    origin_url: ""
+    licence: "Synthetic derivative authored for repository tests (project-owned test fixture)"
+    redistribution_status: "redistributable_synthetic_derivative"
+    transformation: "synthetic derivative preserving structure, not verbatim wording"
+    excerpt_boundaries: "synthetic full document"
+    sha256_digest: "09e9064ee3011488bd25ff67e4cd6b6dd2f43b5aa77ff84e7f3a36ceb68884cb"
+    retrieved_or_created_date: "2026-07-13"
+    notes: "Used for semantic and citation expectation checks."
+
+  - fixture_id: public_service_standard
+    record_id: phase17-public-service-standard
+    filename: public_service_standard.md
+    source_type: synthetic_derivative
+    source_title: Public service operating standard template structure
+    originating_organisation: Synthetic derivative using public service procedural standard patterns
+    origin_url: ""
+    licence: "Synthetic derivative authored for repository tests (project-owned test fixture)"
+    redistribution_status: "redistributable_synthetic_derivative"
+    transformation: "synthetic derivative containing roles, procedural steps, and escalation"
+    excerpt_boundaries: "synthetic full document"
+    sha256_digest: "a99c6bbb18b48f9a9792fd2c6a27ecd6a3222002fe1c51ce67ac374b739a3c58"
+    retrieved_or_created_date: "2026-07-13"
+    notes: "Operational standard fixture for realistic structured guidance."
+
+  - fixture_id: mixed_table_and_prose
+    record_id: phase17-mixed-table-prose
+    filename: mixed_table_and_prose.md
+    source_type: synthetic_derivative
+    source_title: Decision matrix with qualifying prose notes
+    originating_organisation: Synthetic derivative from policy matrix formatting patterns
+    origin_url: ""
+    licence: "Synthetic derivative authored for repository tests (project-owned test fixture)"
+    redistribution_status: "redistributable_synthetic_derivative"
+    transformation: "synthetic table + prose with qualifying exceptions"
+    excerpt_boundaries: "synthetic full document"
+    sha256_digest: "1f33ed6d0d71aaadfc37f8c3e8c0443114b8962e6129efa3f63e1bb76c308b09"
+    retrieved_or_created_date: "2026-07-13"
+    notes: "Verifies table value retrieval does not ignore prose qualifiers."
+
+  - fixture_id: malformed_truncated_markdown
+    record_id: phase17-malformed-truncated
+    filename: malformed_truncated_markdown.md
+    source_type: synthetic_derivative
+    source_title: Corrupted markdown export sample
+    originating_organisation: Synthetic malformed derivative
+    origin_url: ""
+    licence: "Synthetic derivative authored for repository tests (project-owned test fixture)"
+    redistribution_status: "redistributable_synthetic_derivative"
+    transformation: "intentional truncated markdown with incomplete final section"
+    excerpt_boundaries: "synthetic full document"
+    sha256_digest: "33818007f91dedeba67dd0250a546a094e972a7495757033fa5b0cb405b90331"
+    retrieved_or_created_date: "2026-07-13"
+    notes: "Must remain partially ingestible."
+
+  - fixture_id: malformed_encoding_noise
+    record_id: phase17-malformed-encoding
+    filename: malformed_encoding_noise.txt
+    source_type: synthetic_derivative
+    source_title: Encoding-noise text sample for partial recovery behavior
+    originating_organisation: Synthetic malformed derivative
+    origin_url: ""
+    licence: "Synthetic derivative authored for repository tests (project-owned test fixture)"
+    redistribution_status: "redistributable_synthetic_derivative"
+    transformation: "damaged punctuation and replacement characters with recoverable semantic content"
+    excerpt_boundaries: "synthetic full document"
+    sha256_digest: "ef3b347e0839c656e34b3ddecff9dd59343967f621763da045503010b15cd4d0"
+    retrieved_or_created_date: "2026-07-13"
+    notes: "No binary content; safe text-only corruption patterns."
+
+  - fixture_id: malformed_unsupported_binary
+    record_id: phase17-malformed-unsupported-binary
+    filename: malformed_unsupported_binary.bin
+    source_type: synthetic_derivative
+    source_title: Unsupported binary ingest fixture
+    originating_organisation: Synthetic malformed derivative
+    origin_url: ""
+    licence: "Synthetic derivative authored for repository tests (project-owned test fixture)"
+    redistribution_status: "redistributable_synthetic_derivative"
+    transformation: "intentionally unsupported suffix to verify clean ingest failure reporting"
+    excerpt_boundaries: "synthetic single-line marker payload"
+    sha256_digest: "5508843e3186e6048f040afa86b34ec0822353f87c3f5d9629bddc9c3b4ff880"
+    ingest_expectation: "fail"
+    expected_error_contains: "Unsupported source type"
+    retrieved_or_created_date: "2026-07-13"
+    notes: "Must fail cleanly without destabilising run."
+
+  - fixture_id: real_nist_privacy_framework
+    record_id: phase17-real-nist-pf
+    filename: real_nist_privacy_framework_excerpt.md
+    source_type: public_domain
+    source_title: "Privacy Framework | NIST"
+    originating_organisation: National Institute of Standards and Technology (NIST), U.S. Department of Commerce
+    origin_url: "https://www.nist.gov/privacy-framework"
+    licence: "U.S. federal government work; public domain in the United States (17 U.S.C. § 105)"
+    redistribution_status: "redistributable_public_domain"
+    transformation: "verbatim bounded excerpt from About and supporting summary lines; markdown wrapper added"
+    excerpt_boundaries: "NIST Privacy Framework page sections: About, PF 1.1 IPD summary, Quick Start Guide summary (retrieved 2026-07-13)"
+    sha256_digest: "4c9f877706ace90390834145993d224ec869849c471817179d8237d6702dbe69"
+    retrieved_or_created_date: "2026-07-13"
+    notes: "Real government guidance fixture."
+
+  - fixture_id: real_gpo_style_manual
+    record_id: phase17-real-gpo-style
+    filename: real_gpo_style_manual_excerpt.md
+    source_type: public_domain
+    source_title: "U.S. Government Printing Office Style Manual (2008)"
+    originating_organisation: U.S. Government Printing Office (now U.S. Government Publishing Office)
+    origin_url: "https://www.govinfo.gov/content/pkg/GPO-STYLEMANUAL-2008/html/GPO-STYLEMANUAL-2008-1.htm"
+    licence: "U.S. federal government work; public domain in the United States (17 U.S.C. § 105)"
+    redistribution_status: "redistributable_public_domain"
+    transformation: "verbatim bounded excerpt from Section 1105 and About This Manual"
+    excerpt_boundaries: "Fetched text file lines 112-117 and 138-143 from agent-tools/0818731b-a30d-46bd-ada5-96a6d1e77de9.txt (retrieved 2026-07-13)"
+    sha256_digest: "8610f448c0d43435b3b85ab288a21887a0585926db1769325275b4fd3fca3c36"
+    retrieved_or_created_date: "2026-07-13"
+    notes: "Real organisational operating standard fixture."
+
+  - fixture_id: real_uscode_5usc552
+    record_id: phase17-real-5usc552
+    filename: real_uscode_5usc552_excerpt.md
+    source_type: public_domain
+    source_title: "5 U.S.C. § 552 — Public information; agency rules, opinions, orders, records, and proceedings"
+    originating_organisation: Office of the Law Revision Counsel, U.S. House of Representatives (GovInfo publication)
+    origin_url: "https://www.govinfo.gov/content/pkg/USCODE-2023-title5/html/USCODE-2023-title5-partI-chap5-subchapII-sec552.htm"
+    licence: "U.S. federal government work; public domain in the United States (17 U.S.C. § 105)"
+    redistribution_status: "redistributable_public_domain"
+    transformation: "verbatim bounded excerpt from definitions, records, and data publication clauses"
+    excerpt_boundaries: "Fetched text file lines 347-355 and 309-315 from agent-tools/5e1a9baa-a7f9-44f1-a6d0-a6c52abf6307.txt (retrieved 2026-07-13)"
+    sha256_digest: "ecd3794b924898baa2d51c0947c25866068d8deb350224ea117a4feae120403d"
+    retrieved_or_created_date: "2026-07-13"
+    notes: "Real regulator/legal text with definitions, subclauses, and cross-reference complexity."

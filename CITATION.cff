@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "Please cite the Aurora-Lens Public Canonical Statement when referring to the architecture, and cite any specific deposited work used."
+title: "Aurora-Lens Public Architecture, Publications and Provenance Record"
+type: dataset
+authors:
+  - family-names: Stokes
+    given-names: Margaret
+    orcid: "https://orcid.org/0009-0004-6422-4174"
+url: "https://aurora-lens.ai"
+abstract: "Public architecture maps, exact current Zenodo deposits, patent-status summaries, and provenance records for Aurora-Lens and its foundations."
+keywords:
+  - Aurora-Lens
+  - AI governance
+  - runtime governance
+  - admissibility
+  - maintained unresolved state
+  - provenance
+preferred-citation:
+  type: report
+  title: "Aurora-Lens Public Canonical Statement"
+  authors:
+    - family-names: Stokes
+      given-names: Margaret
+      orcid: "https://orcid.org/0009-0004-6422-4174"
+  year: 2026
+  doi: "10.5281/zenodo.21930519"

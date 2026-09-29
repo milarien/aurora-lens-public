@@ -1,43 +1,69 @@
 # Aurora-Lens
 
-Aurora-Lens sits between your application and a language model. It checks each turn before output becomes consequence-bearing, records the decision in an audit log, and can expose an operator web page for health, audit review, and session inspection.
+Aurora-Lens is a deterministic commitment-governance architecture. It evaluates whether a candidate state, interpretation, determination, output, release, or action is admissible to become operative or consequential.
 
-This README is the main setup guide for **this tree** (install from source, configure, run, use the operator page).
+Here, deterministic refers to the admissibility outcome produced from the same candidate, authoritative state, applicable policy pack and evaluation context. It does not describe or require deterministic generation of the candidate.
 
-## Architecture
+Its central invariant is:
 
-Aurora-Lens is a governance layer, not a replacement language model. Its main runtime path is:
+> A candidate does not acquire standing or consequence merely because a model, retrieval system, application, or prior state produced it. Commitment requires independent admissibility.
 
-1. A client sends an OpenAI-compatible chat request to the proxy.
-2. Pre-model state and policy checks determine whether the request can proceed, must be clarified, or must be stopped.
-3. An upstream provider adapter sends admitted requests to the configured model.
-4. Verification and commitment-control components evaluate the candidate response before release.
-5. The governor returns a governed outcome such as pass, contain, clarify, or hard stop.
-6. Session state and tamper-evident audit records preserve the basis for later review.
+Where admissibility is not established, Aurora-Lens preserves governed non-commitment rather than forcing resolution.
 
-The principal code areas are:
+This repository is the public Aurora-Lens record: architecture and publications, patent status, provenance, and the proprietary runtime source you can install and run from this tree.
 
-| Area | Location | Responsibility |
-|---|---|---|
-| Proxy and provider boundary | `aurora_lens/proxy/`, `aurora_lens/adapters/` | OpenAI-compatible transport, provider routing, and lifecycle |
-| Interpretation and state | `aurora_lens/interpret/`, `aurora_lens/pef/`, `aurora_lens/state_native_engine/` | Structured turn interpretation, persistent epistemic state, and state-native evaluation |
-| Governance | `aurora_lens/govern/`, `aurora_lens/governor/` | Admissibility, continuation, commitment control, and governed outcomes |
-| Verification | `aurora_lens/verify/` | Candidate-output checks, hazard handling, and response alignment |
-| Evidence and trust | `aurora_lens/corpus/`, `aurora_lens/trust/`, `aurora_lens/sovereign/` | Optional document evidence, source trust, and provider governance |
-| Audit and operations | `aurora_lens/govern/forensic_ledger.py`, `aurora_lens/proxy/dashboard.html` | Reviewable records and the operator interface |
+This repository is a canonical public index and preservation corpus, not an independent timestamping authority. Historical priority and publication dates rest on the cited patent filings, Zenodo deposits and other external records.
 
-The repository includes the filed patent specifications in `patents/`. Application numbers, filing dates, titles, and file mappings are in `PATENTS.md`. Provenance and integrity information are in `PROVENANCE.md` and `SHA256SUMS.txt`.
+**Earliest claimed priority represented in this portfolio:** 27 November 2025, Australian provisional application AU 2025905835. Priority is claim-specific and depends on the disclosure contained in the relevant filing.
+
+## Start here
+
+**Current architecture:** [CURRENT_ARCHITECTURE.md](architecture/CURRENT_ARCHITECTURE.md)
+
+- [Core invariants](architecture/CORE-INVARIANTS.md): the shortest statement of the architecture.
+- [Canonical architecture map](architecture/Aurora_Lens_Canonical_Architecture_Map.md): commitment surfaces, authority, unresolved state, outcomes, persistence, and audit.
+- [Runtime map](architecture/AURORA_LENS_RUNTIME_MAP.md): the public component separation and runtime vocabulary.
+- [Publication catalogue](publications/zenodo/PUBLICATION-CATALOGUE.md): twenty distinct works in the current publication register.
+- [Patent portfolio](patents/PATENT-PORTFOLIO.md): nine filings, with provisionals, the withdrawn PCT application, and pending complete or nonprovisional applications distinguished.
+- [Public provenance timeline](provenance/PROVENANCE-TIMELINE.md): event dates separated from later public deposits.
+- [Private-file hash manifest](provenance/EVIDENCE-MANIFEST.txt): fingerprints only; the underlying private files are not present.
+
+The public canonical statement is deposited in [Zenodo record 21930519](https://doi.org/10.5281/zenodo.21930519). The records preserved under `publications/zenodo/records/` retain the exact deposited filenames, metadata, and checksums.
+
+## Repository structure
+
+```text
+architecture/             Public invariants and architecture maps
+aurora_lens/              Proprietary runtime source (see LICENSE)
+patents/                  Bibliographic record and filed specification PDFs
+provenance/               Sourced chronology and private-file fingerprints
+publications/zenodo/      Exact current Zenodo deposits, metadata, and manifests
+tests/                    Automated tests
+scripts/                  Operator and acceptance utilities
+tools/                    Demo and chat helpers
+```
+
+## Public surfaces
+
+- Website: [aurora-lens.ai](https://aurora-lens.ai/)
+- Publications: [Zenodo catalogue](publications/zenodo/PUBLICATION-CATALOGUE.md)
+- ORCID: [0009-0004-6422-4174](https://orcid.org/0009-0004-6422-4174)
+- Commercial licensing or acquisition enquiries: margaret.stokes@aurora-lens.ai
+
+Licensing varies by document and deposit. See [LICENSES.md](LICENSES.md), [LEGAL-NOTICE.md](LEGAL-NOTICE.md), and the metadata for each Zenodo record.
 
 ---
 
-## What you need
+## Install and run (from this repository)
+
+Aurora-Lens sits between your application and a language model. It checks each turn before output becomes consequence-bearing, records the decision in an audit log, and can expose an operator web page for health, audit review, and session inspection.
+
+### What you need
 
 - **Python 3.12 only** (`>=3.12,<3.13`)
 - An **API key** for your model provider (OpenAI, Anthropic, or an OpenAI-compatible local server) — **not** required for the offline demo below
 
----
-
-## 1. Install
+### 1. Install
 
 Create an isolated virtual environment, then install from this folder with a **non-editable** install (do not use `pip install -e`):
 
@@ -71,9 +97,7 @@ For PDF or Word corpus ingestion later (same activated environment):
 pip install ".[ingest]"
 ```
 
----
-
-## 2. Try it without an API key (recommended first step)
+### 2. Try it without an API key (recommended first step)
 
 This runs three short scenarios (PASS, CONTAIN, HARD_STOP) and writes **`start_here_demo_audit.jsonl`** in this folder:
 
@@ -83,9 +107,7 @@ python tools/run_demo.py
 
 If all three show `[OK]`, the governance layer is working on your machine.
 
----
-
-## 3. Configure for a live proxy
+### 3. Configure for a live proxy
 
 1. Copy the example config:
 
@@ -130,9 +152,7 @@ If all three show `[OK]`, the governance layer is working on your machine.
 
 Field-by-field YAML notes: **`docs/config_reference.md`**.
 
----
-
-## 4. Start the proxy
+### 4. Start the proxy
 
 **Canonical lifecycle commands:**
 
@@ -159,9 +179,7 @@ Leave the process running. Default listen URL (if port is 8081): `http://127.0.0
 
 Check health: `http://127.0.0.1:8081/health`
 
----
-
-## 5. Operator web page (Forensics)
+### 5. Operator web page (Forensics)
 
 With the proxy running, open in a browser:
 
@@ -180,9 +198,7 @@ Plain-English tour of each section: **`docs/forensics-dashboard.md`**.
 
 HTTP routes used by the page (and by `curl`): **`docs/api.md`**.
 
----
-
-## 6. Send chat requests
+### 6. Send chat requests
 
 Point any OpenAI-compatible client at this base URL:
 
@@ -196,9 +212,7 @@ Or use the built-in chat helper (proxy must be running):
 python tools/chat_with_lens.py
 ```
 
----
-
-## 7. Document library (optional)
+### 7. Document library (optional)
 
 To ingest PDFs and ask governed questions against them:
 
@@ -225,15 +239,11 @@ python scripts/run_phase17_acceptance.py --mode live --provider openai --model M
 
 Reference: realistic corpus governance checks are covered in **`docs/corpus-guide.md`** in this release tree.
 
----
-
-## 8. Windows step-by-step
+### 8. Windows step-by-step
 
 If you prefer a full Windows walkthrough (venv, PowerShell, browser): **`docs/setup-windows-proxy.md`**.
 
----
-
-## 9. Licence
+### 9. Licence
 
 Aurora-Lens is proprietary software. All rights reserved.
 

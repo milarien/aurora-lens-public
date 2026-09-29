@@ -1,0 +1,51 @@
+# Track C — Trust Registry / source_untrusted regression manifest.
+# Run via: python scripts/run_track_c_regression.py
+# Or: pytest with paths below.
+
+name: trust_registry_track_c_regression
+description: >
+  Sign-off suite for Track C (Trust Registry / source_untrusted). Prerequisite
+  trust machinery and deterministic generation only when a complete trust
+  contract exists, the Track C pathway explicitly requires evaluation, and
+  registry policy evaluates to inadmissible. Track A/B checkpoint posture for
+  source_untrusted in PHASE2 table remains external_declared_only; Track C
+  owns deterministic generation via TRACK_C_ESTABLISHMENT_FAILURE_IMPLEMENTATION.
+
+test_paths:
+  - tests/test_trust_registry.py
+  - tests/test_trust_contract.py
+  - tests/test_source_untrusted_generation.py
+  - tests/test_trust_registry_track_c_regression.py
+  - tests/test_epistemic_uncertainty_gate.py
+
+prerequisites:
+  - stable_source_ids
+  - trust_registry
+  - domain_consequence_policy
+  - anti_soup_pathway_flag
+  - gate_parity
+
+deterministic_generated:
+  - source_untrusted
+
+primary_code:
+  - aurora_lens/trust/
+  - aurora_lens/pef/uncertainty_analysis.py
+  - aurora_lens/config.py
+  - aurora_lens/lens.py
+
+locked_rules:
+  - missing_trust_metadata_must_not_generate_source_untrusted
+  - unknown_source_must_not_imply_untrusted
+  - trust_evaluation_required_pathway_flag
+  - complete_trust_contract_required
+  - registry_ref_must_match_configured_registry
+
+track_a_unchanged:
+  phase2_posture_source_untrusted: external_declared_only
+  deterministic_generators_count: 5
+
+track_b_unchanged: true
+
+docs:
+  - docs/trust_registry_track_c.md

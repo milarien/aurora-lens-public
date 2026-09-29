@@ -628,10 +628,18 @@ def _to_proxy_mapping(cfg: SetupInput) -> dict[str, Any]:
         "provider": provider_value,
         "model": cfg.model_name,
         "base_url": cfg.api_endpoint,
-        "api_key": "${AURORA_LENS_UPSTREAM_API_KEY}" if profile.requires_api_key else "",
+        "api_key": "",
     }
+    if profile.requires_api_key:
+        if provider_value == "openai":
+            upstream["api_key_env"] = "OPENAI_API_KEY"
+        elif provider_value == "anthropic":
+            upstream["api_key_env"] = "ANTHROPIC_API_KEY"
+        else:
+            upstream["api_key_env"] = "AURORA_LENS_UPSTREAM_API_KEY"
     if provider_value == "local":
         upstream["api_key"] = ""
+        upstream.pop("api_key_env", None)
     if cfg.provider_type == "anthropic":
         # Anthropic adapter can use default base URL; include only when user changed it.
         if cfg.api_endpoint == profile.endpoint_default:

@@ -1,0 +1,47 @@
+# Corpus product UX checkpoint (2026-06-26).
+# Run: python scripts/run_corpus_product_ux_checkpoint.py
+
+name: corpus_product_ux_checkpoint_2026_06_26
+date: "2026-06-26"
+description: >
+  Sealed corpus/RAG product surface: aurora-lens corpus CLI, cli_support,
+  mocked e2e ask path. Retrieval proposes; Lens disposes.
+
+expected_pass_counts:
+  corpus_cli: 6
+  corpus_e2e: 2
+  checkpoint_regression: 4
+  total: 12
+
+includes:
+  corpus_cli:
+    test_paths:
+      - tests/test_corpus_cli.py
+    status: sealed
+  corpus_e2e:
+    test_paths:
+      - tests/test_corpus_product_e2e.py
+    status: sealed
+  checkpoint_regression:
+    test_paths:
+      - tests/test_corpus_product_ux_checkpoint_regression.py
+    status: sealed
+
+locked_rules:
+  - retrieval_proposes_lens_disposes
+  - no_automatic_pef_truth_from_retrieval
+  - proxy_required_for_ask
+
+primary_code:
+  - aurora_lens/corpus/cli_support.py
+  - aurora_lens/cli.py
+
+docs:
+  - docs/CORPUS_PRODUCT_UX.md
+  - docs/corpus-guide.md
+  - docs/checkpoint/2026-06-25-corpus-product-ux/CHECKPOINT.md
+
+explicitly_not_in_this_checkpoint:
+  - source_scope_enforcement
+  - audit_request_metadata_embedding
+  - corpus_aware_chat_hook

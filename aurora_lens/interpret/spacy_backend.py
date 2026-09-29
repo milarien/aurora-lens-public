@@ -949,7 +949,9 @@ def _is_pronoun(token: Token) -> bool:
 # ── Negation detection ───────────────────────────────────────────────
 
 _NEGATION_DEPS = {"neg"}
-_NEGATION_TOKENS = {"not", "n't", "never", "no", "neither", "nor", "doesn't", "don't", "didn't", "isn't", "aren't", "wasn't", "weren't", "hasn't", "haven't", "hadn't", "won't", "wouldn't", "couldn't", "shouldn't"}
+_NEGATION_TOKENS = {"not", "n't", "never", "no", "neither", "doesn't", "don't", "didn't", "isn't", "aren't", "wasn't", "weren't", "hasn't", "haven't", "hadn't", "won't", "wouldn't", "couldn't", "shouldn't"}
+_OBJECT_CONNECTOR_TOKENS = {"-", "–", "—", "/"}
+_OBJECT_PUNCT_CHARS = set("-–—_/.,;:!?()[]{}'\"`")
 
 
 def _is_negated(token: Token) -> bool:
@@ -960,6 +962,107 @@ def _is_negated(token: Token) -> bool:
         if child.text.lower() in _NEGATION_TOKENS:
             return True
     return False
+
+
+def _is_negated_by_neither_nor(token: Token) -> bool:
+    """Detect coordination negation for conjunct verbs under ``neither ... nor ...``.
+
+    Example: "Evidence establishes ... but neither final settlement nor confirmed
+    non-execution." The ``confirmed`` verb should be interpreted as negated.
+    """
+    if token.dep_ != "conj":
+        return False
+    sent_tokens = list(token.sent)
+    has_neither_before = any(
+        t.text.lower() == "neither" and t.i < token.i
+        for t in sent_tokens
+    )
+    if not has_neither_before:
+        return False
+    has_nor_before = any(
+        t.text.lower() == "nor" and t.i < token.i
+        for t in sent_tokens
+    )
+    if not has_nor_before:
+        return False
+
+    cur = token
+    seen: set[int] = set()
+    while cur.i not in seen:
+        seen.add(cur.i)
+        if any(c.text.lower() == "nor" for c in cur.children):
+            return True
+        if cur.dep_ != "conj" or cur.head == cur:
+            break
+        cur = cur.head
+
+    # Fallback for parser variants where "nor" is near-adjacent but not attached
+    # to the same head chain in dependencies.
+    return any(
+        t.text.lower() == "nor" and 0 < token.i - t.i <= 3
+        for t in sent_tokens
+    )
+
+
+def _is_punctuation_only_object_literal(text: str) -> bool:
+    s = (text or "").strip()
+    if not s:
+        return True
+    return all(ch in _OBJECT_PUNCT_CHARS for ch in s)
+
+
+def _merge_hyphenated_object_fragments(
+    raw_pairs: list[tuple[str, str, Token | None]],
+) -> list[tuple[str, str, Token | None]]:
+    """Merge contiguous hyphen-fragment objects into one lexical value.
+
+    spaCy can split "non-execution" into object fragments (`non`, `-`, `execution`)
+    for the same verb/relation. Merge those contiguous fragments so downstream PEF
+    commitment stores one object literal.
+    """
+    merged: list[tuple[str, str, Token | None]] = []
+    i = 0
+    n = len(raw_pairs)
+    while i < n:
+        rel, obj, tok = raw_pairs[i]
+        if tok is None:
+            merged.append((rel, obj, tok))
+            i += 1
+            continue
+
+        run: list[tuple[str, str, Token]] = [(rel, obj, tok)]
+        j = i + 1
+        prev_tok = tok
+        while j < n:
+            rel_j, obj_j, tok_j = raw_pairs[j]
+            if tok_j is None or rel_j != rel:
+                break
+            if tok_j.sent != tok.sent:
+                break
+            if tok_j.i > prev_tok.i + 1:
+                break
+            run.append((rel_j, obj_j, tok_j))
+            prev_tok = tok_j
+            j += 1
+
+        run_texts = [r[1] for r in run]
+        has_connector = any(t in _OBJECT_CONNECTOR_TOKENS for t in run_texts)
+        has_lexical = any(
+            any(ch.isalnum() for ch in t)
+            for t in run_texts
+            if t not in _OBJECT_CONNECTOR_TOKENS
+        )
+        if len(run) >= 2 and has_connector and has_lexical:
+            first_tok = run[0][2]
+            last_tok = run[-1][2]
+            span_text = first_tok.doc.text[first_tok.idx : last_tok.idx + len(last_tok.text)].strip()
+            merged.append((rel, span_text, first_tok))
+            i = j
+            continue
+
+        merged.append((rel, obj, tok))
+        i += 1
+    return merged
 
 
 # ── SpacyBackend ────────────────────────────────────────────────────
@@ -980,14 +1083,7 @@ class SpacyBackend(ExtractionBackend):
             ) from None
 
         if nlp is None:
-            try:
-                self._nlp = _spacy.load(model)
-            except OSError:
-                # Keep first-run deterministic/local even when a language model is
-                # not installed yet: run with a blank English pipeline.
-                self._nlp = _spacy.blank("en")
-                if "sentencizer" not in self._nlp.pipe_names:
-                    self._nlp.add_pipe("sentencizer")
+            self._nlp = _spacy.load(model)
         else:
             self._nlp = nlp
 
@@ -1468,7 +1564,9 @@ class SpacyBackend(ExtractionBackend):
 
             # Collect all (relation, obj, token) triples for this verb.
             base_relation = canonicalize_relation(token.lemma_)
-            raw_object_pairs = self._find_objects(token, base_relation)
+            raw_object_pairs = _merge_hyphenated_object_fragments(
+                self._find_objects(token, base_relation)
+            )
 
             # Resolve pronouns (specifically 'it') in object literals before creating claims.
             # Requirement: No admitted canonical possession or transfer relation may use
@@ -1478,17 +1576,23 @@ class SpacyBackend(ExtractionBackend):
                 if obj_tok is not None:
                     quantified = self._resolve_quantified_pronoun_object(obj_tok, obj, pef, subject)
                     if quantified:
+                        if _is_punctuation_only_object_literal(quantified):
+                            continue
                         object_pairs.append((rel, quantified))
                         continue
                 if obj_tok is not None and _is_pronoun(obj_tok) and obj_tok.text.lower() == "it":
                     resolved = self._resolve_pronoun_object(obj_tok, pef, subject)
                     if resolved:
+                        if _is_punctuation_only_object_literal(resolved):
+                            continue
                         object_pairs.append((rel, resolved))
                     else:
                         # If unresolved, do not admit as a canonical object literal.
                         # This prevents junk "HAS it" or "GIVE it" claims.
                         continue
                 else:
+                    if _is_punctuation_only_object_literal(obj):
+                        continue
                     object_pairs.append((rel, obj))
 
             # Single-viable transfer subject binding from committed PEF:
@@ -1521,7 +1625,7 @@ class SpacyBackend(ExtractionBackend):
 
             # Compute before the object_pairs guard: shared by passive extraction
             # and the regular claim loop.
-            negated = _is_negated(token)
+            negated = _is_negated(token) or _is_negated_by_neither_nor(token)
             evidence = self._get_clause_text(token, doc)
 
             # Movement-as-location mutation for existing entities:

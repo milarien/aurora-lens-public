@@ -2,6 +2,57 @@
 
 from __future__ import annotations
 
+# Audit/trace vocabulary plus detection-style concealment (e.g. "without detection").
+_FINANCIAL_CONCEALMENT_TARGET_TERMS = frozenset(
+    {
+        "audit",
+        "trail",
+        "record",
+        "records",
+        "trace",
+        "traces",
+        "detection",
+        "detect",
+        "detected",
+        "detecting",
+        "discovered",
+    }
+)
+
+
+def _has_financial_concealment_target(tokens: frozenset[str]) -> bool:
+    if not _FINANCIAL_CONCEALMENT_TARGET_TERMS.isdisjoint(tokens):
+        return True
+    return "off" in tokens and "books" in tokens
+
+
+def _has_localized_explicit_illicit_financial_objective(
+    tok: tuple[str, ...],
+    *,
+    financial_terms: set[str],
+    intent_terms: set[str],
+    explicit_illicit_terms: set[str],
+) -> bool:
+    """Direct laundering/embezzle asks with finance context and user intent in one locale."""
+
+    n = len(tok)
+    if n == 0:
+        return False
+
+    for i, word in enumerate(tok):
+        if word not in explicit_illicit_terms:
+            continue
+        lo = max(0, i - 8)
+        hi = min(n, i + 9)
+        win_set = set(tok[lo:hi])
+        if financial_terms.isdisjoint(win_set):
+            continue
+        if not intent_terms.isdisjoint(win_set):
+            return True
+        if i <= 3 and not {"i", "my", "me"}.isdisjoint(win_set):
+            return True
+    return False
+
 
 def surface_harmful_action_protective(norm: str, tokens: frozenset[str]) -> bool:
     """Educational, defensive, or lawful-framing carve-outs (not operational harm asks)."""
@@ -147,6 +198,10 @@ def surface_harmful_action_objective(norm: str, tokens: frozenset[str]) -> bool:
 
 def surface_financial_crime_evasion(norm: str, tokens: frozenset[str]) -> bool:
     """Illicit financial diversion frame: finance context + evasion intent + audit/record concealment."""
+    tok = tuple(norm.split())
+    if not tok:
+        return False
+
     financial_terms = {
         "escrow",
         "funds",
@@ -181,22 +236,76 @@ def surface_financial_crime_evasion(norm: str, tokens: frozenset[str]) -> bool:
         "untraceable",
     }
     explicit_illicit_terms = {"launder", "laundering", "embezzle", "embezzlement", "divert"}
-    audit_record_terms = {"audit", "trail", "record", "records", "trace", "traces"}
+    audit_record_terms = set(_FINANCIAL_CONCEALMENT_TARGET_TERMS)
     operational_terms = {"workflow", "payment", "payments", "transaction", "transactions"}
+    intent_terms = {
+        "how",
+        "ways",
+        "way",
+        "steps",
+        "step",
+        "approach",
+        "strategy",
+        "guide",
+        "advice",
+        "best",
+        "start",
+        "want",
+        "show",
+        "tell",
+        "give",
+        "suggest",
+        "can",
+        "could",
+        "would",
+        "should",
+        "help",
+        "design",
+        "set",
+        "setup",
+    }
+    directive_verbs = movement_terms | explicit_illicit_terms | {"hide", "conceal", "avoid", "bypass"}
 
     if financial_terms.isdisjoint(tokens):
         return False
+
     if not explicit_illicit_terms.isdisjoint(tokens):
-        return True
+        if _has_localized_explicit_illicit_financial_objective(
+            tok,
+            financial_terms=financial_terms,
+            intent_terms=intent_terms,
+            explicit_illicit_terms=explicit_illicit_terms,
+        ):
+            return True
 
     has_evasion_intent = not evasion_terms.isdisjoint(tokens)
-    has_audit_record_target = (
-        not audit_record_terms.isdisjoint(tokens)
-        or ("off" in tokens and "books" in tokens)
-    )
-    if not (has_evasion_intent and has_audit_record_target):
+    if not (has_evasion_intent and _has_financial_concealment_target(tokens)):
         return False
 
+    has_action_objective = (
+        surface_operational_wrongdoing_framing(norm, tokens)
+        or _has_localized_financial_evasion_objective(
+            tok,
+            financial_terms=financial_terms,
+            intent_terms=intent_terms,
+            directive_verbs=directive_verbs,
+            evasion_terms=evasion_terms,
+            audit_record_terms=audit_record_terms,
+        )
+        or _has_split_clause_financial_evasion_objective(
+            tok,
+            financial_terms=financial_terms,
+            intent_terms=intent_terms,
+            movement_terms=movement_terms,
+            evasion_terms=evasion_terms,
+            audit_record_terms=audit_record_terms,
+        )
+    )
+    if not has_action_objective:
+        return False
+
+    if not explicit_illicit_terms.isdisjoint(tokens):
+        return True
     if not movement_terms.isdisjoint(tokens):
         return True
     if not operational_terms.isdisjoint(tokens):
@@ -208,6 +317,10 @@ def surface_financial_crime_evasion(norm: str, tokens: frozenset[str]) -> bool:
 
 def surface_audit_trail_evasion(norm: str, tokens: frozenset[str]) -> bool:
     """Requests to evade financial auditability, records, or traceability."""
+    tok = tuple(norm.split())
+    if not tok:
+        return False
+
     financial_terms = {
         "escrow",
         "funds",
@@ -241,6 +354,35 @@ def surface_audit_trail_evasion(norm: str, tokens: frozenset[str]) -> bool:
         "no",
         "untraceable",
     }
+    intent_terms = {
+        "how",
+        "ways",
+        "way",
+        "steps",
+        "step",
+        "approach",
+        "strategy",
+        "guide",
+        "advice",
+        "best",
+        "start",
+        "want",
+        "show",
+        "tell",
+        "give",
+        "suggest",
+        "can",
+        "could",
+        "would",
+        "should",
+        "help",
+        "design",
+        "set",
+        "setup",
+    }
+    directive_verbs = {"hide", "conceal", "avoid", "bypass", "erase", "delete", "remove", "leave"}
+    audit_record_terms = set(_FINANCIAL_CONCEALMENT_TARGET_TERMS)
+    movement_terms = {"move", "transfer", "send", "route", "shift", "withdraw", "wire", "funnel", "park", "offshore"}
 
     has_financial_context = not financial_terms.isdisjoint(tokens)
     if not has_financial_context:
@@ -248,6 +390,28 @@ def surface_audit_trail_evasion(norm: str, tokens: frozenset[str]) -> bool:
 
     has_evasion_intent = not evasion_terms.isdisjoint(tokens)
     if not has_evasion_intent:
+        return False
+
+    has_action_objective = (
+        surface_operational_wrongdoing_framing(norm, tokens)
+        or _has_localized_financial_evasion_objective(
+            tok,
+            financial_terms=financial_terms,
+            intent_terms=intent_terms,
+            directive_verbs=directive_verbs | movement_terms,
+            evasion_terms=evasion_terms,
+            audit_record_terms=audit_record_terms,
+        )
+        or _has_split_clause_financial_evasion_objective(
+            tok,
+            financial_terms=financial_terms,
+            intent_terms=intent_terms,
+            movement_terms=movement_terms,
+            evasion_terms=evasion_terms,
+            audit_record_terms=audit_record_terms,
+        )
+    )
+    if not has_action_objective:
         return False
 
     # Audit-trail evasion: "avoid creating an audit trail", "no audit trail",
@@ -267,3 +431,83 @@ def surface_audit_trail_evasion(norm: str, tokens: frozenset[str]) -> bool:
         return True
 
     return False
+
+
+def _has_localized_financial_evasion_objective(
+    tok: tuple[str, ...],
+    *,
+    financial_terms: set[str],
+    intent_terms: set[str],
+    directive_verbs: set[str],
+    evasion_terms: set[str],
+    audit_record_terms: set[str],
+) -> bool:
+    """Require local linkage between intent, action, finance context, and concealment target.
+
+    This blocks broad cross-document token collisions where unrelated evidence fragments
+    happen to contain words like "payment", "no", and "record".
+    """
+
+    n = len(tok)
+    if n == 0:
+        return False
+
+    for i, word in enumerate(tok):
+        if word not in directive_verbs and word not in evasion_terms:
+            continue
+        lo = max(0, i - 8)
+        hi = min(n, i + 9)
+        win = tok[lo:hi]
+        win_set = set(win)
+        if financial_terms.isdisjoint(win_set):
+            continue
+        if audit_record_terms.isdisjoint(win_set) and not ("off" in win_set and "books" in win_set):
+            continue
+        if not intent_terms.isdisjoint(win_set):
+            return True
+        if i <= 2 and word in directive_verbs:
+            return True
+    return False
+
+
+def _has_split_clause_financial_evasion_objective(
+    tok: tuple[str, ...],
+    *,
+    financial_terms: set[str],
+    intent_terms: set[str],
+    movement_terms: set[str],
+    evasion_terms: set[str],
+    audit_record_terms: set[str],
+) -> bool:
+    """Allow two-clause asks where movement and concealment appear in separate clauses.
+
+    This captures prompts like "I want to move funds ... no audit trail ... what's my
+    best way to start?" while still requiring explicit user-intent framing and
+    localized movement + concealment structure.
+    """
+
+    if not tok:
+        return False
+    tok_set = set(tok)
+    if {"i", "my", "me"}.isdisjoint(tok_set):
+        return False
+    if intent_terms.isdisjoint(tok_set):
+        return False
+
+    def _window_has(idx: int, vocab: set[str], radius: int) -> bool:
+        lo = max(0, idx - radius)
+        hi = min(len(tok), idx + radius + 1)
+        return not vocab.isdisjoint(set(tok[lo:hi]))
+
+    has_movement_clause = any(
+        word in movement_terms and _window_has(i, financial_terms, radius=4)
+        for i, word in enumerate(tok)
+    )
+    if not has_movement_clause:
+        return False
+
+    has_concealment_clause = any(
+        word in evasion_terms and _window_has(i, audit_record_terms, radius=4)
+        for i, word in enumerate(tok)
+    ) or ("off" in tok_set and "books" in tok_set and not evasion_terms.isdisjoint(tok_set))
+    return has_concealment_clause

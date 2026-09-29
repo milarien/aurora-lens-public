@@ -54,7 +54,9 @@ def test_literal_api_key_in_yaml_is_rejected() -> None:
         cfg.validate()
 
 
-def test_local_provider_requires_base_url_not_key() -> None:
+def test_local_provider_requires_base_url_not_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("AURORA_LENS_UPSTREAM_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     cfg = ProxyConfig.from_mapping(
         {
             "upstream": {

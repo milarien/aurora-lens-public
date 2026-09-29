@@ -1,0 +1,63 @@
+# Product Phase 3 checkpoint — document ingestion + intake translator (2026-06-25).
+# Run: python scripts/run_product_phase_3_checkpoint.py
+
+name: product_phase_3_checkpoint_2026_06_25
+date: "2026-06-25"
+description: >
+  Sealed Product Phase 3 entrypoints: provenance-carrying document ingestion
+  proposals and intake translation to EstablishmentFailureProposal. Does not
+  establish truth, mutate PEF, or decide admissibility. Corpus/RAG UX remains open.
+
+expected_pass_counts:
+  document_ingestion: 8
+  intake_translator: 11
+  corpus_ingest: 11
+  checkpoint_regression: 5
+  total: 35
+
+includes:
+  document_ingestion:
+    test_paths:
+      - tests/test_product_phase_3_document_ingestion.py
+    status: sealed
+  intake_translator:
+    test_paths:
+      - tests/test_product_phase_3_intake_translator.py
+    status: sealed
+  corpus_ingest:
+    test_paths:
+      - tests/test_corpus_ingest.py
+    status: sealed
+  checkpoint_regression:
+    test_paths:
+      - tests/test_product_phase_3_checkpoint_regression.py
+    status: sealed
+
+locked_rules:
+  - ingestion_proposes_only
+  - intake_proposes_only
+  - no_pef_mutation
+  - no_lens_import_in_ingestion_or_intake
+  - no_admissibility_decision_in_intake
+  - provenance_on_every_candidate
+  - explicit_admission_before_gate_payload
+
+primary_code:
+  - aurora_lens/corpus/ingestion_report.py
+  - aurora_lens/corpus/document_ingestion.py
+  - aurora_lens/corpus/establishment_failure_proposal.py
+  - aurora_lens/corpus/intake_translator.py
+
+operator_cli:
+  - tools/propose_document_ingestion.py
+  - tools/translate_intake.py
+
+docs:
+  - docs/PRODUCT_PHASE_3_DOCUMENT_INGESTION.md
+  - docs/PRODUCT_PHASE_3_INTAKE_TRANSLATOR.md
+  - docs/checkpoint/2026-06-25-product-phase-3/CHECKPOINT.md
+
+explicitly_not_in_this_checkpoint:
+  - corpus_rag_product_ux
+  - automatic_pef_or_lens_wiring
+  - semantic_plain_english_inference

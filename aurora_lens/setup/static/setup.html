@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aurora-Lens Setup</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 28px auto; line-height: 1.5; color: #222; max-width: 720px; padding: 0 16px; }
+    h1 { margin: 0 0 8px 0; }
+    h2 { margin: 0 0 8px 0; }
+    p { margin: 0 0 12px 0; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 18px; background: #fff; margin-bottom: 14px; }
+    .step-label { color: #666; font-size: 0.92rem; margin-bottom: 10px; }
+    .step-help { color: #555; margin-bottom: 16px; }
+    label { font-weight: 600; display: block; margin: 0 0 6px 0; }
+    input, select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
+    .field { margin-bottom: 16px; }
+    .help { color: #555; font-size: 0.92rem; margin-top: 6px; }
+    .hidden { display: none; }
+    .nav { display: flex; gap: 8px; margin-top: 8px; }
+    button { padding: 10px 14px; border-radius: 6px; border: 1px solid #bbb; background: #f7f7f7; cursor: pointer; }
+    button:hover { background: #efefef; }
+    .primary-btn { background: #0f62fe; color: #fff; border-color: #0f62fe; font-weight: 700; }
+    .primary-btn:hover { background: #0353e9; }
+    .review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+    .review-key { color: #555; font-size: 0.95rem; }
+    .review-val { font-weight: 600; }
+    details.card > summary { font-weight: 700; cursor: pointer; color: #666; }
+    details.card[open] > summary { margin-bottom: 12px; }
+    .status { border-radius: 8px; padding: 12px; border: 1px solid transparent; white-space: pre-wrap; min-height: 110px; }
+    .status.info { background: #f7f7f7; border-color: #e3e3e3; }
+    .status.success { background: #edf9f0; border-color: #8ed6a0; }
+    .status.warning { background: #fff8e8; border-color: #f2c46d; }
+    .status.error { background: #fdeeee; border-color: #ef9a9a; }
+    .status-title { font-weight: 700; margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Aurora-Lens Setup</h1>
+  <p>Guided first-run setup with safe defaults. Technical controls stay in Advanced settings.</p>
+
+  <div class="card">
+    <div class="step-label" id="stepLabel">Step 1 of 5</div>
+
+    <div id="step1">
+      <h2>Choose work type</h2>
+      <p class="step-help">Pick the kind of work Aurora-Lens will govern.</p>
+      <label for="work_type">What kind of work is this for?</label>
+      <select id="work_type"></select>
+    </div>
+
+    <div id="step2" class="hidden">
+      <h2>Choose who will use it</h2>
+      <p class="step-help">Choose deployment context separately from work type.</p>
+      <label for="audience_type">Who will use Aurora-Lens?</label>
+      <select id="audience_type"></select>
+    </div>
+
+    <div id="step3" class="hidden">
+      <h2>Connect AI provider</h2>
+      <p class="step-help">Connect your model provider and choose a model from the provider list.</p>
+      <div class="field">
+        <label for="provider">AI provider</label>
+        <select id="provider"></select>
+        <div class="help" id="providerHelp"></div>
+      </div>
+      <div class="field">
+        <label for="api_key">API key</label>
+        <input id="api_key" type="password" autocomplete="off" />
+        <div class="help">An API key is the access key issued by your AI provider. A ChatGPT or Claude subscription does not automatically include one.</div>
+        <div class="help" id="providerKeyHelp"></div>
+        <div class="help">Stored in Windows Credential Manager when available, otherwise local `.env`.</div>
+      </div>
+      <div class="field">
+        <label for="model_select">Available models</label>
+        <select id="model_select">
+          <option value="">Load models, then choose one</option>
+        </select>
+        <div class="help" id="modelHelp">Choose a model from the provider list. If listing is unavailable, use manual model entry in Advanced settings.</div>
+      </div>
+      <button id="btnLoadModels">Load models</button>
+    </div>
+
+    <div id="step4" class="hidden">
+      <h2>Review</h2>
+      <p class="step-help">Confirm setup details before starting Aurora-Lens.</p>
+      <div class="review-grid" id="reviewList"></div>
+    </div>
+
+    <div id="step5" class="hidden">
+      <h2>Set up and start</h2>
+      <p class="step-help">Aurora-Lens will save configuration, run checks, and start locally.</p>
+      <button id="btnPrimary" class="primary-btn">Set up and start Aurora-Lens</button>
+    </div>
+
+    <div class="nav">
+      <button id="btnBack" class="hidden">Back</button>
+      <button id="btnNext">Continue</button>
+    </div>
+  </div>
+
+  <details class="card" id="advancedPanel">
+    <summary>Advanced settings</summary>
+    <div class="field">
+      <label for="api_endpoint">API endpoint</label>
+      <input id="api_endpoint" />
+      <div class="help" id="endpointHelp"></div>
+    </div>
+    <div class="field">
+      <label for="model_manual">Manual model entry</label>
+      <input id="model_manual" />
+      <div class="help">Use this when model listing is unavailable.</div>
+    </div>
+    <div class="field">
+      <label for="listen_port">Port</label>
+      <input id="listen_port" type="number" value="8000" />
+    </div>
+    <div class="field">
+      <label for="audit_log_path">Audit records path</label>
+      <input id="audit_log_path" />
+    </div>
+    <div class="field">
+      <label for="session_backend">Session storage</label>
+      <select id="session_backend">
+        <option value="memory">Local memory only</option>
+        <option value="redis">Redis</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="redis_url">Redis URL</label>
+      <input id="redis_url" value="redis://127.0.0.1:6379/0" />
+    </div>
+    <div class="field">
+      <label for="evidence_vault_enabled">Evidence vault</label>
+      <select id="evidence_vault_enabled">
+        <option value="true">Enabled</option>
+        <option value="false">Disabled</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="policy_profile">Policy profile</label>
+      <select id="policy_profile">
+        <option value="strict">strict</option>
+        <option value="moderate">moderate</option>
+      </select>
+    </div>
+    <div id="advancedActions" class="hidden">
+      <button id="btnReadiness">Run readiness check</button>
+      <button id="btnSave">Save configuration</button>
+    </div>
+  </details>
+
+  <div id="runtimeActions" class="hidden">
+    <div class="card">
+      <h2>Runtime controls</h2>
+      <p class="step-help">Use these controls to stop, restart, export diagnostics, or reset this local installation.</p>
+      <div class="nav" style="margin-bottom: 10px;">
+        <button id="btnStop">Stop Aurora-Lens</button>
+        <button id="btnRestart">Save changes and restart</button>
+        <button id="btnExportLogs">Export support logs</button>
+        <button id="btnGovernance">Run governance smoke test</button>
+      </div>
+      <div class="field">
+        <label for="reset_confirm">Type RESET AURORA-LENS to confirm local reset</label>
+        <input id="reset_confirm" placeholder="RESET AURORA-LENS" />
+      </div>
+      <div class="field">
+        <label><input id="reset_remove_config" type="checkbox" /> Also remove saved configuration file</label>
+        <label><input id="reset_clear_secrets" type="checkbox" /> Also clear saved secrets (.env and Credential Manager entries)</label>
+      </div>
+      <button id="btnResetLocal">Reset local data</button>
+    </div>
+  </div>
+
+  <h2>Status</h2>
+  <div class="status info" id="results"><div class="status-title">Waiting</div><div id="statusBody">Complete the steps to start setup.</div></div>
+
+  <script>
+    const results = document.getElementById("results");
+    const statusBody = document.getElementById("statusBody");
+    const stepLabel = document.getElementById("stepLabel");
+    const reviewList = document.getElementById("reviewList");
+    const btnBack = document.getElementById("btnBack");
+    const btnNext = document.getElementById("btnNext");
+    const advancedPanel = document.getElementById("advancedPanel");
+    const advancedActions = document.getElementById("advancedActions");
+    const runtimeActions = document.getElementById("runtimeActions");
+    const workTypeSelect = document.getElementById("work_type");
+    const audienceSelect = document.getElementById("audience_type");
+    const providerSelect = document.getElementById("provider");
+    const endpointHelp = document.getElementById("endpointHelp");
+    const providerHelp = document.getElementById("providerHelp");
+    const providerKeyHelp = document.getElementById("providerKeyHelp");
+    const modelSelect = document.getElementById("model_select");
+    let providers = [];
+    let workTypes = [];
+    let audienceTypes = [];
+    let defaults = {};
+    let csrfToken = "";
+    let smokeConnectivityRan = false;
+    let smokeGovernanceRan = false;
+    let currentStep = 1;
+    let currentRunning = false;
+
+    function renderStatus(kind, title, lines) {
+      results.className = `status ${kind}`;
+      results.querySelector(".status-title").textContent = title;
+      statusBody.textContent = Array.isArray(lines) ? lines.join("\n") : String(lines || "");
+    }
+
+    function readForm() {
+      const selectedModel = modelSelect.value.trim();
+      const manualModel = document.getElementById("model_manual").value.trim();
+      return {
+        work_type: workTypeSelect.value,
+        audience_type: audienceSelect.value,
+        provider_type: providerSelect.value,
+        model_name: selectedModel || manualModel,
+        api_endpoint: document.getElementById("api_endpoint").value.trim(),
+        api_key: document.getElementById("api_key").value.trim(),
+        listen_port: Number(document.getElementById("listen_port").value),
+        audit_log_path: document.getElementById("audit_log_path").value.trim(),
+        session_backend: document.getElementById("session_backend").value,
+        redis_url: document.getElementById("redis_url").value.trim(),
+        evidence_vault_enabled: document.getElementById("evidence_vault_enabled").value === "true",
+        policy_profile: document.getElementById("policy_profile").value,
+        connectivity_smoke_ran: smokeConnectivityRan,
+        governance_smoke_ran: smokeGovernanceRan
+      };
+    }
+
+    function providerDefaults() {
+      const profile = providers.find(p => p.id === providerSelect.value);
+      if (!profile) return;
+      providerHelp.textContent = profile.label + ": " + profile.endpoint_help;
+      providerKeyHelp.textContent = profile.key_help || "";
+      endpointHelp.textContent = profile.endpoint_help;
+      document.getElementById("api_endpoint").value = profile.endpoint_default;
+      modelSelect.innerHTML = "<option value=\"\">Load models, then choose one</option>";
+    }
+
+    function showAdvancedActionsIfRelevant() {
+      advancedActions.classList.toggle("hidden", !advancedPanel.open);
+    }
+
+    function setRuntimeActions(proxyRunning) {
+      runtimeActions.classList.remove("hidden");
+      document.getElementById("btnStop").disabled = !proxyRunning;
+    }
+
+    function formatCheckLines(checks) {
+      return checks.map(c => `${c.severity}: ${c.message}${c.fix_hint ? " | " + c.fix_hint : ""}`);
+    }
+
+    async function refreshStatusControls() {
+      try {
+        const res = await fetch("/api/status");
+        const data = await res.json();
+        currentRunning = Boolean(data.proxy && data.proxy.running);
+        setRuntimeActions(currentRunning);
+        if (currentStep === 4) updateReview();
+      } catch (_) {
+        currentRunning = false;
+        setRuntimeActions(false);
+      }
+    }
+
+    function labelFor(options, id) {
+      const found = options.find(item => item.id === id);
+      return found ? found.label : id;
+    }
+
+    function updateReview() {
+      const form = readForm();
+      const provider = providers.find(p => p.id === form.provider_type);
+      const rows = [
+        ["Work type", labelFor(workTypes, form.work_type)],
+        ["Audience/deployment type", labelFor(audienceTypes, form.audience_type)],
+        ["Provider", provider ? provider.label : form.provider_type],
+        ["Model", form.model_name || "Not selected"],
+        ["Encrypted evidence enabled", form.evidence_vault_enabled ? "Yes" : "No"],
+        ["Decision records enabled", form.audit_log_path ? "Yes" : "No"],
+        ["Local installation", "Yes"],
+        ["Running status", currentRunning ? "Running" : "Not running yet"],
+      ];
+      reviewList.innerHTML = rows.map(([k, v]) => `<div class="review-key">${k}</div><div class="review-val">${v}</div>`).join("");
+    }
+
+    function showStep(step) {
+      currentStep = step;
+      stepLabel.textContent = `Step ${step} of 5`;
+      for (let idx = 1; idx <= 5; idx++) {
+        document.getElementById(`step${idx}`).classList.toggle("hidden", idx !== step);
+      }
+      btnBack.classList.toggle("hidden", step === 1);
+      btnNext.classList.toggle("hidden", step === 5);
+      if (step === 4) updateReview();
+    }
+
+    async function apiPost(path, payload) {
+      const res = await fetch(path, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-csrf-token": csrfToken
+        },
+        body: JSON.stringify(payload || {})
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Setup request failed.");
+      }
+      return data;
+    }
+
+    async function loadModels(showSuccess) {
+      try {
+        const payload = readForm();
+        const data = await apiPost("/api/provider-models", payload);
+        if (data.ok && Array.isArray(data.models)) {
+          modelSelect.innerHTML = "<option value=\"\">Select a model</option>";
+          data.models.forEach(model => {
+            const opt = document.createElement("option");
+            opt.value = model;
+            opt.textContent = model;
+            modelSelect.appendChild(opt);
+          });
+          if (showSuccess) {
+            renderStatus("success", "Models loaded", ["Choose a model from the list to continue."]);
+          }
+          return;
+        }
+        renderStatus("warning", "Model list unavailable", [data.message || "Use manual model entry in Advanced settings."]);
+      } catch (err) {
+        renderStatus("warning", "Model list unavailable", [String(err)]);
+      }
+    }
+
+    async function initProviders() {
+      csrfToken = (document.cookie.match(/(?:^|;\s*)aurora_setup_csrf=([^;]+)/) || [])[1] || "";
+      const res = await fetch("/api/providers");
+      const data = await res.json();
+      workTypes = data.work_types || [];
+      audienceTypes = data.audience_types || [];
+      defaults = data.defaults || {};
+      providers = data.providers || [];
+
+      workTypeSelect.innerHTML = "";
+      workTypes.forEach(item => {
+        const opt = document.createElement("option");
+        opt.value = item.id;
+        opt.textContent = item.label;
+        workTypeSelect.appendChild(opt);
+      });
+      workTypeSelect.value = defaults.work_type || "general_ai_governance";
+
+      audienceSelect.innerHTML = "";
+      audienceTypes.forEach(item => {
+        const opt = document.createElement("option");
+        opt.value = item.id;
+        opt.textContent = item.label;
+        audienceSelect.appendChild(opt);
+      });
+      audienceSelect.value = defaults.audience_type || "customers_public";
+
+      providerSelect.innerHTML = "";
+      providers.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.label;
+        providerSelect.appendChild(opt);
+      });
+      providerSelect.value = "openai";
+
+      document.getElementById("listen_port").value = defaults.listen_port || 8000;
+      document.getElementById("audit_log_path").value = defaults.audit_log_path || "./audit.jsonl";
+      document.getElementById("session_backend").value = defaults.session_backend || "memory";
+      document.getElementById("redis_url").value = defaults.redis_url || "redis://127.0.0.1:6379/0";
+      document.getElementById("evidence_vault_enabled").value = defaults.evidence_vault_enabled ? "true" : "false";
+      document.getElementById("policy_profile").value = defaults.policy_profile || "strict";
+
+      providerDefaults();
+      showAdvancedActionsIfRelevant();
+      await refreshStatusControls();
+      showStep(1);
+    }
+
+    providerSelect.addEventListener("change", providerDefaults);
+    document.getElementById("api_key").addEventListener("blur", () => { loadModels(false); });
+    document.getElementById("btnLoadModels").addEventListener("click", async () => { await loadModels(true); });
+    advancedPanel.addEventListener("toggle", showAdvancedActionsIfRelevant);
+    btnBack.addEventListener("click", () => showStep(Math.max(1, currentStep - 1)));
+    btnNext.addEventListener("click", () => showStep(Math.min(5, currentStep + 1)));
+
+    document.getElementById("btnPrimary").addEventListener("click", async () => {
+      try {
+        const form = readForm();
+        if (!form.model_name) {
+          renderStatus("error", "Model required", ["Choose a model from the list or enter one in Advanced settings before starting."]);
+          return;
+        }
+        const saveData = await apiPost("/api/save-config", form);
+        const connData = await apiPost("/api/smoke/connectivity", form);
+        smokeConnectivityRan = Boolean(connData.ok);
+        const readinessData = await apiPost("/api/readiness", readForm());
+        const startData = await apiPost("/api/start", { ...readForm(), config_path: "aurora-lens.yaml" });
+        const lines = [
+          "Configuration saved.",
+          `Secret storage: ${saveData.secret_backend}`,
+          "",
+          "Connectivity test:"
+        ];
+        lines.push(...(connData.steps || ["Connectivity test complete."]));
+        lines.push("", readinessData.start_allowed ? "Readiness: Start allowed." : "Readiness: Start blocked.");
+        lines.push(...formatCheckLines(readinessData.checks || []));
+        if (saveData.secret_backend === "env_file") {
+          lines.push("", "WARNING: Windows Credential Manager was unavailable. Secrets were saved to local .env.");
+        }
+        lines.push("", startData.message || "Start request complete.");
+        if (Array.isArray(startData.blocking_checks) && startData.blocking_checks.length) {
+          lines.push("Blocking checks:");
+          lines.push(...formatCheckLines(startData.blocking_checks));
+        }
+        if (startData.warning) lines.push(`WARNING: ${startData.warning}`);
+        if (startData.proxy_url) lines.push(`Open operator page: ${startData.proxy_url}/forensics`);
+        renderStatus(startData.ok ? "success" : "warning", startData.ok ? "Aurora-Lens setup complete" : "Aurora-Lens setup needs attention", lines);
+        await refreshStatusControls();
+        showStep(4);
+      } catch (err) {
+        renderStatus("error", "Setup failed", [String(err)]);
+      }
+    });
+
+    document.getElementById("btnGovernance").addEventListener("click", async () => {
+      try {
+        const data = await apiPost("/api/smoke/governance", {});
+        smokeGovernanceRan = Boolean(data.ok);
+        renderStatus(data.ok ? "success" : "warning", "Governance smoke test", data.steps || ["Governance smoke complete."]);
+      } catch (err) {
+        renderStatus("error", "Governance smoke failed", [String(err)]);
+      }
+    });
+
+    document.getElementById("btnReadiness").addEventListener("click", async () => {
+      try {
+        const data = await apiPost("/api/readiness", readForm());
+        const lines = [
+          data.start_allowed ? "Readiness: Start allowed." : "Readiness: Start blocked.",
+          ""
+        ];
+        lines.push(...formatCheckLines(data.checks || []));
+        renderStatus(data.start_allowed ? "success" : "warning", "Readiness check", lines);
+      } catch (err) {
+        renderStatus("error", "Readiness check failed", [String(err)]);
+      }
+    });
+
+    document.getElementById("btnSave").addEventListener("click", async () => {
+      try {
+        const data = await apiPost("/api/save-config", readForm());
+        const lines = [
+          `Configuration saved: ${data.config_path}`,
+          `Secret storage: ${data.secret_backend}`,
+        ];
+        if (data.secret_backend === "env_file") {
+          lines.push("WARNING: Windows Credential Manager was unavailable. Secrets were saved to local .env.");
+        }
+        renderStatus("success", "Configuration saved", lines);
+      } catch (err) {
+        renderStatus("error", "Save failed", [String(err)]);
+      }
+    });
+
+    document.getElementById("btnStop").addEventListener("click", async () => {
+      try {
+        const data = await apiPost("/api/stop", {});
+        renderStatus("info", "Stop request", [data.message || "Stop request complete."]);
+        await refreshStatusControls();
+      } catch (err) {
+        renderStatus("error", "Stop failed", [String(err)]);
+      }
+    });
+
+    document.getElementById("btnRestart").addEventListener("click", async () => {
+      try {
+        const saveData = await apiPost("/api/save-config", readForm());
+        const data = await apiPost("/api/restart", { config_path: "aurora-lens.yaml" });
+        const lines = [
+          `Configuration saved: ${saveData.config_path}`,
+          data.message || "Restart request complete."
+        ];
+        if (data.proxy_url) lines.push(`Open operator page: ${data.proxy_url}/forensics`);
+        if (data.warning) lines.push(`WARNING: ${data.warning}`);
+        renderStatus(data.ok ? "success" : "warning", "Restart request", lines);
+        await refreshStatusControls();
+      } catch (err) {
+        renderStatus("error", "Restart failed", [String(err)]);
+      }
+    });
+
+    document.getElementById("btnExportLogs").addEventListener("click", async () => {
+      try {
+        const data = await apiPost("/api/export-logs", { config_path: "aurora-lens.yaml" });
+        const lines = [
+          data.message || "Support bundle created.",
+          `Archive: ${data.archive_path}`
+        ];
+        if (Array.isArray(data.included_files) && data.included_files.length) {
+          lines.push("Included files:");
+          lines.push(...data.included_files);
+        }
+        renderStatus("success", "Support logs exported", lines);
+      } catch (err) {
+        renderStatus("error", "Export failed", [String(err)]);
+      }
+    });
+
+    document.getElementById("btnResetLocal").addEventListener("click", async () => {
+      try {
+        const confirmPhrase = document.getElementById("reset_confirm").value.trim();
+        const removeConfig = document.getElementById("reset_remove_config").checked;
+        const clearSecrets = document.getElementById("reset_clear_secrets").checked;
+        const data = await apiPost("/api/reset-local-data", {
+          confirm_phrase: confirmPhrase,
+          remove_audit: true,
+          remove_config: removeConfig,
+          clear_secrets: clearSecrets,
+          config_path: "aurora-lens.yaml"
+        });
+        if (!data.ok) {
+          renderStatus("warning", "Reset blocked", [data.message || "Reset was not confirmed."]);
+          return;
+        }
+        const lines = [data.message || "Local reset complete."];
+        if (Array.isArray(data.removed_files) && data.removed_files.length) {
+          lines.push("Removed:");
+          lines.push(...data.removed_files);
+        }
+        if (data.cleared_secrets) {
+          lines.push("Secrets were cleared from .env and keyring entries when available.");
+        }
+        renderStatus("success", "Local reset complete", lines);
+        document.getElementById("reset_confirm").value = "";
+        await refreshStatusControls();
+      } catch (err) {
+        renderStatus("error", "Reset failed", [String(err)]);
+      }
+    });
+
+    initProviders().catch(err => renderStatus("error", "Setup initialization failed", [String(err)]));
+  </script>
+</body>
+</html>
+

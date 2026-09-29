@@ -1,0 +1,83 @@
+# Data-driven PEF continuity scenarios (real Lens + spaCy + state-native).
+# Consumed by tools/run_pef_continuity_scenarios.py and tests/test_pef_continuity_scenarios.py
+#
+# Schema (per scenario):
+#   name: string
+#   turns: list of user utterances (strings)
+#   checkpoints:
+#     - query: string (run through Lens after turns, on the same PEF)
+#       expected_contains: string | list[string]  # all substrings required (case-insensitive)
+#       expected_regex: string                    # optional alternate / additional check
+#       expected_upstream_calls: 0              # delta on counting LLM adapter during checkpoint
+#       expected_active_relationships:            # optional — each entry must match some non-negated row
+#         - relation: HAS | CONTAIN
+#           subject: entity display name (exact, case-insensitive)
+#           object_literal_contains: substring    # optional literal needle
+scenarios:
+  - name: egg_riddle
+    turns:
+      - "Margaret has 6 eggs."
+      - "Margaret breaks 2 eggs."
+      - "Margaret fries 2 eggs."
+      - "Margaret eats 2 eggs."
+    checkpoints:
+      - query: "How many eggs does Margaret have?"
+        expected_contains:
+          - "Margaret"
+          - "4"
+        expected_upstream_calls: 0
+        expected_active_relationships:
+          - relation: HAS
+            subject: Margaret
+            object_literal_contains: "4 eggs"
+
+  - name: red_box_marbles
+    turns:
+      - "Anna has a red box."
+      - "The red box contains 5 blue marbles."
+      - "Anna gives the red box to Ben."
+      - "Ben gives 2 blue marbles to Clara."
+      - "Clara puts 1 blue marble back into the red box."
+    checkpoints:
+      - query: "Who has the red box?"
+        expected_contains:
+          - "Ben"
+        expected_upstream_calls: 0
+      - query: "How many blue marbles does the red box have?"
+        expected_contains:
+          - "4"
+        expected_upstream_calls: 0
+        expected_active_relationships:
+          - relation: CONTAIN
+            subject: red box
+            object_literal_contains: "4"
+      - query: "How many blue marbles does Clara have?"
+        expected_contains:
+          - "Clara"
+          - "1"
+        expected_upstream_calls: 0
+
+  - name: green_bag_silver_coins
+    turns:
+      - "Liam has a green bag."
+      - "The green bag contains 7 silver coins."
+      - "Liam gives the green bag to Nora."
+      - "Nora gives 3 silver coins to Liam."
+      - "Liam puts 1 silver coin back into the green bag."
+    checkpoints:
+      - query: "Who has the green bag?"
+        expected_regex: "(?i)nora"
+        expected_upstream_calls: 0
+      - query: "How many silver coins does the green bag have?"
+        expected_contains:
+          - "5"
+        expected_upstream_calls: 0
+        expected_active_relationships:
+          - relation: CONTAIN
+            subject: green bag
+            object_literal_contains: "5"
+      - query: "How many silver coins does Liam have?"
+        expected_contains:
+          - "Liam"
+          - "2"
+        expected_upstream_calls: 0

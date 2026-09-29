@@ -23,7 +23,7 @@ from aurora_lens.launcher.lifecycle import (
     RuntimeStatusCode,
     RuntimeStatusResult,
 )
-from aurora_lens.launcher.paths import RuntimePaths
+from aurora_lens.launcher.paths import RuntimePaths, runtime_paths_from_setup_home
 
 
 @dataclass(frozen=True)
@@ -34,6 +34,7 @@ class ProxyStartResult:
     proxy_url: str | None = None
     health_url: str | None = None
     log_path: str | None = None
+    warning: str | None = None
 
 
 def _utc_now() -> str:
@@ -135,12 +136,17 @@ def _utc_stamp_compact() -> str:
 class LauncherState:
     """Owns deterministic runtime files and proxy process lifecycle."""
 
-    def __init__(self, paths: RuntimePaths) -> None:
+    def __init__(self, paths: RuntimePaths | None = None, *, home: Path | None = None) -> None:
+        if paths is None:
+            if home is None:
+                raise TypeError("LauncherState requires paths= or home=")
+            paths = runtime_paths_from_setup_home(home)
         self.paths = paths
         self.proxy_pid_path = paths.proxy_pid_path
         self.log_path = paths.launcher_log_path
         self.proxy_log_path = paths.proxy_log_path
         self._release_info = load_build_info()
+        self.controller_pid_path = paths.state_dir / "aurora-lens.controller.pid"
 
     def log(self, message: str) -> None:
         line = f"{_utc_now()} {message}\n"
@@ -667,3 +673,68 @@ class LauncherState:
             "Aurora-Lens proxy stopped.",
             {"role": "proxy", "pid": pid, "port": port},
         )
+
+    def controller_pid(self) -> int | None:
+        payload = _read_pid_file(self.controller_pid_path)
+        if not payload:
+            if self.controller_pid_path.exists():
+                try:
+                    self.controller_pid_path.unlink()
+                except OSError:
+                    pass
+            return None
+        pid = int(payload.get("pid") or 0)
+        if _is_pid_alive(pid):
+            return pid
+        try:
+            self.controller_pid_path.unlink()
+        except OSError:
+            pass
+        return None
+
+    def proxy_pid(self) -> int | None:
+        payload = _read_pid_file(self.proxy_pid_path)
+        if not payload:
+            if self.proxy_pid_path.exists():
+                try:
+                    self.proxy_pid_path.unlink()
+                except OSError:
+                    pass
+            return None
+        pid = int(payload.get("pid") or 0)
+        if _is_pid_alive(pid):
+            return pid
+        try:
+            self.proxy_pid_path.unlink()
+        except OSError:
+            pass
+        return None
+
+    def stop_proxy(self) -> bool:
+        pid = self.proxy_pid()
+        if not pid:
+            return False
+        self._kill_pid(pid)
+        time.sleep(0.25)
+        if not _is_pid_alive(pid):
+            try:
+                self.proxy_pid_path.unlink()
+            except OSError:
+                pass
+            self.log(f"proxy_stopped pid={pid}")
+            return True
+        self.log(f"proxy_stop_failed pid={pid}")
+        return False
+
+    def proxy_status(self) -> dict[str, Any]:
+        pid = self.proxy_pid()
+        proxy_running = bool(pid and _is_pid_alive(pid))
+        proxy_port = None
+        payload = _read_pid_file(self.proxy_pid_path)
+        if payload:
+            proxy_port = payload.get("port")
+        return {
+            "running": proxy_running,
+            "pid": pid,
+            "port": proxy_port,
+        }

@@ -78,7 +78,6 @@ from aurora_lens.govern.chain_of_custody import get_code_revision_snapshot
 from aurora_lens.proxy.rate_limits import RateLimiter
 from aurora_lens.proxy.metrics import get_metrics
 from aurora_lens import __author__, __license__, __project__
-from aurora_lens.build_info import load_build_info, public_release_metadata
 
 _logger = get_logger(__name__)
 # Phase 5: validation limits (chars per message for content extraction)
@@ -875,6 +874,38 @@ def _auth_exempt(path: str) -> bool:
         "/v1/models",
     )
 
+
+# Public demo surface proxied by aurora-lens.ai Pages Functions. Transport-only gate;
+# does not change governance. Requires Railway secret AURORA_EDGE_TOKEN.
+#
+# Audit GET routes are intentionally excluded: the Railway /forensics console loads
+# them same-origin from the browser (no place to put the edge token), and the same
+# read surface is already public via aurora-lens.ai Pages. Chat / new-scenario remain
+# gated so anonymous clients cannot burn upstream model capacity on the Railway URL.
+PUBLIC_DEMO_EDGE_PATHS = frozenset({
+    "/v1/chat/completions",
+    "/v1/session/new-scenario",
+})
+
+_EDGE_TOKEN_FORBIDDEN = {
+    "error": {
+        "message": "Forbidden",
+        "type": "authentication_error",
+    }
+}
+
+
+def _edge_token_matches(provided: str | None, expected: str) -> bool:
+    """Timing-safe compare of edge tokens (length-independent via SHA-256 digests)."""
+    got = (provided or "").encode("utf-8")
+    want = expected.encode("utf-8")
+    return hmac.compare_digest(hashlib.sha256(got).digest(), hashlib.sha256(want).digest())
+
+
+def _public_demo_edge_token_required(path: str) -> bool:
+    return path in PUBLIC_DEMO_EDGE_PATHS
+
+
 def _provider_display(p: str | None) -> str:
     """Map config provider (vendor) to adapter identity for Aurora-Upstream header."""
     raw = "" if p is None else p
@@ -959,7 +990,6 @@ def _maybe_rotate_audit_for_fresh_chain(path: Path) -> None:
 
 def create_app(cfg: ProxyConfig) -> FastAPI:
     app = FastAPI(title="aurora-lens-proxy", version="1.0")
-    release_info = load_build_info()
 
     upstream_adapter, extraction_adapter = _build_provider_adapters(cfg)
     if cfg.governance.enable_mock_hard_stop:
@@ -1120,6 +1150,25 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
                 _user_class_var.reset(token_uc)
             if token_domain is not None:
                 _domain_var.reset(token_domain)
+
+    @app.middleware("http")
+    async def _aurora_edge_token_middleware(request: Request, call_next):
+        """Transport gate for public-demo routes proxied by aurora-lens.ai.
+
+        Requires ``x-aurora-edge-token`` matching Railway secret ``AURORA_EDGE_TOKEN``.
+        Fail closed when the secret is unset. Does not log token values.
+        Registered last among http middlewares so it runs before auth/route work.
+        """
+        path = request.url.path
+        if not _public_demo_edge_token_required(path):
+            return await call_next(request)
+        expected = (os.environ.get("AURORA_EDGE_TOKEN") or "").strip()
+        if not expected:
+            return JSONResponse(status_code=403, content=_EDGE_TOKEN_FORBIDDEN)
+        provided = request.headers.get("x-aurora-edge-token")
+        if not _edge_token_matches(provided, expected):
+            return JSONResponse(status_code=403, content=_EDGE_TOKEN_FORBIDDEN)
+        return await call_next(request)
 
     if cfg.cors.enabled:
         from starlette.middleware.cors import CORSMiddleware
@@ -1386,7 +1435,6 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
             "git_commit": rev["git_commit"],
             "git_commit_source": rev["git_commit_source"],
             "git_working_tree_clean": rev["git_working_tree_clean"],
-            "release": public_release_metadata(release_info),
         }
         if "proxy_run_id" in snap:
             body["proxy_run_id"] = snap["proxy_run_id"]
@@ -1405,7 +1453,6 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
                 "commercial_license_required_for": (
                     "closed-source, SaaS, hosted, embedded, internal proprietary, or enterprise use"
                 ),
-                "release": public_release_metadata(release_info),
             }
         )
 
@@ -2090,7 +2137,6 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
             "n": len(entries),
             "backend": audit_sink,
             "operator_rows": [_json_safe(_operator_audit_row(e, audit_sink)) for e in entries],
-            "release": public_release_metadata(release_info),
         }
         proxy_ms = int((time.time() - started) * 1000)
         return JSONResponse(
@@ -2142,7 +2188,6 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
             "block_count": block_count,
             "audit_writable": audit_writable,
             "proxy_run_id": snap.get("proxy_run_id"),
-            "release": public_release_metadata(release_info),
         }
         proxy_ms = int((time.time() - started) * 1000)
         return JSONResponse(
@@ -2310,11 +2355,7 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
             domain=domain,
             non_admit_only=non_admit_only,
         )
-        body = {
-            "entries": [_json_safe(e) for e in filtered],
-            "count": len(filtered),
-            "release": public_release_metadata(release_info),
-        }
+        body = {"entries": [_json_safe(e) for e in filtered], "count": len(filtered)}
         proxy_ms = int((time.time() - started) * 1000)
         return JSONResponse(
             content=body,

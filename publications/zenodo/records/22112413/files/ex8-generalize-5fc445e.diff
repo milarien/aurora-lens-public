@@ -1,0 +1,49 @@
+﻿5fc445e1316330774cd4c3b15881b20955516571
+2026-08-26 09:07:09 +0200
+Nj├Ñl Gaute Solland
+Generalize PEACE non-public categories to avoid research-direction map
+
+diff --git a/PUBLICATION_POLICY.md b/PUBLICATION_POLICY.md
+index 8f2b91d..5878333 100644
+--- a/PUBLICATION_POLICY.md
++++ b/PUBLICATION_POLICY.md
+@@ -20,22 +20,22 @@ The approved public surface is limited to material required for independent PEAC
+ 
+ ## Not public by default
+ 
+-The following require a separate explicit decision before any public push:
++A separate explicit publication decision is required for material that is not necessary to implement or verify the released interoperability contract, including:
+ 
+-- research derivations or discovery lineage;
+-- unpublished mechanisms or invariants beyond the released protocol contract;
+-- experimental routing, capability-composition or adaptive-network work;
+-- model-specific state-transfer techniques or evaluation results;
+-- internal product topology, commercial implementation strategy or roadmap;
+-- cross-project synthesis that reveals how independently useful components combine into a protected architecture;
+-- partner/customer material, private data, credentials, thresholds or assurance methods.
++- unpublished research, derivations, discovery lineage or experimental results;
++- proprietary mechanisms, implementation strategies or non-normative system composition;
++- internal topology, dependency relationships, sequencing, roadmaps or commercial plans;
++- cross-project synthesis that materially reduces the search space around protected work;
++- partner/customer material, private data, credentials, internal thresholds or assurance methods.
++
++The public exclusion list is intentionally expressed as information classes rather than a catalogue of protected project names, research directions or internal components.
+ 
+ ## Review test
+ 
+ Before promotion to this public repository, the reviewer must answer:
+ 
+ 1. Is every disclosed element necessary for interoperability, adoption, auditability or a deliberate public standard claim?
+-2. Could the material be combined with other public artifacts to reconstruct a protected mechanism, architecture or research direction?
++2. Could the material be combined with other public artifacts to reconstruct protected work?
+ 3. Does disclosure weaken patent, trade-secret, licensing, standards, negotiation or competitive position?
+ 4. Can the same public objective be achieved with less disclosure?
+ 5. Has the exact proposed public diff, not merely its topic, been reviewed?
+@@ -44,4 +44,6 @@ If any answer is uncertain, do not push the material here.
+ 
+ ## Secondary CI gate
+ 
+-CI checks the current tree for known non-public research markers and obvious secret material. This is defense in depth only. It does not replace pre-push IP review because a failed branch in a public repository is already public.
++Public CI checks generic publication hygiene, required protocol artifacts, schema/conformance validity and obvious credential material. Protected IP/research policy must be evaluated before public push using a private policy source; a public deny-list or reversible fingerprint catalogue would itself create disclosure risk.
++
++CI is defense in depth only. It does not replace pre-push IP review because a failed branch in a public repository is already public.

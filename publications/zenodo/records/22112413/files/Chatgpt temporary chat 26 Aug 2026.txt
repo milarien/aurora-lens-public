@@ -1,0 +1,933 @@
+The smallest architecture is not “a secure agent.” It is a continuity of authority that survives the replacement of every component that happens to implement it.
+
+The core distinction is this:
+
+The sovereign domain is a logical actor whose authority is defined by governed state transitions, not by possession of data, credentials, compute, identity artifacts, or infrastructure.
+
+Everything else follows from that.
+
+1. The irreducible state
+
+A sovereign domain needs one logically authoritative state, even if that state is physically replicated, sharded, encoded, backed up, or reconstructed.
+
+Call it Sovereign State \(S\).
+
+At minimum, \(S\) must determine:
+
+$$ S = ( I,\, A,\, R,\, D,\, G,\, H,\, C ) $$
+
+where:
+
+\(I\): actor identity and continuity rules
+\(A\): currently valid authorities
+\(R\): rights, obligations, relationships and constraints
+\(D\): delegations currently in force
+\(G\): governance and recovery rules
+\(H\): authoritative transition history or commitments sufficient to reconstruct it
+\(C\): current constitutional/version state, including what rules determine valid future transitions
+
+This does not mean those fields require a particular database, ledger, key system or serialization. It means that, whatever implementation exists, there must be an unambiguous answer to:
+
+“What state currently determines what this actor is allowed to do, who may act for it, and how that state may legitimately change?”
+
+If there is no such answer, sovereignty has already been lost.
+
+2. The minimal invariants
+
+I think only nine fundamental invariants are required. Most other desirable properties reduce to them.
+
+Invariant 1 — Actor continuity is independent of replaceable artifacts
+
+No replaceable artifact may be identical with the sovereign actor.
+
+Therefore:
+
+$$ Actor \neq Device \neq Key \neq Credential \neq Account \neq Runtime \neq Model \neq Provider $$
+
+A replacement operation changes an implementation binding, not the actor.
+
+Consequently there must exist rules for deciding that:
+
+$$ Actor_{before} = Actor_{after} $$
+
+despite changes in keys, devices, providers, software or infrastructure.
+
+Without this invariant, key rotation, device migration or provider migration becomes identity replacement.
+
+Invariant 2 — Authority comes only from authoritative state
+
+An operation has authority only because the current sovereign state says that it does.
+
+Not because:
+
+a service possesses data,
+a user successfully authenticated,
+a model generated the operation,
+a credential verifies,
+a message arrived through a trusted channel,
+a provider hosts the state,
+a device was previously trusted,
+a worker was assigned the task,
+an agent possesses a capability,
+or an operation was authorized earlier.
+
+Formally, for consequential operation \(x\):
+
+$$ Authorized(x,t) \iff ValidUnder(x,S_t,E_t) $$
+
+where \(S_t\) is authoritative state at the relevant decision point and \(E_t\) represents required external conditions.
+
+Everything else is merely evidence supplied to that decision.
+
+This is perhaps the most important invariant in the system.
+
+Invariant 3 — Every consequential transition is explicitly authorized
+
+Compute can happen freely within its allowed information boundary.
+
+Authority cannot happen implicitly.
+
+Any transition that alters the sovereign domain or causes an external consequence must pass through an authority boundary.
+
+So:
+
+$$ Proposal \not\Rightarrow Consequence $$
+
+Instead:
+
+$$ Proposal \rightarrow Authorization \rightarrow Commitment \rightarrow Execution $$
+
+These may sometimes collapse into a single atomic operation, but they remain logically distinct.
+
+The fact that a system can perform an action must never imply that it may perform that action.
+
+Invariant 4 — Authorization is evaluated against current state
+
+Authorization cannot merely mean “someone approved this once.”
+
+Between proposal and consequence:
+
+authority may disappear,
+delegation may expire,
+a relationship may terminate,
+scope may change,
+purpose may change,
+the underlying object may change,
+external conditions may change,
+approval thresholds may change,
+revocation may occur.
+
+Therefore a consequential action must be bound to a sufficiently precise state/context and either:
+
+execute within an indivisible authorization/commitment transition; or
+be revalidated before consequence.
+
+Conceptually:
+
+$$ Authorize(P,S_a) $$
+
+does not establish:
+
+$$ Execute(P,S_b) $$
+
+unless the authorization explicitly remains valid under the transition from \(S_a\) to \(S_b\).
+
+This eliminates stale authority.
+
+Invariant 5 — Delegation is bounded, attributable and revocable
+
+Delegated authority must never become indistinguishable from original authority.
+
+Every delegation must answer at least:
+
+who delegated,
+to whom,
+what authority,
+over what objects/domain,
+for what purpose,
+under what constraints,
+for how long / until what condition,
+whether/how it may be redelegated,
+how it is revoked.
+
+Thus:
+
+$$ DelegatedAuthority \subseteq DelegatorAuthority $$
+
+A delegate cannot manufacture authority the delegator did not possess.
+
+Delegation can be narrower but cannot silently become broader.
+
+Invariant 6 — Information access and authority are orthogonal
+
+Possessing information is not possession of authority.
+
+A component may have:
+
+all the data and no authority,
+authority to perform one operation and almost no data,
+neither,
+or narrowly scoped quantities of both.
+
+Therefore the system must conceptually separate:
+
+$$ DataAccess $$
+
+from:
+
+$$ DecisionAuthority $$
+
+from:
+
+$$ ExecutionAuthority $$
+
+This is what permits external models, clouds and workers to be useful without becoming sovereign.
+
+Invariant 7 — External disclosure is purpose-bounded
+
+An external compute system receives only information legitimately required for its assigned purpose.
+
+That implies a transformation:
+
+$$ S \xrightarrow{\text{derive for purpose } p} V_p $$
+
+where \(V_p\) is a view, not sovereign state itself.
+
+The recipient operates on \(V_p\).
+
+It does not acquire authority over \(S\).
+
+A useful consequence follows:
+
+The normal unit of interaction with external intelligence should be a purpose-specific derived view, not unrestricted access to the sovereign domain.
+
+No particular privacy mechanism is implied. It is the boundary that matters.
+
+Invariant 8 — Evidence and authoritative state are different things
+
+Evidence can establish that something occurred without making the contents authoritative.
+
+For example, it may prove:
+
+model M received context X,
+worker W proposed action P,
+authority service A approved P,
+executor E submitted request Q,
+provider returned result R.
+
+None of these facts imply that:
+
+X was true,
+P was correct,
+R was legitimate,
+the model had authority,
+or the sovereign state actually changed.
+
+Therefore:
+
+$$ Evidence(event) \neq Authority(event) $$
+
+and:
+
+$$ Evidence(content) \neq Truth(content) $$
+
+Only a valid state transition changes authoritative state.
+
+This prevents logs, transcripts, AI outputs, signed statements and provider records from silently becoming constitutional truth.
+
+Invariant 9 — Constitutional control has a recoverable root
+
+Every replaceable mechanism may disappear.
+
+Therefore the rules by which sovereign authority can be recovered cannot ultimately depend upon any one such mechanism.
+
+Recovery must be able to establish:
+
+which actor is being recovered,
+which authoritative state or valid successor is recovered,
+which prior authorities are preserved or revoked,
+which implementation bindings are replaced,
+why the recovery transition itself is legitimate.
+
+This yields:
+
+$$ Loss(Component) \not\Rightarrow Loss(Sovereignty) $$
+
+although it may cause:
+
+$$ Loss(Component) \Rightarrow Loss(Capability) $$
+
+Those are deliberately different outcomes.
+
+A sovereign system can tolerate incapacity.
+
+It cannot tolerate involuntary transfer of constitutional control.
+
+3. The necessary boundaries
+
+From those invariants, only a few logical boundaries are required.
+
+Boundary A — Sovereign state boundary
+
+Inside lies authoritative state.
+
+Outside lies everything that may observe, cache, process, reproduce or propose changes to it.
+
+Only valid transition machinery may cross this boundary in the mutating direction.
+
+Conceptually:
+
+                observations
+                     ↓
+        ┌────────────────────────┐
+        │    Sovereign State     │
+        │                        │
+        │ identity               │
+        │ authority              │
+        │ rights                 │
+        │ delegation             │
+        │ governance             │
+        │ recovery               │
+        └───────────┬────────────┘
+                    │
+            valid transition
+                    │
+                    ▼
+                  S'
+
+No database or machine is inherently “inside.” The boundary is logical.
+
+Boundary B — Intelligence boundary
+
+Models, algorithms, analysts, agents, simulations and optimizers sit on the non-authoritative side.
+
+They can produce:
+
+$$ Observation \rightarrow Analysis \rightarrow Proposal $$
+
+but never:
+
+$$ Proposal \equiv Authority $$
+
+An AI may be extraordinarily capable while remaining constitutionally powerless.
+
+That is precisely the desired property.
+
+Boundary C — Authorization boundary
+
+This resolves:
+
+“May this proposed transition occur now?”
+
+Inputs may include:
+
+current authoritative state,
+proposal,
+provenance,
+delegation,
+purpose,
+constraints,
+required approvals,
+environmental facts,
+freshness,
+revocation state.
+
+Its output is not merely “yes/no.”
+
+It must bind approval to what was actually approved.
+
+For example:
+
+$$ Auth = f( Actor, Operation, Target, Parameters, Purpose, StateReference, Constraints, Validity ) $$
+
+Otherwise an approval for one thing can be replayed or transformed into approval for another.
+
+Boundary D — Consequence boundary
+
+A separate distinction exists between changing internal authoritative state and causing effects elsewhere.
+
+Examples include:
+
+transferring money,
+opening a lock,
+publishing a statement,
+entering a contract,
+commanding machinery,
+issuing an access grant.
+
+At this boundary the system must ensure the attempted external consequence still corresponds to valid authority.
+
+This is where stale authorization, substitution and confused-deputy failures must be prevented.
+
+Boundary E — Evidence boundary
+
+Evidence enters an append/preserve process but does not enter authoritative state merely because it exists.
+
+This gives two separate streams:
+
+                   ┌──> Evidence history
+Event / Result ────┤
+                   │
+                   └──> Proposed state transition
+                             │
+                          validation
+                             │
+                             ▼
+                     Authoritative state
+
+This distinction is essential to reconstructibility.
+
+4. The minimum state-transition model
+
+The entire world can be described with surprisingly few transition types.
+
+1. Observe
+
+Acquire information.
+
+$$ S \rightarrow (S,O) $$
+
+No authority changes.
+
+Observation may later become evidence.
+
+2. Derive
+
+Produce a purpose-limited view.
+
+$$ (S,p) \rightarrow V_p $$
+
+No authoritative state changes.
+
+This is how sovereign information leaves the boundary.
+
+3. Propose
+
+An agent, model, person or process proposes a change.
+
+$$ (S,V,O) \rightarrow P $$
+
+Still no authoritative change.
+
+4. Authorize
+
+Current sovereign state evaluates whether P may proceed.
+
+$$ (S,P,E) \rightarrow A $$
+
+where \(A\) is a scoped authorization.
+
+Still not necessarily a state change or external consequence.
+
+5. Commit
+
+A valid authorization becomes an authoritative transition:
+
+$$ (S,A) \rightarrow S' $$
+
+This is the only operation that changes sovereign truth.
+
+Examples include:
+
+grant delegation,
+revoke delegation,
+accept relationship,
+change policy,
+rotate implementation binding,
+record an authoritative decision.
+6. Execute
+
+A currently valid authorization is presented at the consequence boundary:
+
+$$ (A,S,E) \rightarrow X $$
+
+where \(X\) is an attempted external consequence.
+
+The result may succeed, fail or be ambiguous.
+
+Critically:
+
+$$ Attempt \neq Success $$
+
+and:
+
+$$ Success \neq AuthorizedStateChange $$
+
+unless sovereign rules explicitly connect them.
+
+7. Record evidence
+
+Every meaningful stage may generate durable evidence:
+
+$$ event \rightarrow e $$
+
+Evidence can cover:
+
+observed
+derived
+disclosed
+proposed
+authorized
+denied
+committed
+attempted
+returned
+failed
+revoked
+recovered
+
+Evidence remains evidence.
+
+8. Revoke
+
+Authority is changed so that some previously available transition is no longer valid.
+
+$$ S \rightarrow S' $$
+
+The important semantic requirement is that subsequent authorization/execution observes the revocation.
+
+It is impossible in a general distributed world to guarantee that every previously leaked datum disappears. Sovereignty therefore has to depend on revocation of authority, not magical revocation of knowledge.
+
+9. Replace
+
+Change an implementation artifact.
+
+$$ (S,B_x) \rightarrow (S,B_y) $$
+
+where \(B\) means an implementation binding.
+
+Notice:
+
+$$ S_{identity}=S_{identity} $$
+
+The actor did not change.
+
+This operation covers:
+
+key rotation,
+new phone,
+new cloud,
+new model,
+new runtime,
+new storage system,
+new executor,
+new credential.
+10. Recover
+
+Restore operative control from survivable authoritative information and governance.
+
+$$ RecoveryEvidence + Governance \rightarrow S' $$
+
+Recovery is itself an authoritative transition and must obey constitutional rules.
+
+Otherwise “recovery” is merely a privileged takeover path.
+
+5. The minimal lifecycle for consequential action
+
+The safe primitive is therefore:
+
+PURPOSE
+   │
+   ▼
+DERIVE MINIMUM VIEW
+   │
+   ▼
+COMPUTE / REASON
+   │
+   ▼
+PROPOSAL
+   │
+   ▼
+VALIDATE AGAINST CURRENT SOVEREIGN STATE
+   │
+   ▼
+AUTHORIZE
+   │
+   ├──── state changed / authorization stale ──> reject or reauthorize
+   │
+   ▼
+COMMIT / EXECUTE
+   │
+   ▼
+OBSERVE RESULT
+   │
+   ▼
+EVIDENCE
+   │
+   └──── if authoritative update required ─────> new validated transition
+
+That loop is the essential machine.
+
+Everything else is an optimization.
+
+6. A particularly important rule: never confuse nouns with powers
+
+Many architectures fail because they attach sovereignty to a noun.
+
+For example:
+
+“The key is the identity.”
+
+That fails when the key must be replaced.
+
+“The phone is the trusted device.”
+
+That fails when the phone disappears.
+
+“The account owns the data.”
+
+That fails when the provider disappears.
+
+“The AI agent is acting for the user.”
+
+That fails when the model is compromised or replaced.
+
+“The signed request is authorized.”
+
+That fails when authority has since been revoked.
+
+“The ledger says it happened.”
+
+That fails when recorded evidence is mistaken for authoritative truth.
+
+The correct formulation is always relational:
+
+Under current sovereign state, this evidence establishes that this principal currently has this authority, for this purpose, over this scope, subject to these constraints.
+
+That relation can survive replacement of the nouns involved.
+
+7. Four distinct concepts that should never collapse
+
+A minimal implementation must preserve four different kinds of state.
+
+Kind	Means	Example
+Authoritative state	What the sovereign domain currently declares operative	Alice may spend ≤ $500
+Proposal	What some party suggests should happen	Transfer $300
+Authorization	Permission for a precisely bounded consequence	This transfer may execute under conditions X
+Evidence	Durable information about events	Agent proposed it; authority approved it; bank returned success
+
+Collapsing any two creates severe problems.
+
+Proposal = authorization
+
+The model becomes sovereign.
+
+Authentication = authorization
+
+Anyone holding an authentication mechanism acquires unintended powers.
+
+Evidence = state
+
+Logs become constitutional truth.
+
+Execution result = state
+
+External services determine sovereign truth.
+
+Credential = identity
+
+Credential replacement becomes actor replacement.
+
+Hosted state = authority
+
+The storage provider becomes sovereign.
+
+Those equivalences therefore have to be prohibited at the architectural level.
+
+8. The reconstruction invariant
+
+“Backup” is weaker than what your conditions demand.
+
+The system needs semantic reconstructibility.
+
+After catastrophic replacement, a valid recovery process must be able to determine at least:
+
+Who is the actor?
+
+What constitutional rules govern it?
+
+What is the latest defensible authoritative state?
+
+How was that state reached?
+
+Which delegations remain valid?
+
+Which have expired or been revoked?
+
+Which relationships and obligations remain?
+
+Which implementation bindings are obsolete?
+
+What unresolved external actions may still be in flight?
+
+What evidence exists regarding them?
+
+What recovery authority permits the new implementation to continue?
+
+This does not require reproducing every bit that ever existed.
+
+It requires preserving enough information to reconstruct the operative sovereign domain.
+
+That means the survival target is not:
+
+$$ all\ data $$
+
+but:
+
+$$ constitution + authoritative\ state + transition\ lineage + recovery\ basis + unresolved\ commitments $$
+
+Everything else may be recoverable, reproducible or expendable according to policy.
+
+9. The subtle distributed-systems consequence
+
+There is one unavoidable limitation.
+
+The world contains components that can disappear during actions.
+
+Therefore some outcomes will be uncertain.
+
+For example:
+
+authorize payment
+→ send payment
+→ network fails
+→ did the bank receive it?
+
+No architecture can universally infer the answer from silence.
+
+So sovereign reconstruction must admit an explicit state such as:
+
+$$ Outcome = Unknown $$
+
+rather than inventing false certainty.
+
+Consequently transitions involving external systems need stable operation identity so that reconciliation can distinguish:
+
+never attempted,
+attempted,
+definitely failed,
+definitely succeeded,
+outcome unknown,
+subsequently reconciled.
+
+Thus uncertainty itself must be representable authoritative state where external atomicity is unavailable.
+
+That is necessary, not optional.
+
+10. Replacement without sovereignty transfer
+
+A component migration should therefore conceptually look like:
+
+Old implementation
+       │
+       │  proves / exports sufficient state and evidence
+       ▼
+Sovereign continuity process
+       │
+       │  governed replacement transition
+       ▼
+New implementation
+
+and never:
+
+New provider says:
+"I authenticated successfully,
+therefore I am now the sovereign root."
+
+The replacement is legitimate because the sovereign domain authorized a new binding.
+
+The new binding does not legitimize itself.
+
+This inversion is critical.
+
+11. What must be durable?
+
+Not everything.
+
+The least-resistance architecture makes only a small constitutional core durable.
+
+Necessarily durable
+
+Enough to recover:
+
+actor continuity,
+current authoritative state,
+governance rules,
+delegation state,
+revocations,
+rights/relationships/obligations that survive replacement,
+transition lineage sufficient to establish the legitimacy of current state,
+unresolved consequential operations,
+recovery rules.
+Desirably durable
+
+Evidence required for:
+
+audit,
+dispute resolution,
+accountability,
+provenance,
+reconstruction,
+reconciliation.
+Not constitutionally necessary
+
+Unless application policy says otherwise:
+
+model scratchpads,
+temporary caches,
+intermediate computation,
+runtime state,
+provider-specific metadata,
+replicated derived views,
+ephemeral session state.
+
+This separation substantially simplifies the architecture.
+
+12. The smallest possible conceptual architecture
+
+You can reduce the entire system to five logical functions.
+
+                    ┌─────────────────────┐
+                    │  Sovereign State    │
+                    │ + Constitution      │
+                    └──────────┬──────────┘
+                               │
+                 ┌─────────────┴─────────────┐
+                 │                           │
+                 ▼                           ▼
+          VIEW DERIVATION              AUTHORITY
+       minimum necessary data       validate transitions
+                 │                           │
+                 ▼                           │
+       EXTERNAL COMPUTATION                  │
+       models / agents / clouds              │
+                 │                           │
+                 └────── proposal ───────────┘
+                                             │
+                                             ▼
+                                      CONSEQUENCE
+                                        execution
+                                             │
+                                             ▼
+                                         EVIDENCE
+
+Plus one cross-cutting operation:
+
+RECOVERY / REPLACEMENT
+
+which can reconstruct or rebind every box without changing the logical actor.
+
+No more fundamental architecture is required.
+
+Individual implementations may split these into hundreds of services or collapse them into one device.
+
+The logical invariants remain identical.
+
+13. The constitutional kernel
+
+If reduced even further, the sovereign domain needs to be able to answer exactly six questions:
+
+Who am I?
+What is currently authoritative?
+Who may change or act upon it?
+Under what scope, purpose and conditions?
+How do I know which transitions legitimately produced the present state?
+How can legitimate control continue when the current implementation disappears?
+
+Everything else can be delegated to replaceable machinery.
+
+That gives a useful definition:
+
+The constitutional kernel is the minimum information and rules necessary to answer those six questions without trusting any particular replaceable component to answer them merely because it possesses them.
+
+14. Therefore, sovereignty is not primarily a security property
+
+Security mechanisms help enforce it, but the underlying property is architectural.
+
+Confidentiality alone is insufficient.
+
+Integrity alone is insufficient.
+
+Authentication alone is insufficient.
+
+Cryptographic possession alone is insufficient.
+
+Availability alone is insufficient.
+
+Auditability alone is insufficient.
+
+Decentralisation alone is insufficient.
+
+Local storage alone is insufficient.
+
+Self-hosting alone is insufficient.
+
+Even perfect cryptography cannot repair an architecture whose rule is:
+
+$$ PossessesKey \Rightarrow Sovereign $$
+
+because then compromise or replacement of the key changes sovereignty by definition.
+
+The deeper requirement is:
+
+$$ Authority = GovernedInterpretation(CurrentState, Evidence, ProposedTransition) $$
+
+Cryptographic mechanisms, credentials, hardware and providers can then serve as evidence and enforcement mechanisms beneath that rule.
+
+15. The irreducible safety laws
+
+The entire derivation can finally be compressed into these laws:
+
+Continuity law
+
+$$ Replace(Component) \not\Rightarrow Replace(Actor) $$
+
+Authority law
+
+$$ Possession \not\Rightarrow Authority $$
+
+Computation law
+
+$$ Computation \not\Rightarrow Authority $$
+
+Proposal law
+
+$$ Proposal \not\Rightarrow Consequence $$
+
+Freshness law
+
+$$ PastAuthorization \not\Rightarrow CurrentAuthorization $$
+
+Delegation law
+
+$$ DelegateAuthority \subseteq DelegatorAuthority $$
+
+Disclosure law
+
+$$ ExternalView \subseteq InformationNeededForPurpose $$
+
+Evidence law
+
+$$ Evidence \not\Rightarrow AuthoritativeTruth $$
+
+Transition law
+
+$$ AuthoritativeStateChange \Rightarrow ValidGovernedTransition $$
+
+Recovery law
+
+$$ Loss(ReplaceableArtifact) \not\Rightarrow Loss(ConstitutionalControl) $$
+
+Uncertainty law
+
+$$ UnknownOutcome \neq Success \neq Failure $$
+
+And one meta-law sits above all of them:
+
+$$ \boxed{ \text{No replaceable artifact may become the ultimate source of its own authority.} } $$
+
+That is the smallest coherent foundation I can derive from your premises.
+
+If that law and the invariants above hold, languages, models, clouds, devices, cryptographic systems, databases, runtimes and providers can all be treated as replaceable machinery.
+
+If they do not hold, one or more of those artifacts eventually becomes the sovereign in practice.

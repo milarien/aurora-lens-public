@@ -269,6 +269,174 @@ def _strip_markdown_bold_wrappers_for_rag_extraction(context_block: str) -> str:
     return re.sub(r"\*\*([^*]+)\*\*", r"\1", context_block)
 
 
+@dataclass(frozen=True)
+class _RagContextExtractionUnit:
+    text: str
+    admission_context: str
+    document_id: str | None
+    document_locator: str | None
+
+
+_RAG_JSON_FIELD_ROLE_OBSERVED_FACT = "observed_fact"
+_RAG_JSON_FIELD_ROLE_POLICY_RULE = "policy_rule"
+_RAG_JSON_FIELD_ROLE_PROPOSITION_UNDER_EVAL = "proposition_under_evaluation"
+_RAG_JSON_FIELD_ROLE_EPISTEMIC_LIMIT = "epistemic_limit"
+_RAG_JSON_FIELD_ROLE_WORKFLOW_INSTRUCTION = "workflow_instruction"
+_RAG_JSON_FIELD_ROLE_METADATA = "metadata"
+_RAG_JSON_ADMISSIBLE_FIELD_ROLES = frozenset(
+    {
+        _RAG_JSON_FIELD_ROLE_OBSERVED_FACT,
+        _RAG_JSON_FIELD_ROLE_EPISTEMIC_LIMIT,
+    }
+)
+_RAG_JSON_OBSERVED_TEXT_KEYS = frozenset(
+    {
+        "asserted_fact",
+        "observed_fact",
+        "meaning",
+        "provider_message",
+    }
+)
+_RAG_JSON_METADATA_KEYS = frozenset(
+    {
+        "case_id",
+        "scenario",
+        "currency",
+        "evidence_cutoff_utc",
+        "freeze_point",
+        "action_a",
+        "action_b",
+        "order_id",
+        "amount",
+        "note",
+        "policy_id",
+        "effective_from_utc",
+        "object_type",
+        "supporting_evidence_refs",
+        "reason",
+        "historical_integrity",
+        "non_inheritance_rule",
+        "workflow_constraint",
+        "claim_under_evaluation",
+    }
+)
+
+
+def _rag_json_field_tokens(path: str) -> list[str]:
+    return [tok.lower() for tok in re.findall(r"[A-Za-z_][A-Za-z0-9_]*", path or "")]
+
+
+def _rag_json_field_role(path: str) -> str:
+    toks = _rag_json_field_tokens(path)
+    leaf = toks[-1] if toks else ""
+    if "claim_under_evaluation" in toks:
+        return _RAG_JSON_FIELD_ROLE_PROPOSITION_UNDER_EVAL
+    if "epistemic_limit" in toks:
+        return _RAG_JSON_FIELD_ROLE_EPISTEMIC_LIMIT
+    if "workflow_constraint" in toks or "non_inheritance_rule" in toks or "historical_integrity" in toks:
+        return _RAG_JSON_FIELD_ROLE_WORKFLOW_INSTRUCTION
+    if path.lower().startswith("rules[") and "text" in toks and "rules" in toks:
+        return _RAG_JSON_FIELD_ROLE_POLICY_RULE
+    if leaf in _RAG_JSON_OBSERVED_TEXT_KEYS:
+        return _RAG_JSON_FIELD_ROLE_OBSERVED_FACT
+    if leaf in _RAG_JSON_METADATA_KEYS:
+        return _RAG_JSON_FIELD_ROLE_METADATA
+    return _RAG_JSON_FIELD_ROLE_METADATA
+
+
+def _split_rag_file_sections(context_block: str) -> list[tuple[str, str]]:
+    """Split FILE-labeled context blocks into ``(record_label, body)`` sections."""
+    matches = list(re.finditer(r"(?im)^FILE:\s*(.+?)\s*$", context_block))
+    if not matches:
+        return []
+    sections: list[tuple[str, str]] = []
+    for idx, m in enumerate(matches):
+        label = m.group(1).strip()
+        start = m.end()
+        end = matches[idx + 1].start() if idx + 1 < len(matches) else len(context_block)
+        body = context_block[start:end].strip()
+        if body:
+            sections.append((label, body))
+    return sections
+
+
+def _iter_assertive_json_field_values(value: object, *, path: str = "") -> list[tuple[str, str]]:
+    """Return text field values that may be admitted as assertions.
+
+    ``claim_under_evaluation`` is explicitly non-assertive and therefore omitted.
+    """
+    out: list[tuple[str, str]] = []
+    if isinstance(value, dict):
+        for key, inner in value.items():
+            key_s = str(key)
+            if key_s.strip().lower() == "claim_under_evaluation":
+                continue
+            child_path = f"{path}.{key_s}" if path else key_s
+            out.extend(_iter_assertive_json_field_values(inner, path=child_path))
+        return out
+    if isinstance(value, list):
+        for i, inner in enumerate(value):
+            child_path = f"{path}[{i}]" if path else f"[{i}]"
+            out.extend(_iter_assertive_json_field_values(inner, path=child_path))
+        return out
+    if isinstance(value, str):
+        text = value.strip()
+        role = _rag_json_field_role(path)
+        if role in _RAG_JSON_ADMISSIBLE_FIELD_ROLES and text and re.search(r"[A-Za-z]", text):
+            out.append((path or "<root>", text))
+    return out
+
+
+def _build_rag_context_extraction_units(context_block: str) -> list[_RagContextExtractionUnit]:
+    """Build extraction units for RAG context admission.
+
+    - FILE-labeled JSON sections are parsed structurally and emitted one assertive
+      field value at a time (record + field-path provenance).
+    - Malformed JSON sections are skipped entirely (no partial extraction).
+    - Non-JSON FILE sections and plain prose context are preserved as prose units.
+    """
+    sections = _split_rag_file_sections(context_block)
+    if not sections:
+        prose = context_block.strip()
+        return (
+            [_RagContextExtractionUnit(prose, prose, None, None)]
+            if prose
+            else []
+        )
+
+    units: list[_RagContextExtractionUnit] = []
+    for record_label, body in sections:
+        text = body.strip()
+        if not text:
+            continue
+        locator_prefix = f"FILE:{record_label}"
+        if text.startswith("{") or text.startswith("["):
+            try:
+                parsed = json.loads(text)
+            except json.JSONDecodeError:
+                # Structural rule: malformed JSON records do not contribute partial claims.
+                continue
+            for field_path, field_text in _iter_assertive_json_field_values(parsed):
+                units.append(
+                    _RagContextExtractionUnit(
+                        text=field_text,
+                        admission_context=field_text,
+                        document_id=record_label,
+                        document_locator=f"{locator_prefix}#{field_path}",
+                    )
+                )
+            continue
+        units.append(
+            _RagContextExtractionUnit(
+                text=text,
+                admission_context=text,
+                document_id=record_label,
+                document_locator=f"{locator_prefix}#prose",
+            )
+        )
+    return units
+
+
 def _build_clarification_continuation(pending: dict) -> str:
     """Build a targeted continuation response from stored pending state.
 
@@ -6209,17 +6377,28 @@ class Lens:
             return await self._backend.extract(user_input, self._pef), None, None
         context_block, question_line = rag
         context_for_extract = _strip_markdown_bold_wrappers_for_rag_extraction(context_block)
-        ext_ctx = await self._backend.extract(context_for_extract, self._pef)
-        if ext_ctx.extraction_error:
-            return await self._backend.extract(user_input, self._pef), None, None
         snap = self._pef.to_dict()
-        rag_adm = admit_retrieved_context_to_pef(
-            ext_ctx,
-            self._pef,
-            context_block=context_block,
-            request_metadata=get_request_metadata(),
-        )
-        self._capture_pef_admission_for_operator_wire(rag_adm)
+        rag_adm: PEFAdmissionResult | None = None
+        self._pef.retrieval_unresolved = []
+        unresolved_aggregate: list[dict] = []
+        for unit in _build_rag_context_extraction_units(context_for_extract):
+            ext_ctx = await self._backend.extract(unit.text, self._pef)
+            if ext_ctx.extraction_error:
+                return await self._backend.extract(user_input, self._pef), None, None
+            rag_adm = admit_retrieved_context_to_pef(
+                ext_ctx,
+                self._pef,
+                context_block=unit.admission_context,
+                request_metadata=get_request_metadata(),
+                provenance_document_id=unit.document_id,
+                provenance_document_locator=unit.document_locator,
+            )
+            unresolved_aggregate.extend(self._pef.retrieval_unresolved)
+        self._pef.retrieval_unresolved = unresolved_aggregate
+        if rag_adm is not None:
+            self._capture_pef_admission_for_operator_wire(rag_adm)
+        else:
+            self._reset_pef_admission_operator_wire_turn()
         ext_q = await self._backend.extract(question_line, self._pef)
         if ext_q.extraction_error:
             self._pef = PEFState.from_dict(snap)

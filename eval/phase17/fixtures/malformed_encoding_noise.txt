@@ -1,0 +1,4 @@
+Incident summary: Servi�e gateway returned error burst at 09:17.
+Operator note: Use fallback channel -- do not bypass escalation rules.
+Recovered phrase: manual review threshold remains policy-controlled.
+Corrupted punctuation sample: "cust�mer notif�cation" and "revie� window".

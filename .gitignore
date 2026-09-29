@@ -23,6 +23,9 @@ demo_governance.yaml
 *.local.yaml
 aurora-lens.local.*.yaml
 
+# local pytest logs (not source)
+pytest_*.txt
+
 # build artifacts
 dist/
 build/

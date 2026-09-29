@@ -74,3 +74,17 @@ def ensure_runtime_dirs(paths: RuntimePaths) -> None:
     paths.logs_dir.mkdir(parents=True, exist_ok=True)
     paths.support_dir.mkdir(parents=True, exist_ok=True)
     paths.temp_dir.mkdir(parents=True, exist_ok=True)
+
+
+def runtime_paths_from_setup_home(home: Path) -> RuntimePaths:
+    """Layout used by the setup wizard and legacy launcher tests (PID files under home)."""
+
+    resolved = home.resolve()
+    return RuntimePaths(
+        runtime_root=resolved,
+        config_dir=resolved / "config",
+        state_dir=resolved,
+        logs_dir=resolved / "logs",
+        support_dir=resolved / "support",
+        temp_dir=resolved / "tmp",
+    )

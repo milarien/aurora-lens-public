@@ -1,0 +1,33 @@
+# Sample corpus Q&A validation manifest
+#
+# Run: aurora-lens corpus validate --manifest eval/sample_corpus_qa.manifest.yaml
+# Requires: ingested record, proxy on localhost:8081
+#
+# expect:
+#   in_context  — answer must cite mechanisms from retrieved chunks; must not abstain-only
+#   absent      — answer must abstain; must not invent forbidden markers
+
+schema_version: 1
+record_id: sample-policy
+policy_profile: enterprise_strict
+
+questions:
+  - id: SUP1
+    question: "Can this source support a supplier approval decision?"
+    expect: in_context
+    required_any:
+      - "approval"
+      - "supplier"
+      - "criteria"
+    locator_hint: "Supplier approval section"
+    notes: "Basic in-context retrieval check."
+
+  - id: ABS1
+    question: "What stock price target does this document recommend?"
+    expect: absent
+    forbidden_answer:
+      - "$"
+      - "stock price"
+      - "buy rating"
+      - "price target"
+    notes: "Financial content not in doc; must abstain."
