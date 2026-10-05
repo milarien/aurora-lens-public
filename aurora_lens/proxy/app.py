@@ -838,16 +838,30 @@ def _resolve_auth(
     return None, None, None, 403
 
 
-def _auth_exempt(path: str) -> bool:
+_LOOPBACK_LISTEN_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
+_LOCAL_FORENSICS_AUDIT_PATHS = frozenset({
+    "/v1/audit/recent",
+    "/v1/audit/search",
+})
+
+
+def _listen_host_is_loopback(host: str) -> bool:
+    return host.strip().lower() in _LOOPBACK_LISTEN_HOSTS
+
+
+def _auth_exempt(path: str, *, listen_host: str) -> bool:
     """Paths that bypass auth (health checks, forensics console, read-only audit GETs).
 
-    Read-only audit GETs stay aligned with the forensics HTML shell: same-origin fetches
-    to ``/v1/audit/recent`` / ``/v1/audit/search`` / ``/v1/operator/summary`` must not 401
-    when ``auth.enabled`` is true.
+    ``/v1/audit/recent`` and ``/v1/audit/search`` stay open for the local forensics
+    page when the proxy listens on loopback, even if ``auth.enabled`` is true.
+    On any other listen address they follow inbound auth, so a production bind
+    such as ``0.0.0.0`` does not publish the audit log to the network.
     ``/v1/operator/summary`` is intentionally restricted to coarse aggregate counters and
     runtime labels only (no prompts, responses, user/session identifiers, paths, or secrets).
     ``POST /v1/chat/completions`` still requires ``Authorization`` or ``x-api-key``.
     """
+    if path in _LOCAL_FORENSICS_AUDIT_PATHS:
+        return _listen_host_is_loopback(listen_host)
     return path in (
         "/health",
         "/healthz",
@@ -858,8 +872,6 @@ def _auth_exempt(path: str) -> bool:
         "/v1/audit/anomaly-check",
         "/v1/audit/verify",
         "/v1/audit/entry",
-        "/v1/audit/recent",
-        "/v1/audit/search",
         "/v1/operator/summary",
         "/v1/session/operator-pef",
         "/v1/corpus/records",
@@ -1111,7 +1123,7 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
     @app.middleware("http")
     async def _aurora_auth_middleware(request: Request, call_next):
         """Phase B: Inbound auth. 401 missing key, 403 invalid key. Health exempt."""
-        if _auth_exempt(request.url.path):
+        if _auth_exempt(request.url.path, listen_host=cfg.listen.host):
             return await call_next(request)
         auth_header = request.headers.get("authorization")
         api_key_header = request.headers.get("x-api-key")

@@ -105,6 +105,23 @@ def _is_pid_alive(pid: int) -> bool:
     return _pid_status(pid) == _PidStatus.ALIVE
 
 
+def _reap_exited_child(pid: int) -> None:
+    """Collect an exited child so a zombie is not reported as still running.
+
+    ``os.kill(pid, 0)`` succeeds for a zombie. That happens when stop runs in
+    the same process that started the proxy (the parent has not waited). A
+    process that is still alive is left alone: ``WNOHANG`` returns immediately.
+    """
+    if pid <= 0 or sys.platform == "win32":
+        return
+    try:
+        os.waitpid(pid, os.WNOHANG)
+    except ChildProcessError:
+        return
+    except OSError:
+        return
+
+
 def _read_pid_file(path: Path) -> dict[str, Any] | None:
     if not path.exists():
         return None
@@ -633,9 +650,11 @@ class LauncherState:
         self._kill_pid(pid)
         deadline = time.time() + 8.0
         while time.time() < deadline:
+            _reap_exited_child(pid)
             if _pid_status(pid) == _PidStatus.DEAD and not self._probe_health(port)[0]:
                 break
             time.sleep(0.25)
+        _reap_exited_child(pid)
         pid_status_after = _pid_status(pid)
         health_after = self._probe_health(port)[0]
         if pid_status_after == _PidStatus.DEAD and health_after:

@@ -9,11 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy project and install (include redis for session backend)
-COPY pyproject.toml ./
+# Non-editable install, same rule as the README. The build backend and licence
+# files have to be in the context or the wheel build cannot run.
+COPY pyproject.toml aurora_lens_build_backend.py release_guard.py setup.py ./
+COPY LICENSE NOTICE LICENSING.md README.md ./
 COPY aurora_lens/ ./aurora_lens/
 
-RUN pip install --no-cache-dir -e ".[spacy,proxy,redis]"
+RUN pip install --no-cache-dir ".[spacy,proxy,redis]"
 RUN python -m spacy download en_core_web_sm
 
 # Stage 2: minimal runtime
@@ -31,12 +33,12 @@ WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
-# Copy app (for config discovery; proxy runs via -m)
-COPY --chown=aurora:aurora aurora_lens/ ./aurora_lens/
+# The installed package is already in site-packages. aurora-lens.yaml is not
+# baked into the image: copy aurora-lens.yaml.example to aurora-lens.yaml and
+# mount it at /app/aurora-lens.yaml before starting the container.
 COPY --chown=aurora:aurora pyproject.toml ./
-COPY --chown=aurora:aurora aurora-lens.yaml ./aurora-lens.yaml
 
-# Config mounted at runtime
+# Config mounted at runtime. The container does not start correctly without it.
 ENV AURORA_LENS_CONFIG=/app/aurora-lens.yaml
 
 # Entrypoint runs as root to fix volume ownership, then drops to aurora

@@ -42,6 +42,8 @@ audit.jsonl
 # Ledger backups rotated aside (e.g. manual clear / reset); not *.jsonl suffix so not covered above
 audit.jsonl.pre_*
 *.jsonl
+# Golden hazard corpus is a public test fixture, not a runtime audit log.
+!tests/hazard/corpus_v1.jsonl
 *.log
 state/
 logs/

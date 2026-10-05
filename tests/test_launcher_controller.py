@@ -119,6 +119,9 @@ def test_init_config_start_status_and_governed_request_without_llm_extractor(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+    # The spawned proxy is a new interpreter whose cwd is the runtime config
+    # directory. Point it at this checkout so it does not import another install.
+    monkeypatch.setenv("PYTHONPATH", str(Path(__file__).resolve().parents[1]))
 
     assert cli_main(["init-config"]) == 0
     paths = resolve_runtime_paths()

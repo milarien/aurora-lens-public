@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Start-here demo — one command, three governance outcomes, one audit file.
 
-No API key. No spaCy. No network. Pure in-process mocks.
+No provider API key and no network call to a language model. The three
+scenarios use in-process mock adapters. spaCy and the ``en_core_web_sm``
+model are required: governance extraction loads them even though these
+scenarios do not call a model provider.
 
 Usage:
+    pip install ".[proxy,spacy]"
+    python -m spacy download en_core_web_sm
     python tools/run_demo.py
 
 Writes: start_here_demo_audit.jsonl (repository root)
@@ -218,7 +223,7 @@ def _print_results(
     print("  Aurora-Lens start-here demo")
     print("=" * width)
     print()
-    print("Three turns. One audit file. No API key required.")
+    print("Three turns. One audit file. No provider API key. spaCy is required.")
     print()
 
     failed = 0

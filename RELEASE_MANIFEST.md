@@ -43,3 +43,4 @@ The commands below describe how this tree is validated; they do not grant permis
 - Full automated suite: `pytest tests` (from an isolated virtual environment with `pip install ".[proxy,dev]"`).
 - Offline demo: `python tools/run_demo.py`
 - Release packaging guard: `python tools/validate_release_clean_audit.py` (requires a clean working tree without local audit artefacts)
+- Installed-artifact smoke check: `python scripts/release_artifact_smoke.py` (builds the wheel and sdist from a clean copy, installs the wheel in a fresh environment, and runs the demo and launcher against that install)

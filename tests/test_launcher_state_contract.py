@@ -2,13 +2,16 @@ from __future__ import annotations
 
 from pathlib import Path
 import json
+import subprocess
+import sys
+import time
 
 import pytest
 
 from aurora_lens.launcher.lifecycle import LifecycleResultCode, RuntimeStatusCode
 from aurora_lens.launcher.paths import RuntimePaths
 from aurora_lens.launcher import state as launcher_state
-from aurora_lens.launcher.state import LauncherState
+from aurora_lens.launcher.state import LauncherState, _PidStatus, _pid_status, _reap_exited_child
 
 
 def _paths(tmp_path: Path) -> RuntimePaths:
@@ -129,3 +132,23 @@ def test_unknown_pid_with_healthy_proxy_reports_healthy_without_quarantine(
     assert status.details["pid_status"] == "unknown"
     assert state.proxy_pid_path.exists()
     assert list(paths.state_dir.glob("*.quarantine.*.json")) == []
+
+
+def test_exited_child_is_not_reported_alive():
+    """An exited child must not stay 'alive' merely because its parent has not waited.
+
+    Do not call ``Popen.poll`` or ``wait`` before the assertion: those reap the
+    child and hide the zombie that ``os.kill(pid, 0)`` still treats as alive.
+    """
+    child = subprocess.Popen([sys.executable, "-c", "raise SystemExit(0)"])
+    try:
+        deadline = time.time() + 5
+        while time.time() < deadline:
+            _reap_exited_child(child.pid)
+            if _pid_status(child.pid) == _PidStatus.DEAD:
+                break
+            time.sleep(0.05)
+        assert _pid_status(child.pid) == _PidStatus.DEAD
+    finally:
+        if child.poll() is None:
+            child.wait(timeout=5)

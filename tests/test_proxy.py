@@ -3638,6 +3638,7 @@ class TestPhaseBAuth:
         audit_file.write_text("", encoding="utf-8")
         cfg = ProxyConfig.from_mapping({
             "upstream": {"provider": "openai", "api_key": "sk-test", "model": "gpt-4"},
+            "listen": {"host": "127.0.0.1", "port": 8081},
             "auth": {"enabled": True, "keys": [{"key": "secret-key-1", "label": "app-prod"}]},
             "governance": {"audit_log": str(audit_file), "audit_backend": "jsonl"},
         })
@@ -3651,6 +3652,40 @@ class TestPhaseBAuth:
             json={"model": "gpt-4", "messages": [{"role": "user", "content": "Hi"}]},
         )
         assert r.status_code == 401
+
+    def test_auth_audit_reads_require_key_off_loopback(self, monkeypatch, tmp_path):
+        """A non-loopback bind does not publish recent/search without the API key."""
+        try:
+            from starlette.testclient import TestClient
+        except ImportError:
+            pytest.skip(SKIP_STARLETTE_HTTP_TESTCLIENT)
+
+        from aurora_lens.proxy.app import create_app
+
+        monkeypatch.setattr(
+            "aurora_lens.proxy.app._build_provider_adapters",
+            lambda cfg: (MockAdapter(), MockAdapter()),
+        )
+        audit_file = tmp_path / "audit.jsonl"
+        audit_file.write_text("", encoding="utf-8")
+        cfg = ProxyConfig.from_mapping({
+            "upstream": {"provider": "openai", "api_key": "sk-test", "model": "gpt-4"},
+            "listen": {"host": "0.0.0.0", "port": 8081},
+            "auth": {"enabled": True, "keys": [{"key": "secret-key-1", "label": "app-prod"}]},
+            "governance": {"audit_log": str(audit_file), "audit_backend": "jsonl"},
+        })
+        app = create_app(cfg)
+        client = TestClient(app)
+        assert client.get("/v1/audit/recent?n=5").status_code == 401
+        assert client.get("/v1/audit/search?limit=5").status_code == 401
+        assert client.get(
+            "/v1/audit/recent?n=5",
+            headers={"x-api-key": "secret-key-1"},
+        ).status_code == 200
+        assert client.get(
+            "/v1/audit/search?limit=5",
+            headers={"x-api-key": "secret-key-1"},
+        ).status_code == 200
 
     def test_auth_label_in_audit_entry(self, monkeypatch, tmp_path):
         """Auth key label appears in audit entry when auth enabled."""

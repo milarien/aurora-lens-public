@@ -24,6 +24,7 @@ include "Status Aurora-Lens.bat"
 include "Stop Aurora-Lens.bat"
 include START_TRIAL_WINDOWS.bat
 include START_TRIAL_MAC.sh
+recursive-include aurora_lens/data *.json
 recursive-include docs *.md *.html *.txt
 recursive-include tools *.py
 recursive-include examples *.yaml *.py *.md

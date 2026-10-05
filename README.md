@@ -82,16 +82,13 @@ Activate the environment:
 
 ```bash
 python -m pip install -U pip
-pip install ".[proxy]"
-```
-
-On first `aurora-lens start` with the default config, Aurora-Lens checks for spaCy
-and `en_core_web_sm` and installs them automatically if missing. You can also
-pre-install the model yourself:
-
-```bash
+pip install ".[proxy,spacy]"
 python -m spacy download en_core_web_sm
 ```
+
+The offline demo in the next step needs spaCy and `en_core_web_sm` before it
+runs. It does not use a provider API key. `aurora-lens start` can also install
+a missing spaCy model later, but that automatic install does not run for the demo.
 
 Official release install is a non-editable `pip install` into an isolated virtual environment from the extracted release directory.
 
@@ -101,9 +98,11 @@ For PDF or Word corpus ingestion later (same activated environment):
 pip install ".[ingest]"
 ```
 
-### 2. Try it without an API key (recommended first step)
+### 2. Try it without a provider API key (recommended first step)
 
-This runs three short scenarios (PASS, CONTAIN, HARD_STOP) and writes **`start_here_demo_audit.jsonl`** in this folder:
+This does not call OpenAI, Anthropic, or a local model server. It does use spaCy,
+which step 1 installed. It runs three short scenarios (PASS, CONTAIN, HARD_STOP)
+and writes **`start_here_demo_audit.jsonl`** in this folder:
 
 ```bash
 python tools/run_demo.py

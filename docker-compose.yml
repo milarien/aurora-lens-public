@@ -1,5 +1,9 @@
 # aurora-lens — local development
-# Usage: copy .env.example to .env, set API keys, then: docker compose up
+# 1. Copy aurora-lens.yaml.example to aurora-lens.yaml and edit it.
+#    The image does not contain this file; the mount below supplies it.
+# 2. Create a .env file next to this compose file if the YAML reads credentials
+#    from the environment.
+# 3. docker compose up --build
 # For Redis session backend: docker compose --profile redis up
 
 services:

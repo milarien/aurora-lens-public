@@ -143,6 +143,8 @@ Prometheus exposition format.
 
 Last n audit entries. Requires `audit_log` configured. 404 if not configured.
 
+On a loopback listen address (`127.0.0.1`, `localhost`, or `::1`) this route stays available to the local forensics page even when inbound auth is enabled. On any other listen address, including `0.0.0.0`, it requires the inbound API key when `auth.enabled` is true. `GET /v1/audit/search` follows the same rule.
+
 ### GET /v1/audit/verify?n=20
 
 Verify HMAC and hash-chain integrity of last n entries. Works on both `jsonl` and `ledger` backends. Returns 400 if no `audit_signing_key` is configured (jsonl) or if the audit log is not configured.

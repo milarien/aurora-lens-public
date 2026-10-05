@@ -50,7 +50,10 @@ session:
   lock_acquire_timeout_seconds: 10
   lock_lease_seconds: 240
 
-# Phase B — inbound API keys (all routes except /health, /healthz)
+# Phase B — inbound API keys.
+# listen.host is 0.0.0.0, so GET /v1/audit/recent and GET /v1/audit/search
+# require one of these keys. They stay open without a key only on loopback,
+# for the local forensics page. See docs/config_reference.md.
 auth:
   enabled: true
   keys:
