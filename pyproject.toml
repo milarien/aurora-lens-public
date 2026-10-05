@@ -78,6 +78,7 @@ aurora_lens = [
     "proxy/*.png",
     "benchmarks/governance/*.json",
     "benchmarks/runtime/*.json",
+    "data/hazard/*.json",
 ]
 
 [project.scripts]

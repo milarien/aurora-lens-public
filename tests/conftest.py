@@ -50,12 +50,17 @@ def reset_request_scoped_context_vars():
 
 @pytest.fixture(autouse=True)
 def _public_demo_edge_token_defaults(monkeypatch):
-    """Ensure public-demo routes have a transport token in the test suite.
+    """Keep the edge-token gate off unless a test opts into the hosted demo.
 
-    Production fails closed when ``AURORA_EDGE_TOKEN`` is unset. Tests set a
-    deterministic value and auto-inject ``x-aurora-edge-token`` on TestClient
-    calls unless ``x-test-omit-edge-token: 1`` is present (negative tests).
+    The gate is keyed on Railway's deployment environment name, which a
+    licensed local install does not set. Clearing those variables here makes
+    the default test process a local deployment. Tests of the hosted gate set
+    one themselves. When it is set, this fixture supplies ``AURORA_EDGE_TOKEN`` and
+    auto-injects ``x-aurora-edge-token`` on TestClient calls unless
+    ``x-test-omit-edge-token: 1`` is present (negative tests).
     """
+    monkeypatch.delenv("RAILWAY_ENVIRONMENT", raising=False)
+    monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
     monkeypatch.setenv("AURORA_EDGE_TOKEN", PYTEST_AURORA_EDGE_TOKEN)
     try:
         from starlette.testclient import TestClient

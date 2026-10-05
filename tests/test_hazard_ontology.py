@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import tomllib
+from fnmatch import fnmatch
 from pathlib import Path
 
 import pytest
@@ -81,6 +83,21 @@ def test_ontology_loads_from_bundled_data():
     assert "oleandrin" in onto.substances
     assert "poisonous_plant_cardiotoxin" in onto.hazard_classes
     assert onto.decision_matrix
+
+
+def test_hazard_ontology_files_are_declared_package_data():
+    """The wheel must ship the ontology. A working-tree load is not that evidence."""
+    repo = Path(__file__).resolve().parents[1]
+    pyproject = tomllib.loads((repo / "pyproject.toml").read_text(encoding="utf-8"))
+    patterns = pyproject["tool"]["setuptools"]["package-data"]["aurora_lens"]
+    bundled = sorted((repo / "aurora_lens" / "data" / "hazard").glob("*.json"))
+    assert bundled, "bundled hazard ontology is empty"
+    missing = [
+        path.name
+        for path in bundled
+        if not any(fnmatch(path.relative_to(repo / "aurora_lens").as_posix(), pat) for pat in patterns)
+    ]
+    assert missing == []
 
 
 def test_ontology_load_missing_dir(tmp_path: Path):

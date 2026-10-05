@@ -9,6 +9,11 @@ from tests.skip_reasons import SKIP_STARLETTE_HTTP_TESTCLIENT
 from tests.test_proxy import CountingMockAdapter, MockAdapter
 
 
+def _hosted_public_demo(monkeypatch) -> None:
+    """Opt this process into the Railway-hosted deployment the gate protects."""
+    monkeypatch.setenv("RAILWAY_ENVIRONMENT_NAME", "production")
+
+
 def _make_app(monkeypatch, adapter=None):
     from aurora_lens.proxy.app import create_app
     from aurora_lens.proxy.config import ProxyConfig
@@ -35,6 +40,7 @@ class TestPublicDemoEdgeTokenGate:
         except ImportError:
             pytest.skip(SKIP_STARLETTE_HTTP_TESTCLIENT)
 
+        _hosted_public_demo(monkeypatch)
         counter = CountingMockAdapter()
         app, _ = _make_app(monkeypatch, adapter=counter)
         client = TestClient(app)
@@ -55,6 +61,7 @@ class TestPublicDemoEdgeTokenGate:
         except ImportError:
             pytest.skip(SKIP_STARLETTE_HTTP_TESTCLIENT)
 
+        _hosted_public_demo(monkeypatch)
         counter = CountingMockAdapter()
         app, _ = _make_app(monkeypatch, adapter=counter)
         client = TestClient(app)
@@ -76,6 +83,7 @@ class TestPublicDemoEdgeTokenGate:
         except ImportError:
             pytest.skip(SKIP_STARLETTE_HTTP_TESTCLIENT)
 
+        _hosted_public_demo(monkeypatch)
         monkeypatch.delenv("AURORA_EDGE_TOKEN", raising=False)
         counter = CountingMockAdapter()
         app, _ = _make_app(monkeypatch, adapter=counter)
@@ -91,12 +99,57 @@ class TestPublicDemoEdgeTokenGate:
         assert r.status_code == 403
         assert counter.generate_calls == 0
 
+    def test_legacy_railway_environment_var_still_gates(self, monkeypatch):
+        try:
+            from starlette.testclient import TestClient
+        except ImportError:
+            pytest.skip(SKIP_STARLETTE_HTTP_TESTCLIENT)
+
+        monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
+        monkeypatch.setenv("RAILWAY_ENVIRONMENT", "production")
+        counter = CountingMockAdapter()
+        app, _ = _make_app(monkeypatch, adapter=counter)
+        client = TestClient(app)
+        r = client.post(
+            "/v1/chat/completions",
+            json={"model": "gpt-4", "messages": [{"role": "user", "content": "Hi"}]},
+            headers={"x-test-omit-edge-token": "1"},
+        )
+        assert r.status_code == 403
+        assert counter.generate_calls == 0
+
+    def test_local_install_without_token_reaches_model(self, monkeypatch):
+        """A local install reaches the model with no edge token.
+
+        Governance mode stays at its default, public. That setting is not
+        the hosted demo; only Railway's environment name marks that deployment.
+        """
+        try:
+            from starlette.testclient import TestClient
+        except ImportError:
+            pytest.skip(SKIP_STARLETTE_HTTP_TESTCLIENT)
+
+        monkeypatch.delenv("RAILWAY_ENVIRONMENT", raising=False)
+        monkeypatch.delenv("RAILWAY_ENVIRONMENT_NAME", raising=False)
+        monkeypatch.delenv("AURORA_EDGE_TOKEN", raising=False)
+        counter = CountingMockAdapter()
+        app, _ = _make_app(monkeypatch, adapter=counter)
+        client = TestClient(app)
+        r = client.post(
+            "/v1/chat/completions",
+            json={"model": "gpt-4", "messages": [{"role": "user", "content": "Hi"}]},
+            headers={"x-test-omit-edge-token": "1"},
+        )
+        assert r.status_code == 200
+        assert counter.generate_calls == 1
+
     def test_correct_token_allows_chat(self, monkeypatch):
         try:
             from starlette.testclient import TestClient
         except ImportError:
             pytest.skip(SKIP_STARLETTE_HTTP_TESTCLIENT)
 
+        _hosted_public_demo(monkeypatch)
         counter = CountingMockAdapter()
         app, _ = _make_app(monkeypatch, adapter=counter)
         client = TestClient(app)
@@ -114,6 +167,7 @@ class TestPublicDemoEdgeTokenGate:
         except ImportError:
             pytest.skip(SKIP_STARLETTE_HTTP_TESTCLIENT)
 
+        _hosted_public_demo(monkeypatch)
         app, _ = _make_app(monkeypatch)
         client = TestClient(app)
         r = client.post(
@@ -129,6 +183,7 @@ class TestPublicDemoEdgeTokenGate:
         except ImportError:
             pytest.skip(SKIP_STARLETTE_HTTP_TESTCLIENT)
 
+        _hosted_public_demo(monkeypatch)
         app, _ = _make_app(monkeypatch)
         client = TestClient(app)
         r = client.get(
@@ -144,6 +199,7 @@ class TestPublicDemoEdgeTokenGate:
         except ImportError:
             pytest.skip(SKIP_STARLETTE_HTTP_TESTCLIENT)
 
+        _hosted_public_demo(monkeypatch)
         app, _ = _make_app(monkeypatch)
         client = TestClient(app)
         r = client.get(

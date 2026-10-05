@@ -878,10 +878,20 @@ def _auth_exempt(path: str) -> bool:
 # Public demo surface proxied by aurora-lens.ai Pages Functions. Transport-only gate;
 # does not change governance. Requires Railway secret AURORA_EDGE_TOKEN.
 #
+# The gate is a property of the hosted deployment, not of the request path.
+# Railway injects RAILWAY_ENVIRONMENT_NAME (and, on older images,
+# RAILWAY_ENVIRONMENT) into that service. A licensed local install does not,
+# and must not 403 chat when AURORA_EDGE_TOKEN is unset.
+#
 # Audit GET routes are intentionally excluded: the Railway /forensics console loads
 # them same-origin from the browser (no place to put the edge token), and the same
 # read surface is already public via aurora-lens.ai Pages. Chat / new-scenario remain
-# gated so anonymous clients cannot burn upstream model capacity on the Railway URL.
+# gated on the hosted deployment so anonymous clients cannot burn upstream model
+# capacity on the Railway URL.
+_HOSTED_PUBLIC_DEMO_ENVS = (
+    "RAILWAY_ENVIRONMENT_NAME",
+    "RAILWAY_ENVIRONMENT",
+)
 PUBLIC_DEMO_EDGE_PATHS = frozenset({
     "/v1/chat/completions",
     "/v1/session/new-scenario",
@@ -902,8 +912,17 @@ def _edge_token_matches(provided: str | None, expected: str) -> bool:
     return hmac.compare_digest(hashlib.sha256(got).digest(), hashlib.sha256(want).digest())
 
 
+def _hosted_public_demo_deployment() -> bool:
+    """True when Railway injected a deployment environment name.
+
+    That is how the hosted public demo is identified. A licensed local install
+    does not have it. Path membership is not evidence of that deployment.
+    """
+    return any((os.environ.get(name) or "").strip() for name in _HOSTED_PUBLIC_DEMO_ENVS)
+
+
 def _public_demo_edge_token_required(path: str) -> bool:
-    return path in PUBLIC_DEMO_EDGE_PATHS
+    return _hosted_public_demo_deployment() and path in PUBLIC_DEMO_EDGE_PATHS
 
 
 def _provider_display(p: str | None) -> str:
@@ -1153,10 +1172,12 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
 
     @app.middleware("http")
     async def _aurora_edge_token_middleware(request: Request, call_next):
-        """Transport gate for public-demo routes proxied by aurora-lens.ai.
+        """Transport gate for the Railway-hosted public demo.
 
-        Requires ``x-aurora-edge-token`` matching Railway secret ``AURORA_EDGE_TOKEN``.
-        Fail closed when the secret is unset. Does not log token values.
+        Inactive unless Railway has set the deployment environment name, so a
+        licensed local install is not blocked when ``AURORA_EDGE_TOKEN`` is unset.
+        When active, requires ``x-aurora-edge-token`` matching that secret and
+        fails closed if the secret is missing. Does not log token values.
         Registered last among http middlewares so it runs before auth/route work.
         """
         path = request.url.path
