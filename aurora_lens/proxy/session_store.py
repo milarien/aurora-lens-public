@@ -84,7 +84,33 @@ class SessionStore(ABC):
 
     @abstractmethod
     def cleanup_expired(self) -> int:
-        """Best-effort removal of expired records. Safe to run concurrently."""
+        """Best-effort removal of expired records. Safe to run concurrently.
+
+        Must not delete an unresolved governance hold. Session expiry is not
+        resolution.
+        """
+        ...
+
+    @abstractmethod
+    def get_governance_hold(self, session_id: str) -> dict[str, Any] | None:
+        """Return the unresolved-governance residue for ``session_id``, if any.
+
+        This record is not removed when the conversational session expires.
+        """
+        ...
+
+    @abstractmethod
+    def put_governance_hold(self, session_id: str, residue: dict[str, Any]) -> None:
+        """Store unresolved governance until an explicit resolution clears it.
+
+        No session TTL. Callers pass the residue from
+        ``unresolved_governance_residue``, not a full PEF or audit snapshot.
+        """
+        ...
+
+    @abstractmethod
+    def delete_governance_hold(self, session_id: str) -> None:
+        """Drop the residue after explicit resolution. Idempotent."""
         ...
 
     @contextmanager
@@ -108,6 +134,7 @@ class MemorySessionStore(SessionStore):
         self._ttl = ttl_seconds
         self._lock_acquire_timeout = lock_acquire_timeout_seconds
         self._store: dict[str, SessionRecord] = {}
+        self._governance_holds: dict[str, dict[str, Any]] = {}
         self._store_lock = threading.Lock()
         self._session_locks: dict[str, threading.Lock] = {}
         self._session_locks_meta = threading.Lock()
@@ -119,6 +146,8 @@ class MemorySessionStore(SessionStore):
                 return None
             now = time.time()
             if now >= record.expires_at:
+                # Drop the conversational record only. An open governance hold
+                # stays until explicit resolution.
                 del self._store[session_id]
                 return None
             return record
@@ -141,6 +170,21 @@ class MemorySessionStore(SessionStore):
             for sid in expired:
                 del self._store[sid]
             return len(expired)
+
+    def get_governance_hold(self, session_id: str) -> dict[str, Any] | None:
+        with self._store_lock:
+            residue = self._governance_holds.get(session_id)
+            if residue is None:
+                return None
+            return json.loads(json.dumps(residue))
+
+    def put_governance_hold(self, session_id: str, residue: dict[str, Any]) -> None:
+        with self._store_lock:
+            self._governance_holds[session_id] = json.loads(json.dumps(residue))
+
+    def delete_governance_hold(self, session_id: str) -> None:
+        with self._store_lock:
+            self._governance_holds.pop(session_id, None)
 
     @contextmanager
     def acquire_lock(self, session_id: str) -> Iterator[None]:
@@ -167,6 +211,14 @@ class MemorySessionStore(SessionStore):
             return sum(1 for r in self._store.values() if now < r.expires_at)
 
 
+def _governance_hold_prefix(session_prefix: str) -> str:
+    """Hold keys sit beside session keys and are not covered by the session TTL."""
+    marker = "session:"
+    if session_prefix.endswith(marker):
+        return session_prefix[: -len(marker)] + "governance-hold:"
+    return f"{session_prefix}governance-hold:"
+
+
 # ── RedisSessionStore ──────────────────────────────────────────────────────
 
 class RedisSessionStore(SessionStore):
@@ -179,23 +231,31 @@ class RedisSessionStore(SessionStore):
         key_prefix: str = "aurora:session:",
         lock_acquire_timeout_seconds: float = 10.0,
         lock_lease_seconds: float = 240.0,
+        client: Any | None = None,
     ):
-        try:
-            import redis
-        except ImportError:
-            raise ImportError(
-                "redis package required for RedisSessionStore. "
-                "Install with: pip install aurora-lens[redis]"
-            ) from None
-        self._client = redis.from_url(redis_url, decode_responses=True)
+        if client is not None:
+            self._client = client
+        else:
+            try:
+                import redis
+            except ImportError:
+                raise ImportError(
+                    "redis package required for RedisSessionStore. "
+                    "Install with: pip install aurora-lens[redis]"
+                ) from None
+            self._client = redis.from_url(redis_url, decode_responses=True)
         self._ttl = ttl_seconds
         self._prefix = key_prefix
+        self._hold_prefix = _governance_hold_prefix(key_prefix)
         self._lock_prefix = "aurora:lock:"
         self._lock_acquire_timeout = lock_acquire_timeout_seconds
         self._lock_lease_ttl = lock_lease_seconds
 
     def _key(self, session_id: str) -> str:
         return f"{self._prefix}{session_id}"
+
+    def _hold_key(self, session_id: str) -> str:
+        return f"{self._hold_prefix}{session_id}"
 
     def _lock_key(self, session_id: str) -> str:
         return f"{self._lock_prefix}{session_id}"
@@ -237,7 +297,11 @@ class RedisSessionStore(SessionStore):
         record = self._deserialize(raw)
         if record is None:
             return None
-        return record if time.time() < record.expires_at else None
+        # Past expires_at the conversational record is gone, even if Redis has
+        # not yet dropped the key. The governance hold is a different key.
+        if time.time() >= record.expires_at:
+            return None
+        return record
 
     def put(self, session_id: str, record: SessionRecord) -> None:
         try:
@@ -254,9 +318,39 @@ class RedisSessionStore(SessionStore):
             raise SessionStoreError(f"Redis delete failed: {e}") from e
 
     def cleanup_expired(self) -> int:
-        # Redis TTL handles expiry; we scan for keys and delete any that expired
-        # Best-effort, bounded. Return 0.
+        # Redis TTL handles conversational expiry. Governance holds have no TTL.
         return 0
+
+    def get_governance_hold(self, session_id: str) -> dict[str, Any] | None:
+        try:
+            raw = self._client.get(self._hold_key(session_id))
+        except Exception as e:
+            raise SessionStoreError(f"Redis governance-hold get failed: {e}") from e
+        if raw is None:
+            return None
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError as e:
+            raise SessionStoreError(f"Redis governance-hold is unreadable: {e}") from e
+        if not isinstance(data, dict):
+            raise SessionStoreError("Redis governance-hold is not a record")
+        return data
+
+    def put_governance_hold(self, session_id: str, residue: dict[str, Any]) -> None:
+        try:
+            # No TTL. Session expiry must not delete an unresolved constraint.
+            self._client.set(
+                self._hold_key(session_id),
+                json.dumps(residue, separators=(",", ":"), ensure_ascii=False),
+            )
+        except Exception as e:
+            raise SessionStoreError(f"Redis governance-hold put failed: {e}") from e
+
+    def delete_governance_hold(self, session_id: str) -> None:
+        try:
+            self._client.delete(self._hold_key(session_id))
+        except Exception as e:
+            raise SessionStoreError(f"Redis governance-hold delete failed: {e}") from e
 
     @contextmanager
     def acquire_lock(self, session_id: str) -> Iterator[None]:

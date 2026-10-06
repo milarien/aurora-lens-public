@@ -4221,6 +4221,12 @@ def _apply_epistemic_hold_after_non_admit(pef: PEFState, decision: GovernanceDec
     """Update durable epistemic holding after REFUSE/STOP/ASK. REFUSE/STOP supersede ambiguity."""
     if decision.action in (InterventionAction.PASS, InterventionAction.SOFT_CORRECT):
         return
+    if decision.action == InterventionAction.CONTAIN:
+        existing = pef.epistemic_hold if isinstance(pef.epistemic_hold, dict) else None
+        existing_mode = existing.get("mode") if existing else None
+        if existing_mode in (EPISTEMIC_MODE_REFUSAL, EPISTEMIC_MODE_STOP):
+            # An ambiguity contain must not replace a separate refusal or stop.
+            return
     _cap = _primary_allowed_continuation(decision)
     if decision.interaction_open and _cap:
         pef.active_continuation_capability = _cap

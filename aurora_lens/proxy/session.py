@@ -12,9 +12,15 @@ from typing import TYPE_CHECKING
 from aurora_lens.context import lock_metadata_var
 from aurora_lens.lens import Lens
 from aurora_lens.config import LensConfig
+from aurora_lens.proxy.governance_hold import (
+    apply_unresolved_governance_residue,
+    merge_unresolved_governance_residue,
+    unresolved_governance_residue,
+)
+from aurora_lens.proxy.session_store import SessionLockTimeoutError, SessionRecord
 
 if TYPE_CHECKING:
-    from aurora_lens.proxy.session_store import SessionStore, SessionLockTimeoutError
+    from aurora_lens.proxy.session_store import SessionStore
 
 
 def _create_session_store(
@@ -75,8 +81,6 @@ class SessionManager:
     def with_lock(self, session_id: str):
         """Acquire session lock. All get/get_or_create/persist must be inside.
         Sets lock_metadata_var (lock_wait_ms, lock_acquired, lock_timeout_ms on timeout)."""
-        from aurora_lens.proxy.session_store import SessionLockTimeoutError
-
         t0 = time.perf_counter()
         try:
             with self._store.acquire_lock(session_id):
@@ -106,18 +110,26 @@ class SessionManager:
         """Get or create Lens. MUST be called inside with_lock().
         Returns (lens, is_new_session).
         Guardrail: session_id must never be empty in proxy mode."""
-        from aurora_lens.proxy.session_store import SessionRecord
-
         if not session_id or not str(session_id).strip():
             raise ValueError("session_id must not be empty in proxy mode")
         record = self._store.get(session_id)
         if record is not None:
-            pef = record.to_pef()
+            pef = self._pef_with_durable_hold(session_id, record.to_pef())
             config = self._config_factory()
             return Lens(config, initial_pef=pef, session_id=session_id), False
 
         config = self._config_factory()
+        residue = self._store.get_governance_hold(session_id)
         lens = Lens(config, session_id=session_id)
+        if residue is not None:
+            # Same session id, expired conversational record. Carry the open
+            # constraint onto a fresh state. Do not reload the old snapshot.
+            apply_unresolved_governance_residue(lens.pef, residue)
+            expires_at = time.time() + self._ttl
+            carried = SessionRecord.from_pef(lens.pef, expires_at, revision=0)
+            self._store.put(session_id, carried)
+            return lens, False
+
         expires_at = time.time() + self._ttl
         new_record = SessionRecord.from_pef(lens.pef, expires_at, revision=0)
         self._store.put(session_id, new_record)
@@ -129,17 +141,38 @@ class SessionManager:
         if record is None:
             return None
         config = self._config_factory()
-        return Lens(config, initial_pef=record.to_pef(), session_id=session_id)
+        return Lens(
+            config,
+            initial_pef=self._pef_with_durable_hold(session_id, record.to_pef()),
+            session_id=session_id,
+        )
+
+    def _pef_with_durable_hold(self, session_id: str, pef):
+        """Overlay a durable hold the conversational record does not already carry."""
+        residue = self._store.get_governance_hold(session_id)
+        if residue is not None:
+            merge_unresolved_governance_residue(pef, residue)
+        return pef
 
     def persist(self, session_id: str, lens: Lens) -> None:
-        """Persist session. Increments revision. MUST be called inside with_lock()."""
-        from aurora_lens.proxy.session_store import SessionRecord
+        """Persist session. Increments revision. MUST be called inside with_lock().
 
+        An unresolved constraint is written to the durable hold before the
+        expiring session record. A failed session write therefore cannot leave
+        that constraint only in the record that times out. The hold is deleted
+        only after the session record that no longer carries it has been stored.
+        """
         record = self._store.get(session_id)
         revision = (record.revision + 1) if record is not None else 0
         expires_at = time.time() + self._ttl
         new_record = SessionRecord.from_pef(lens.pef, expires_at, revision)
+        residue = unresolved_governance_residue(lens.pef)
+        if residue is not None:
+            self._store.put_governance_hold(session_id, residue)
+            self._store.put(session_id, new_record)
+            return
         self._store.put(session_id, new_record)
+        self._store.delete_governance_hold(session_id)
 
     def cleanup_expired(self) -> int:
         """Remove expired sessions."""
