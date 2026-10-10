@@ -102,6 +102,7 @@ from aurora_lens.interpret.schema import ExtractedClaim, ExtractionResult
 from aurora_lens.verify.blocked_request_policy import (
     classify_agency_context_followup,
     evaluate_blocked_act_request,
+    personalized_financial_advice_from_probe,
     sanitize_agency_prompt_for_non_coercive_use,
 )
 from aurora_lens.verify.checker import Checker
@@ -437,6 +438,33 @@ def _build_rag_context_extraction_units(context_block: str) -> list[_RagContextE
     return units
 
 
+def _interpretation_limit_clarification(limit: dict, original_input: str) -> str:
+    """Governed clarification naming what the interpreter could not read."""
+    kind = str(limit.get("kind") or "")
+    detail = str(limit.get("detail") or "This input could not be interpreted.")
+    if kind == "UNSUPPORTED_SCRIPT":
+        ask = "Restate the request in English to continue."
+    elif kind == "FINANCIAL_DETERMINATION_UNRESOLVED":
+        ask = (
+            "Restate the allocation you are asking about and the decision you "
+            "want, in a complete English sentence."
+        )
+    else:
+        ask = (
+            "Restate it as a complete sentence that says what you are stating "
+            "or what you want done."
+        )
+    return (
+        "Clarification required.\n\n"
+        f"{detail}\n\n"
+        f"Held input: \"{original_input.strip()}\"\n\n"
+        "Nothing from this input has been recorded, and no answer or action has "
+        f"been produced. {ask}\n\n"
+        "Status: Interpretation unresolved.\n"
+        "Action: Restate the held input to continue."
+    )
+
+
 def _build_clarification_continuation(pending: dict) -> str:
     """Build a targeted continuation response from stored pending state.
 
@@ -444,6 +472,11 @@ def _build_clarification_continuation(pending: dict) -> str:
     forensic state. It never invents entities or pulls from stale context.
     """
     constraint = pending.get("failed_constraint")
+    if constraint == "INTERPRETATION_LIMIT":
+        return _interpretation_limit_clarification(
+            dict(pending.get("interpretation_limit") or {}),
+            str(pending.get("original_question") or ""),
+        )
     ambiguous = pending.get("ambiguous_referents", [])
     candidates = _normalized_candidate_entities_for_binding(pending)
 
@@ -1808,7 +1841,42 @@ def _pending_ambiguity_continuation_flags(pending: dict) -> list[Flag]:
         return [_pending_unresolved_referent_flag(pending)]
     if fc == "UNRESOLVED_COMPARAND":
         return [_pending_unresolved_comparand_flag(pending)]
+    if fc == "INTERPRETATION_LIMIT":
+        return [_interpretation_limit_flag(dict(pending.get("interpretation_limit") or {}))]
     return []
+
+
+def _pending_is_interpretation_limit(pending: dict | None) -> bool:
+    return bool(pending) and str(pending.get("failed_constraint") or "") == "INTERPRETATION_LIMIT"
+
+
+def _assign_pending_without_replacing_other_matter(pef: PEFState, new_pending: dict) -> None:
+    """Keep an open matter when a different clarification arrives.
+
+    The referent registry addresses the new reference. The occupied
+    ``pending_clarification`` slot keeps the matter already stored there.
+    """
+    existing = pef.pending_clarification
+    if (
+        isinstance(existing, dict)
+        and str(existing.get("failed_constraint") or "")
+        and str(existing.get("failed_constraint") or "")
+        != str(new_pending.get("failed_constraint") or "")
+    ):
+        return
+    pef.pending_clarification = new_pending
+
+
+def _interpretation_limit_flag(limit: dict) -> Flag:
+    kind = str(limit.get("kind") or "UNKNOWN")
+    return Flag(
+        flag_type=FlagType.INTERPRETATION_LIMIT,
+        entity_name="interpretation",
+        claim=f"Input outside interpreter capability: {kind}",
+        evidence=str(limit.get("detail") or ""),
+        severity="warning",
+        rule_id=f"interpret.limit.{kind.lower()}",
+    )
 
 
 def _format_explicit_correction_surface_response(
@@ -3709,6 +3777,14 @@ def _find_owned_item_entity(
     return None
 
 
+# Held because the user did not assert the claim; binding a referent does not change that.
+_NON_ASSERTION_HELD_REASONS = frozenset({
+    "EMBEDDED_IN_INSTRUCTION",
+    "INTERPRETATION_LIMIT",
+    "QUOTATION",
+})
+
+
 def _infer_held_reason(cd: dict) -> str:
     """Infer held_reason from a blocked_claim dict.
 
@@ -3956,6 +4032,8 @@ def _commit_resolved_claims(
     saw_bound_give = False
     gave_obj_literal: str | None = None
     for cd in blocked:
+        if _infer_held_reason(cd) in _NON_ASSERTION_HELD_REASONS:
+            continue
         subj = cd.get("subject", "")
         subj_lower = subj.lower()
         if subj_lower in ambiguous or subj_lower in _POSSESSIVE_PRONOUNS:
@@ -4242,7 +4320,9 @@ def _apply_epistemic_hold_after_non_admit(pef: PEFState, decision: GovernanceDec
         pef.active_continuation_capability = None
         pef.active_continuation_context = None
     if decision.action in (InterventionAction.FORCE_REVISE, InterventionAction.HARD_STOP):
-        pef.pending_clarification = None
+        # A held uninterpretable input stays open; a later refusal does not answer it.
+        if not _pending_is_interpretation_limit(pef.pending_clarification):
+            pef.pending_clarification = None
         pef.epistemic_hold = _epistemic_hold_dict_for_decision(decision, turn)
         return
     if decision.action == InterventionAction.CONTAIN:
@@ -4814,8 +4894,9 @@ class Lens:
 
     def _check_blocked_act_request(self, user_input: str) -> list[Flag]:
         """Pre-LLM blocked-act scan (RAG harness: Question line only)."""
+        scan_text = blocked_act_request_scan_text(user_input)
         return self._checker.check_blocked_act_request(
-            blocked_act_request_scan_text(user_input),
+            scan_text,
             pef=self._pef,
         )
 
@@ -5970,6 +6051,145 @@ class Lens:
         )
         return gate is not None and gate.allow_through
 
+    async def _maybe_apply_interpretation_limit_gate(
+        self,
+        *,
+        turn: int,
+        history_user_input: str,
+        user_input: str,
+        ext_flags: list,
+        detected_span: Span,
+        extraction: ExtractionResult,
+    ) -> LensResult | None:
+        """Hold input the interpreter reports it cannot read: no commit, no model call."""
+        limit = extraction.interpretation_limit
+        if not limit:
+            return None
+        interp_flags = [_interpretation_limit_flag(limit)]
+        if ext_flags:
+            interp_flags = interp_flags + list(ext_flags)
+        pre_decision = await self._bridge.decide(interp_flags, user_input, self._pef)
+        if pre_decision.action in (InterventionAction.PASS, InterventionAction.SOFT_CORRECT):
+            pre_decision = replace(
+                pre_decision,
+                action=InterventionAction.CONTAIN,
+                pathway_id="P_ASK_MISSING_FACT",
+                output_mode="clarification_request",
+                interaction_open=True,
+                commitment_closed=True,
+            )
+        if pre_decision.action == InterventionAction.CONTAIN:
+            clarification = _interpretation_limit_clarification(limit, history_user_input)
+            pre_decision.original_response = ""
+            pre_decision.corrected_response = clarification
+            pre_decision.governed_response = clarification
+        response = pre_decision.governed_response or ""
+        _apply_epistemic_hold_after_non_admit(self._pef, pre_decision, turn)
+        if pre_decision.action == InterventionAction.CONTAIN and self._pef.pending_clarification is None:
+            _tx_held = [
+                tx for tx in _build_semantic_transactions(extraction) if not tx.allowed_commit
+            ]
+            self._pef.pending_clarification = {
+                "original_question": history_user_input,
+                "unresolved_entity_ids": [],
+                "failed_constraint": "INTERPRETATION_LIMIT",
+                "interpretation_limit": dict(limit),
+                "ambiguous_referents": [],
+                "candidate_entities": [],
+                "original_span": detected_span.value,
+                "blocked_proposition": None,
+                "blocked_claims": [
+                    {
+                        "subject": tx.claim.subject,
+                        "relation": tx.claim.relation,
+                        "obj": tx.claim.obj,
+                        "span": tx.claim.span.value,
+                        "negated": tx.claim.negated,
+                        "evidence": tx.claim.evidence,
+                        "held_reason": tx.held_reason,
+                    }
+                    for tx in _tx_held
+                ],
+                "turn": turn,
+            }
+        self._bridge.log_decision(
+            pre_decision,
+            turn=turn,
+            pef_context=self._pef.to_context_summary(),
+            pre_llm=True,
+            pef_snapshot=self._pef.to_dict(),
+            at_verification_basis=self._audit_at_basis(),
+            **self._audit_linkage_kwargs(pre_decision),
+        )
+        self._history.append({"role": "user", "content": history_user_input})
+        self._history.append({"role": "assistant", "content": response})
+        return LensResult(
+            response=response,
+            flags=interp_flags,
+            pef_snapshot=self._pef.to_context_summary(),
+            turn=turn,
+            span=detected_span,
+            model="",
+            action=pre_decision.action,
+            decision=pre_decision,
+            original_response=None,
+        )
+
+    async def _maybe_apply_established_financial_determination_gate(
+        self,
+        *,
+        turn: int,
+        history_user_input: str,
+        user_input: str,
+        ext_flags: list,
+        extraction: ExtractionResult,
+    ) -> LensResult | None:
+        """Pre-LLM PFA when the parser established a personal finance determination."""
+        flag = personalized_financial_advice_from_probe(extraction.financial_determination_probe)
+        if flag is None:
+            return None
+        bf_with_ext = [flag] + list(ext_flags) if ext_flags else [flag]
+        blocked_decision = await self._bridge.decide(bf_with_ext, user_input, self._pef)
+        blocked_decision.pre_llm = True
+        blocked_decision.admissibility_basis = "blocked_illicit_intent"
+        _attach_rule_result(blocked_decision)
+        if blocked_decision.action == InterventionAction.PASS:
+            return None
+        blocked_decision.original_response = ""
+        governed_text = _maybe_sanitize_governed_clarification_action(
+            await self._bridge.intervene(
+                blocked_decision,
+                self._config.adapter,
+                user_input,
+                self._pef.to_context_summary(),
+            )
+        )
+        governed_text = _maybe_sanitize_governed_clarification_action(governed_text)
+        _apply_epistemic_hold_after_non_admit(self._pef, blocked_decision, turn)
+        self._bridge.log_decision(
+            blocked_decision,
+            turn=turn,
+            pef_context=self._pef.to_context_summary(),
+            pre_llm=True,
+            pef_snapshot=self._pef.to_dict(),
+            at_verification_basis=self._audit_at_basis(),
+            **self._audit_linkage_kwargs(blocked_decision),
+        )
+        self._history.append({"role": "user", "content": history_user_input})
+        self._history.append({"role": "assistant", "content": governed_text})
+        return LensResult(
+            response=governed_text,
+            flags=bf_with_ext,
+            pef_snapshot=self._pef.to_context_summary(),
+            turn=turn,
+            span=Span.PRESENT,
+            model="",
+            action=blocked_decision.action,
+            decision=blocked_decision,
+            original_response=None,
+            telemetry_release_path="blocked_pre_generation",
+        )
+
     async def _maybe_apply_open_registry_session_gate(
         self,
         *,
@@ -5987,6 +6207,8 @@ class Lens:
             return None
         if is_session_reset_request(history_user_input):
             dismiss_open_unresolved_referents(self._pef)
+            if _pending_is_interpretation_limit(self._pef.pending_clarification):
+                _clear_epistemic_hold_ambiguity(self._pef)
             return None
 
         gate = evaluate_unresolved_session_gate(
@@ -7061,6 +7283,66 @@ class Lens:
             )
         yield ("metadata", _aurora)
 
+    async def _stream_emit_pre_llm_suppressed_response(
+        self,
+        result: LensResult,
+        turn: int,
+        *,
+        include_operator_detail: bool,
+        gate_event: tuple[str, LensResult] | None = None,
+    ) -> AsyncIterator[tuple[str, object]]:
+        """User-visible stream contract for pre-LLM non-admit outcomes (no upstream buffer).
+
+        Matches post-buffer SUPPRESSING_BUFFER delivery: governed_chunk plus metadata
+        with governed_response_hash aligned to emitted governed text.
+        """
+        if gate_event is not None:
+            yield gate_event
+        decision = result.decision
+        flags = result.flags
+        governed = result.response or ""
+        if decision is not None:
+            governed = (
+                getattr(decision, "governed_response", None)
+                or decision.corrected_response
+                or governed
+            )
+        if self._config.stream_emit_progress:
+            yield ("progress", ProgressSignal(status="releasing"))
+        _model_hint = result.model or ""
+        yield (
+            "governed_chunk",
+            (make_governed_chunk_dict(governed, _model_hint), governed),
+        )
+        _gov_body = governed
+        if decision is not None and getattr(decision, "governed_response", None):
+            _gov_body = decision.governed_response
+        aurora = build_aurora_block(
+            action=result.action,
+            flags=flags,
+            turn=turn,
+            decision=decision,
+            pef=self._pef,
+            include_operator_detail=include_operator_detail,
+            session_id=None,
+            original_response=decision.original_response if decision else None,
+            governed_response_body=_gov_body,
+            stream_governed=True,
+            stream_truncated=False,
+            stream_dropped_chars=0,
+            pef_admission_result_wire=self.peek_pef_admission_result_wire(),
+        )
+        aurora["_log_flags"] = [
+            f.flag_type.name for f in decision.flags
+        ] if decision else [f.flag_type.name for f in flags]
+        aurora["_log_policy"] = decision.policy if decision else None
+        aurora["_log_pathway"] = decision.pathway_id if decision else None
+        aurora["_log_commitment_closed"] = (
+            decision.commitment_closed if decision else None
+        )
+        aurora["epistemic_normalisation_applied"] = False
+        yield ("metadata", aurora)
+
     def _pending_state_native_typo_recovery_phase(
         self,
         *,
@@ -7285,7 +7567,9 @@ class Lens:
             rag_turn_active=rag_pef_update_user_text is not None,
         )
 
-        _illicit_request_flags = evaluate_blocked_act_request(history_user_input or user_input)
+        _illicit_request_flags = evaluate_blocked_act_request(
+            history_user_input or user_input,
+        )
         if _illicit_request_flags:
             flags = [
                 f for f in flags
@@ -7826,6 +8110,7 @@ class Lens:
         if (
             self._pef.pending_clarification is not None
             and self._config.auto_interpret
+            and not _pending_is_interpretation_limit(self._pef.pending_clarification)
             and (
                 not self._check_blocked_act_request(user_input)
                 or _pending_fc_resume
@@ -8685,6 +8970,25 @@ class Lens:
             )
             if _session_gate_result is not None:
                 return _session_gate_result
+            _limit_gate_result = await self._maybe_apply_interpretation_limit_gate(
+                turn=turn,
+                history_user_input=history_user_input,
+                user_input=user_input,
+                ext_flags=ext_flags,
+                detected_span=detected_span,
+                extraction=extraction,
+            )
+            if _limit_gate_result is not None:
+                return _limit_gate_result
+            _fin_probe_gate = await self._maybe_apply_established_financial_determination_gate(
+                turn=turn,
+                history_user_input=history_user_input,
+                user_input=user_input,
+                ext_flags=ext_flags,
+                extraction=extraction,
+            )
+            if _fin_probe_gate is not None:
+                return _fin_probe_gate
             _ambig_govern = self._governed_ambiguous_tokens_for_turn(
                 extraction,
                 history_user_input,
@@ -8769,13 +9073,16 @@ class Lens:
                             else user_input
                         )
                         _apply_epistemic_hold_after_non_admit(self._pef, pre_decision, turn)
-                        self._pef.pending_clarification = _build_pending_unresolved_referent_dict(
+                        _assign_pending_without_replacing_other_matter(
                             self._pef,
-                            scope_text=_scope_ambig,
-                            original_question=user_input,
-                            extraction=extraction,
-                            ambiguous_tokens=list(_ambig_govern),
-                            detected_span=detected_span,
+                            _build_pending_unresolved_referent_dict(
+                                self._pef,
+                                scope_text=_scope_ambig,
+                                original_question=user_input,
+                                extraction=extraction,
+                                ambiguous_tokens=list(_ambig_govern),
+                                detected_span=detected_span,
+                            ),
                         )
                         self._register_governed_ambiguity_in_pef(
                             turn=turn,
@@ -9361,6 +9668,14 @@ class Lens:
             and _hold.get("mode") == EPISTEMIC_MODE_AMBIGUITY
             and _hold.get("interaction_open") is True
             and _pend is not None
+            and not _pending_is_interpretation_limit(_pend)
+            and not (
+                str((_pend or {}).get("failed_constraint") or "") == "UNRESOLVED_REFERENT"
+                and not list((_pend or {}).get("candidate_entities") or [])
+                and self._open_registry_session_gate_allows_through(
+                    history_user_input, turn_act,
+                )
+            )
         )
         _session_gate_unrelated_bypass = (
             _registry_open and is_unrelated_safe_turn(history_user_input)
@@ -9608,6 +9923,7 @@ class Lens:
         if (
             self._pef.pending_clarification is not None
             and self._config.auto_interpret
+            and not _pending_is_interpretation_limit(self._pef.pending_clarification)
             and (
                 not self._check_blocked_act_request(user_input)
                 or _pending_fc_resume
@@ -9796,7 +10112,13 @@ class Lens:
                     extraction=_clar_ext,
                 )
                 if _session_gate_result is not None:
-                    yield ("session_registry_gate", _session_gate_result)
+                    async for _evt in self._stream_emit_pre_llm_suppressed_response(
+                        _session_gate_result,
+                        turn,
+                        include_operator_detail=_stream_include_operator_detail,
+                        gate_event=("session_registry_gate", _session_gate_result),
+                    ):
+                        yield _evt
                     return
 
             _hold_unresolved_result = await self._maybe_apply_hold_unresolved_selection(
@@ -10464,7 +10786,34 @@ class Lens:
                 extraction=extraction,
             )
             if _session_gate_result is not None:
-                yield ("session_registry_gate", _session_gate_result)
+                async for _evt in self._stream_emit_pre_llm_suppressed_response(
+                    _session_gate_result,
+                    turn,
+                    include_operator_detail=_stream_include_operator_detail,
+                    gate_event=("session_registry_gate", _session_gate_result),
+                ):
+                    yield _evt
+                return
+            _limit_gate_result = await self._maybe_apply_interpretation_limit_gate(
+                turn=turn,
+                history_user_input=history_user_input,
+                user_input=user_input,
+                ext_flags=ext_flags,
+                detected_span=detected_span,
+                extraction=extraction,
+            )
+            if _limit_gate_result is not None:
+                yield ("interpretation_limit_gate", _limit_gate_result)
+                return
+            _fin_probe_gate = await self._maybe_apply_established_financial_determination_gate(
+                turn=turn,
+                history_user_input=history_user_input,
+                user_input=user_input,
+                ext_flags=ext_flags,
+                extraction=extraction,
+            )
+            if _fin_probe_gate is not None:
+                yield ("financial_determination_gate", _fin_probe_gate)
                 return
             _ambig_govern = self._governed_ambiguous_tokens_for_turn(
                 extraction,
@@ -10550,13 +10899,16 @@ class Lens:
                             else user_input
                         )
                         _apply_epistemic_hold_after_non_admit(self._pef, pre_decision, turn)
-                        self._pef.pending_clarification = _build_pending_unresolved_referent_dict(
+                        _assign_pending_without_replacing_other_matter(
                             self._pef,
-                            scope_text=_scope_ambig,
-                            original_question=user_input,
-                            extraction=extraction,
-                            ambiguous_tokens=list(_ambig_govern),
-                            detected_span=detected_span,
+                            _build_pending_unresolved_referent_dict(
+                                self._pef,
+                                scope_text=_scope_ambig,
+                                original_question=user_input,
+                                extraction=extraction,
+                                ambiguous_tokens=list(_ambig_govern),
+                                detected_span=detected_span,
+                            ),
                         )
                         self._register_governed_ambiguity_in_pef(
                             turn=turn,
@@ -11187,13 +11539,27 @@ class Lens:
                 extraction=extraction,
             )
             if _session_gate_result is not None:
-                yield ("session_registry_gate", _session_gate_result)
+                async for _evt in self._stream_emit_pre_llm_suppressed_response(
+                    _session_gate_result,
+                    turn,
+                    include_operator_detail=_stream_include_operator_detail,
+                    gate_event=("session_registry_gate", _session_gate_result),
+                ):
+                    yield _evt
                 return
         _active_ambiguity_hold_stream = (
             _hold_stream is not None
             and _hold_stream.get("mode") == EPISTEMIC_MODE_AMBIGUITY
             and _hold_stream.get("interaction_open") is True
             and _pend_stream is not None
+            and not _pending_is_interpretation_limit(_pend_stream)
+            and not (
+                str((_pend_stream or {}).get("failed_constraint") or "") == "UNRESOLVED_REFERENT"
+                and not list((_pend_stream or {}).get("candidate_entities") or [])
+                and self._open_registry_session_gate_allows_through(
+                    history_user_input, turn_act,
+                )
+            )
         )
         if (not _registry_open_stream and not _held_unresolved_active_stream and _active_ambiguity_hold_stream) or (
             not _registry_open_stream

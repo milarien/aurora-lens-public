@@ -257,8 +257,21 @@ def _build_semantic_transactions(
     for claim in result.claims:
         tx = SemanticTransaction(claim=claim)
 
+        # Phase 0: the claim is not something the user asserted. An instruction's
+        # clauses describe the act requested, and an undetermined act has no
+        # established reading at all.
+        if claim.provenance == "quotation":
+            tx.allowed_commit = False
+            tx.held_reason = "QUOTATION"
+        elif claim.utterance_act == "instruct":
+            tx.allowed_commit = False
+            tx.held_reason = "EMBEDDED_IN_INSTRUCTION"
+        elif claim.utterance_act == "undetermined":
+            tx.allowed_commit = False
+            tx.held_reason = "INTERPRETATION_LIMIT"
+
         # Phase 1: comparative IS claim with unresolved comparand.
-        if (
+        elif (
             comparative_adjectives
             and canonicalize_relation(claim.relation) == "IS"
             and str(claim.obj).strip().lower() in comparative_adjectives
@@ -440,6 +453,9 @@ def update_pef(
                 "UNRESOLVED_COMPARAND": "U-TX1",
                 "UNRESOLVED_POSSESSOR": "U-TX2",
                 "UNRESOLVED_REFERENT": "U-TX3",
+                "EMBEDDED_IN_INSTRUCTION": "U-TX4",
+                "INTERPRETATION_LIMIT": "U-TX5",
+                "QUOTATION": "U-TX6",
             }.get(str(held), "SEMANTIC_HELD_UNKNOWN")
             admission_evidence.append(
                 make_admission_evidence(veto_map, slice_index=slice_i, held_reason=str(held) or None)
@@ -580,7 +596,15 @@ def update_pef(
 
     # Create entity entries for mentioned-but-not-asserted entities.
     # Skip pronouns and generic concept labels (AI, ML, LLM, etc.).
-    for name in result.entity_mentions:
+    if result.interpretation_limit:
+        admission_evidence.append(
+            make_admission_evidence(
+                "U-M3",
+                scope="entity_mention",
+                detail=str(result.interpretation_limit.get("kind") or ""),
+            )
+        )
+    for name in ([] if result.interpretation_limit else result.entity_mentions):
         name_lower = name.lower()
         if name_lower in _PRONOUNS or name_lower in _GENERIC_CONCEPT_LABELS:
             admission_evidence.append(make_admission_evidence("U-M1", scope="entity_mention", detail=name_lower))

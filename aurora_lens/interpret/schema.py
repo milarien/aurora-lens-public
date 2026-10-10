@@ -26,6 +26,12 @@ class ExtractedClaim:
     extractor_backend: str = "unknown"  # spacy | llm | rule | manual | unknown
     document_id: str | None = None
     document_locator: str | None = None
+    utterance_act: str | None = None
+        # Act of the sentence the claim came from: assert | instruct | undetermined.
+        # None: the backend did not assess the act.
+    clause_scope: str | None = None
+        # main: the claim's predicate is the sentence's main predicate.
+        # embedded: relative, complement, or other subordinate clause.
 
 
 @dataclass
@@ -578,3 +584,10 @@ class ExtractionResult:
         # Comparative adjectives whose comparand cannot be uniquely determined
     extraction_error: dict | None = None
         # When set: parse failed (e.g. JSON_DECODE_ERROR). Keys: reason, snippet, raw_preview.
+    interpretation_limit: dict | None = None
+        # When set: the input is outside what this backend can interpret.
+        # Keys: kind, detail, and kind-specific fields. Claims are parser
+        # output only and must not be admitted as the user's assertions.
+    financial_determination_probe: dict | None = None
+        # Parser-grounded probe: act, concern, personal link, determination vs
+        # response_format. status is established | partial | none.

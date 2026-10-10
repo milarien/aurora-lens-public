@@ -53,6 +53,9 @@ class FlagType(Enum):
     UPSTREAM_INSUFFICIENT_CONTEXT = auto()
     # Strict admissibility: consequential request intent without a matching lane.
     UNCLASSIFIED_CONSEQUENCE_INTENT = auto()
+    # Pre-commit: the interpreter reports the input is outside what it can read
+    # (unsupported script, no main predicate). Nothing is committed or answered.
+    INTERPRETATION_LIMIT = auto()
 
     # ── PEF binding failures ─────────────────────────────────────────────────
     UNRESOLVED_REFERENT = auto()            # Common-noun referent not bound into PEF (e.g. "sister")

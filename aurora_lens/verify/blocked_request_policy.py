@@ -1391,6 +1391,26 @@ def _finance_request_has_imperative_execution_surface(normalised_text: str) -> b
     return surface_finance_imperative_first_line(normalised_text)
 
 
+def personalized_financial_advice_from_probe(probe: dict | None) -> Flag | None:
+    """Map parser-established personal finance determination to the existing PFA flag."""
+    if not probe or str(probe.get("status") or "") != "established":
+        return None
+    parts: list[str] = []
+    for key in ("act", "personal", "concern", "determination", "instruction"):
+        for item in probe.get(key) or []:
+            parts.append(str(item))
+    if not parts:
+        return None
+    return Flag(
+        flag_type=FlagType.PERSONALIZED_FINANCIAL_ADVICE,
+        entity_name="financial",
+        claim="Request asks for personalised financial advice about the user's own money",
+        evidence="Parser evidence: " + "; ".join(parts[:12]),
+        severity="warning",
+        rule_id=BlockedRequestRuleId.PERSONALIZED_FINANCIAL,
+    )
+
+
 def _finance_request_is_informational_leading_query(lower: str) -> bool:
     """True when the request opens as a definition / education question (finance seam only)."""
     return surface_finance_informational_leading(lower.strip())

@@ -1729,7 +1729,10 @@ def apply_intervention_policy_pathway_fields(
             decision.output_mode = "clarification_request"
             interaction_open = True
             commitment_closed = True
-        elif any(f.flag_type == FlagType.UNCLASSIFIED_CONSEQUENCE_INTENT for f in flags):
+        elif any(
+            f.flag_type in (FlagType.UNCLASSIFIED_CONSEQUENCE_INTENT, FlagType.INTERPRETATION_LIMIT)
+            for f in flags
+        ):
             pathway_id = "P_ASK_MISSING_FACT"
             decision.output_mode = "clarification_request"
             interaction_open = True

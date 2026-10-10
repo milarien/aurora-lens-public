@@ -81,6 +81,7 @@ _RULE_DOMAIN_BY_FLAG_TYPE: dict[FlagType, str] = {
     FlagType.AGENCY_RISK_CONTEXT_UNRESOLVED:  "ambiguity",
     FlagType.HAZARD_SUBSTANCE_UNRESOLVED:     "ambiguity",
     FlagType.UNCLASSIFIED_CONSEQUENCE_INTENT: "governance",
+    FlagType.INTERPRETATION_LIMIT:            "ambiguity",
 }
 
 # Hazard ontology rule ids — always canonical domain "harmful" (never LEGAL).

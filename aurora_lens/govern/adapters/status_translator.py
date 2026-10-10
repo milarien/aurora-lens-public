@@ -148,6 +148,7 @@ _ASK: frozenset[FlagType] = frozenset({
     FlagType.UPSTREAM_INSUFFICIENT_CONTEXT,
     FlagType.AGENCY_RISK_CONTEXT_UNRESOLVED,
     FlagType.UNCLASSIFIED_CONSEQUENCE_INTENT,
+    FlagType.INTERPRETATION_LIMIT,
 })
 
 # Priority values for the worst-class invariant.

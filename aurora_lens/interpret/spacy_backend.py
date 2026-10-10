@@ -13,6 +13,7 @@ import asyncio
 import logging
 import os
 import re
+import unicodedata
 from typing import Any, TYPE_CHECKING
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,12 @@ from aurora_lens.pef.state import (
     CONSUMPTION_RELATIONS,
     canonicalize_relation,
 )
-from aurora_lens.interpret.schema import ComparativeAmbiguity, ExtractedClaim, ExtractionResult
+from aurora_lens.interpret.schema import (
+    ComparativeAmbiguity,
+    ExtractedClaim,
+    ExtractionResult,
+)
+from aurora_lens.interpret.financial_determination_probe import probe_financial_determination
 from aurora_lens.interpret.base import ExtractionBackend
 from aurora_lens.verify.numeric import parse_numeric
 from aurora_lens.state_native_engine.lexical import item_key
@@ -1103,6 +1109,21 @@ class SpacyBackend(ExtractionBackend):
 
         # Extract SVO relationships from dependency parse
         result.claims = self._extract_claims(doc, result.span, pef)
+        result.interpretation_limit = self._interpretation_limit(doc, result.claims)
+        result.financial_determination_probe = probe_financial_determination(doc, text)
+        if (
+            result.financial_determination_probe.get("status") == "partial"
+            and result.interpretation_limit is None
+        ):
+            result.interpretation_limit = {
+                "kind": "FINANCIAL_DETERMINATION_UNRESOLVED",
+                "detail": (
+                    "Personal finance wording is present, but the parser could not "
+                    "establish the requested act, its target, and a determination "
+                    "with enough evidence to apply finance policy."
+                ),
+                "probe": dict(result.financial_determination_probe),
+            }
 
         # Role/common-noun discourse entities (operator, contractor, …) for referent ASK.
         _role_mentions = _discourse_role_noun_entity_mentions(result.claims)
@@ -1228,6 +1249,126 @@ class SpacyBackend(ExtractionBackend):
                     if child.dep_ in ("nsubj", "nsubjpass") and child.tag_ in ("WP", "WRB", "WDT"):
                         return True
         return False
+
+    _SUBJECT_DEPS: frozenset[str] = frozenset(
+        {"nsubj", "nsubjpass", "expl", "csubj", "csubjpass"}
+    )
+    # Scripts the loaded pipeline was trained to read, keyed by pipeline language.
+    _SUPPORTED_SCRIPTS: dict[str, frozenset[str]] = {"en": frozenset({"LATIN"})}
+
+    def _sentence_act(self, sent: Any) -> str:
+        """Act of one sentence: query | assert | instruct | undetermined."""
+        if self._is_interrogative_sentence(sent):
+            return "query"
+        root = sent.root
+        if root.pos_ not in ("VERB", "AUX"):
+            return "undetermined"
+        if any(child.dep_ in self._SUBJECT_DEPS for child in root.children):
+            return "assert"
+        if root.tag_ == "VB":
+            return "instruct"
+        return "undetermined"
+
+    def _is_main_predicate(self, token: Token) -> bool:
+        """True for the sentence root or a predicate coordinated with it."""
+        while token.dep_ == "conj" and token.head is not token:
+            token = token.head
+        return token.dep_ == "ROOT"
+
+    def _tag_claim_scope(
+        self,
+        claims: list[ExtractedClaim],
+        start: int,
+        predicate: Token | None,
+        quoted: set[int],
+    ) -> int:
+        """Record act, clause scope, and quotation provenance for *predicate*."""
+        if predicate is not None:
+            act = self._sentence_act(predicate.sent)
+            scope = "main" if self._is_main_predicate(predicate) else "embedded"
+            quoted_claim = self._predicate_is_quoted(predicate, quoted)
+            for claim in claims[start:]:
+                claim.utterance_act = act
+                claim.clause_scope = scope
+                if quoted_claim:
+                    claim.provenance = "quotation"
+        return len(claims)
+
+    def _quoted_token_indices(self, doc: Doc) -> set[int]:
+        """Token indices strictly inside paired quote marks the parser already marked."""
+        inside: set[int] = set()
+        opening: int | None = None
+        for token in doc:
+            if not token.is_quote:
+                continue
+            if opening is None:
+                opening = token.i
+                continue
+            inside.update(range(opening + 1, token.i))
+            opening = None
+        return inside
+
+    def _predicate_is_quoted(self, predicate: Token, quoted: set[int]) -> bool:
+        """True when the predicate, or the material it contributes, lies inside a quotation."""
+        if not quoted:
+            return False
+        if predicate.i in quoted:
+            return True
+        return any(token.i in quoted for token in predicate.subtree)
+
+    def _unsupported_scripts(self, doc: Doc) -> list[str]:
+        supported = self._SUPPORTED_SCRIPTS.get(getattr(self._nlp, "lang", ""))
+        if supported is None:
+            return []
+        found: list[str] = []
+        for token in doc:
+            if not token.is_alpha:
+                continue
+            for ch in token.text:
+                script = unicodedata.name(ch, "").split(" ")[0]
+                if script and script not in supported and script not in found:
+                    found.append(script)
+        return found
+
+    def _interpretation_limit(
+        self,
+        doc: Doc,
+        claims: list[ExtractedClaim],
+    ) -> dict | None:
+        """Report input this pipeline cannot interpret, or None.
+
+        Claims stay on the result for audit. Every claim is marked
+        ``undetermined`` so admission holds it.
+        """
+        scripts = self._unsupported_scripts(doc)
+        if scripts:
+            for claim in claims:
+                claim.utterance_act = "undetermined"
+            return {
+                "kind": "UNSUPPORTED_SCRIPT",
+                "scripts": scripts,
+                "pipeline_language": getattr(self._nlp, "lang", ""),
+                "detail": (
+                    f"The input contains {', '.join(s.title() for s in scripts)} "
+                    "script, which this interpreter does not read."
+                ),
+            }
+        undetermined = [
+            claim for claim in claims if claim.utterance_act == "undetermined"
+        ]
+        if undetermined:
+            sentences = list(
+                dict.fromkeys(str(claim.evidence or "").strip() for claim in undetermined)
+            )
+            return {
+                "kind": "MAIN_ACT_UNDETERMINED",
+                "sentences": sentences,
+                "detail": (
+                    "No main predicate was identified, so it could not be "
+                    "determined whether this input states, asks, or instructs."
+                ),
+            }
+        return None
 
     def _find_nsubj_token_active(self, verb: Token) -> Token | None:
         """Active-clause nsubj only (excludes passive nsubjpass)."""
@@ -1542,7 +1683,12 @@ class SpacyBackend(ExtractionBackend):
                 for token in sent:
                     interrogative_indices.add(token.i)
 
+        _scope_mark = 0
+        _scope_predicate: Token | None = None
+        _quoted = self._quoted_token_indices(doc)
         for token in doc:
+            _scope_mark = self._tag_claim_scope(claims, _scope_mark, _scope_predicate, _quoted)
+            _scope_predicate = token
             if token.i in interrogative_indices:
                 continue
             if token.pos_ not in ("VERB", "AUX"):
@@ -1999,6 +2145,7 @@ class SpacyBackend(ExtractionBackend):
                         extractor_backend="spacy",
                     ))
 
+        self._tag_claim_scope(claims, _scope_mark, _scope_predicate, _quoted)
         return claims
 
     def _verb_local_span(self, verb: "Token", doc_span: Span) -> Span:
@@ -2361,6 +2508,15 @@ class SpacyBackend(ExtractionBackend):
             if lower in _SUBJECT_OBJECT_PRONOUNS and token.dep_ in (
                 "nsubj", "nsubjpass", "dobj", "pobj"
             ):
+                if lower in {"this", "that"}:
+                    # Near-demonstratives presuppose an antecedent. With none bound,
+                    # the reference stays unresolved; it is not assigned a target.
+                    if lower in pef.discourse_referent_bindings:
+                        continue
+                    if lower not in seen:
+                        seen.add(lower)
+                        ambiguous.append(lower)
+                    continue
                 if lower == "it":
                     # Only treat unresolved "it" as ambiguity for non-interrogative
                     # transfer/possession mutation contexts.
