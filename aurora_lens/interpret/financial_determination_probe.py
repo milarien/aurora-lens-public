@@ -2,7 +2,9 @@
 
 Separates a requested allocation determination from response-format cues.
 Does not treat a successful parse as permission: ``status`` is ``established``
-only when personal, concern, act, and determination each have cited evidence.
+only when personal scope, finance concern, and a cited determination (including
+an allocation stay/move choice bound to the user's holdings) each have evidence,
+or when a linked allocation act supports the same conclusion.
 """
 
 from __future__ import annotations
@@ -12,8 +14,9 @@ from typing import Any
 _ALLOCATION_LEMMAS = frozenset(
     {"move", "put", "invest", "allocate", "transfer", "switch", "reallocate"}
 )
+_ALLOCATION_CHOICE_LEMMAS = frozenset({"move", "stay"})
 _CONCERN_LEMMAS = frozenset(
-    {"fund", "saving", "retirement", "pension", "portfolio", "pot"}
+    {"fund", "saving", "retirement", "pension", "portfolio", "pot", "allocation"}
 )
 _FORMAT_VERBS = frozenset({"return"})
 _JUDGMENT_ATTR = frozenset({"call", "choice", "decision"})
@@ -118,6 +121,46 @@ def _determination_evidence(doc: Any) -> list[str]:
             for child in tok.children:
                 if child.dep_ in ("xcomp", "ccomp") and child.lemma_.lower() == "move":
                     out.append(f"tell xcomp {_evidence(child)}")
+    return list(dict.fromkeys(out))
+
+
+def _allocation_choice_evidence(doc: Any) -> list[str]:
+    """Stay/move (or equivalent) alternatives the user wants decided."""
+    out: list[str] = []
+    for tok in doc:
+        if tok.lemma_.lower() != "stay" or tok.dep_ != "conj":
+            continue
+        head = tok.head
+        if head.lemma_.lower() in _ALLOCATION_CHOICE_LEMMAS:
+            out.append(f"move/stay disjunction {_evidence(tok)}")
+    return list(dict.fromkeys(out))
+
+
+def _allocation_binding_evidence(doc: Any) -> list[str]:
+    """Possessive finance scope the choice is about (e.g. asking about my allocation)."""
+    out: list[str] = []
+    for tok in doc:
+        if tok.lemma_.lower() not in ("ask", "asking") and tok.text.lower() not in (
+            "ask",
+            "asking",
+        ):
+            continue
+        for child in tok.children:
+            if child.dep_ != "prep" or child.text.lower() != "about":
+                continue
+            for pobj in child.children:
+                if pobj.dep_ != "pobj":
+                    continue
+                if any(t.text.lower() == "my" for t in pobj.subtree) or (
+                    _is_finance_concern(pobj)
+                    and any(c.dep_ == "poss" and c.text.lower() == "my" for c in pobj.children)
+                ):
+                    out.append(f"allocation scope {_evidence(pobj)}")
+    for tok in doc:
+        if not _is_finance_concern(tok):
+            continue
+        if any(c.dep_ == "poss" and c.text.lower() == "my" for c in tok.children):
+            out.append(f"my concern {_evidence(tok)}")
     return list(dict.fromkeys(out))
 
 
@@ -227,6 +270,8 @@ def probe_financial_determination(doc: Any, text: str) -> dict[str, Any]:
     personal = _personal_evidence(doc, act_tokens)
     concern = _concern_evidence(doc)
     determination = _determination_evidence(doc)
+    choice = _allocation_choice_evidence(doc)
+    allocation_binding = _allocation_binding_evidence(doc)
     response_format = _response_format_evidence(doc, text)
     instruction: list[str] = []
     reported: list[str] = []
@@ -238,6 +283,8 @@ def probe_financial_determination(doc: Any, text: str) -> dict[str, Any]:
     has_personal = bool(personal)
     has_concern = bool(concern)
     has_determination = bool(determination)
+    has_choice = bool(choice)
+    has_binding = bool(allocation_binding)
 
     finance_surface = has_concern or "401k" in text.lower()
     personal_surface = has_personal or " my " in f" {text.lower()} "
@@ -252,8 +299,15 @@ def probe_financial_determination(doc: Any, text: str) -> dict[str, Any]:
             status = "partial"
         elif uncertain:
             status = "partial"
+    elif (
+        has_personal
+        and has_concern
+        and has_choice
+        and (has_binding or has_determination)
+    ):
+        status = "established"
     elif finance_surface and personal_surface and (
-        has_determination or response_format or not has_act
+        has_determination or response_format or has_choice or not has_act
     ):
         status = "partial"
 
@@ -263,6 +317,8 @@ def probe_financial_determination(doc: Any, text: str) -> dict[str, Any]:
         "concern": concern,
         "act": act,
         "determination": determination,
+        "choice": choice,
+        "allocation_binding": allocation_binding,
         "instruction": instruction,
         "reported": reported,
         "uncertain": uncertain,

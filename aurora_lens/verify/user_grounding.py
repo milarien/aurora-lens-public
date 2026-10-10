@@ -25,6 +25,7 @@ class UserGroundingContext:
     user_committed_relationships: tuple[Relationship, ...]
     retrieved_context_relationships: tuple[Relationship, ...] = ()
     retrieved_context_text: str | None = None
+    financial_determination_probe: dict | None = None
 
     @property
     def same_turn_evidence_relationships(self) -> tuple[Relationship, ...]:
@@ -37,6 +38,7 @@ def build_user_grounding_context(
     effective_user_text: str | None,
     *,
     retrieved_context_text: str | None = None,
+    financial_determination_probe: dict | None = None,
 ) -> UserGroundingContext:
     """Collect same-turn relationships admitted from user input and retrieval.
 
@@ -63,10 +65,16 @@ def build_user_grounding_context(
     ctx_text = retrieved_context_text.strip() if retrieved_context_text else None
     if ctx_text == "":
         ctx_text = None
+    probe_snapshot = (
+        dict(financial_determination_probe)
+        if financial_determination_probe
+        else None
+    )
     return UserGroundingContext(
         effective_user_text=effective_user_text,
         turn=turn,
         user_committed_relationships=committed,
         retrieved_context_relationships=retrieved,
         retrieved_context_text=ctx_text,
+        financial_determination_probe=probe_snapshot,
     )

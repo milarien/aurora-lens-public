@@ -610,6 +610,7 @@ from .numeric import (
 from .blocked_request_policy import (
     BlockedRequestRuleId,
     evaluate_blocked_act_request,
+    personalized_financial_advice_from_inherited_response,
     user_seeks_historical_market_data_lookup,
 )
 from .harmful_operational_response import classify_harmful_operational_guidance
@@ -2187,6 +2188,13 @@ class Checker:
         flags.extend(self._check_truthfulness_certainty(response_text))
         if user_input:
             flags.extend(self._check_bare_truthfulness_verdict(response_text, user_input))
+        if user_grounding is not None and user_grounding.financial_determination_probe:
+            _inherited_pfa = personalized_financial_advice_from_inherited_response(
+                user_grounding.financial_determination_probe,
+                response_text,
+            )
+            if _inherited_pfa is not None:
+                flags.append(_inherited_pfa)
         flags.extend(self._check_pii_exposure(response_text))
         flags.extend(self._check_regulatory_claims(response_text))
         # Verify-or-refuse: education / workforce / enterprise personalised advice

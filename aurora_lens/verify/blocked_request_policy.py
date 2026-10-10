@@ -45,6 +45,7 @@ from __future__ import annotations
 
 import base64
 import binascii
+import re
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
@@ -1391,14 +1392,27 @@ def _finance_request_has_imperative_execution_surface(normalised_text: str) -> b
     return surface_finance_imperative_first_line(normalised_text)
 
 
+def _financial_determination_probe_evidence_parts(probe: dict) -> list[str]:
+    parts: list[str] = []
+    for key in (
+        "act",
+        "personal",
+        "concern",
+        "choice",
+        "allocation_binding",
+        "determination",
+        "instruction",
+    ):
+        for item in probe.get(key) or []:
+            parts.append(str(item))
+    return parts
+
+
 def personalized_financial_advice_from_probe(probe: dict | None) -> Flag | None:
     """Map parser-established personal finance determination to the existing PFA flag."""
     if not probe or str(probe.get("status") or "") != "established":
         return None
-    parts: list[str] = []
-    for key in ("act", "personal", "concern", "determination", "instruction"):
-        for item in probe.get(key) or []:
-            parts.append(str(item))
+    parts = _financial_determination_probe_evidence_parts(probe)
     if not parts:
         return None
     return Flag(
@@ -1406,6 +1420,52 @@ def personalized_financial_advice_from_probe(probe: dict | None) -> Flag | None:
         entity_name="financial",
         claim="Request asks for personalised financial advice about the user's own money",
         evidence="Parser evidence: " + "; ".join(parts[:12]),
+        severity="warning",
+        rule_id=BlockedRequestRuleId.PERSONALIZED_FINANCIAL,
+    )
+
+
+_BARE_BINARY_VERDICT_RE = re.compile(
+    r"^\s*(?:definitely\s+|clearly\s+|obviously\s+|absolutely\s+)?(?:yes|no)[.!?]?\s*$",
+    re.IGNORECASE,
+)
+_BARE_ALLOCATION_CHOICE_RE = re.compile(
+    r"^\s*(?:definitely\s+|clearly\s+|obviously\s+|absolutely\s+)?(?:stay|move)[.!?]?\s*$",
+    re.IGNORECASE,
+)
+
+
+def personalized_financial_advice_from_inherited_response(
+    probe: dict | None,
+    response_text: str,
+) -> Flag | None:
+    """Response-side PFA when a bare answer inherits an established allocation choice frame."""
+    if not probe or str(probe.get("status") or "") != "established":
+        return None
+    if not probe.get("choice"):
+        return None
+    stripped = (response_text or "").strip()
+    if not stripped:
+        return None
+    if not (
+        _BARE_BINARY_VERDICT_RE.match(stripped)
+        or _BARE_ALLOCATION_CHOICE_RE.match(stripped)
+    ):
+        return None
+    parts = _financial_determination_probe_evidence_parts(probe)
+    if not parts:
+        return None
+    return Flag(
+        flag_type=FlagType.PERSONALIZED_FINANCIAL_ADVICE,
+        entity_name="financial",
+        claim=(
+            "Response gives a bare allocation verdict inheriting a personal finance "
+            "determination frame from the user's question"
+        ),
+        evidence=(
+            f"Established allocation choice frame; bare model answer: {stripped!r}; "
+            + "; ".join(parts[:10])
+        ),
         severity="warning",
         rule_id=BlockedRequestRuleId.PERSONALIZED_FINANCIAL,
     )

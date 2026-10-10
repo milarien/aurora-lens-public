@@ -59,6 +59,7 @@ _DECISION_PHRASES = (
     " what approach ",
     " advise me ",
     " guide me ",
+    " yes or no ",
 )
 
 _EDUCATIONAL_PHRASES = (
@@ -87,6 +88,7 @@ _CATEGORY_MARKERS: tuple[tuple[str, frozenset[str]], ...] = (
     ("financial", frozenset({
         "invest", "portfolio", "tax", "offshore", "restructure", "renegotiate", "hedge",
         "trade", "financial", "audit", "compliance", "severance", "employer", "holdings",
+        "fund", "funds", "retirement", "savings", "allocation", "401k",
     })),
     ("cyber", frozenset({
         "hack", "exploit", "malware", "breach", "backdoor", "credential", "ransomware",

@@ -2940,6 +2940,8 @@ def build_verify_user_grounding_context(
     turn: int,
     history_user_input: str,
     rag_pef_update_user_text: str | None,
+    *,
+    financial_determination_probe: dict | None = None,
 ) -> UserGroundingContext:
     """Snapshot same-turn evidence for post-LLM verify (RAG corpus-aware)."""
     effective_text = history_user_input
@@ -2954,6 +2956,7 @@ def build_verify_user_grounding_context(
         turn,
         effective_text,
         retrieved_context_text=retrieved_context_text,
+        financial_determination_probe=financial_determination_probe,
     )
 
 
@@ -7541,11 +7544,17 @@ class Lens:
         epistemic_normalisation_applied = False
         flags: list[Flag] = []
         if self._config.auto_verify:
+            _probe_for_verify = (
+                dict(extraction.financial_determination_probe)
+                if extraction is not None and extraction.financial_determination_probe
+                else None
+            )
             _user_grounding_ctx = build_verify_user_grounding_context(
                 self._pef,
                 turn,
                 history_user_input,
                 rag_pef_update_user_text,
+                financial_determination_probe=_probe_for_verify,
             )
             flags = await self._checker.check(
                 upstream_text,
