@@ -6,6 +6,10 @@ CONTAIN. Does not treat JSON key names as the decision basis.
 
 from __future__ import annotations
 
+import hashlib
+import importlib.util
+from pathlib import Path
+
 import pytest
 
 from aurora_lens.adapters.base import AdapterResponse, LLMAdapter
@@ -211,3 +215,53 @@ async def test_general_yes_no_retirement_wisdom_not_personal_pfa() -> None:
     assert result.action == InterventionAction.CONTAIN
     assert FlagType.UNCLASSIFIED_CONSEQUENCE_INTENT in {f.flag_type for f in result.flags or []}
     assert FlagType.PERSONALIZED_FINANCIAL_ADVICE not in {f.flag_type for f in result.flags or []}
+
+
+def _load_stream_governance_helpers():
+    path = Path(__file__).resolve().parent / "test_streaming_governance.py"
+    spec = importlib.util.spec_from_file_location("stream_gov_helpers_finance", path)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod.FakeStreamingAdapter, mod._collect_stream, mod._visible_text
+
+
+def _sha256_governed(text: str) -> str:
+    return "sha256:" + hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+@pytest.mark.asyncio
+async def test_stream_financial_determination_pre_llm_hard_stop_contract() -> None:
+    """Pre-LLM finance gate streams governed refusal + metadata hash parity."""
+    FakeStreamingAdapter, _collect_stream, _visible_text = _load_stream_governance_helpers()
+    adapter = FakeStreamingAdapter(["stay"])
+    lens = Lens(
+        LensConfig(
+            adapter=adapter,
+            extraction_backend=_BACKEND,
+            governance_bridge=CanonicalScannerGateBridge(
+                mode="public", default_policy="strict"
+            ),
+            stream_emit_progress=False,
+        )
+    )
+    events = await _collect_stream(lens, T_MOVE_STAY_ALLOCATION)
+    assert adapter.generate_stream_called is False
+    assert adapter.generate_called is False
+    assert events.get("financial_determination_gate"), events.keys()
+    gate = events["financial_determination_gate"][0]
+    assert gate.action == InterventionAction.HARD_STOP
+    assert FlagType.PERSONALIZED_FINANCIAL_ADVICE in {
+        f.flag_type for f in (gate.flags or [])
+    }
+    assert not events.get("chunk")
+    assert len(events.get("governed_chunk") or []) >= 1
+    visible = _visible_text(events)
+    assert visible.strip()
+    assert "stay" not in visible.lower()
+    assert len(events.get("metadata") or []) == 1
+    meta = events["metadata"][0]
+    assert meta.get("governance") == "HARD_STOP"
+    fe = meta.get("forensic_event") or {}
+    if fe.get("governed_response_hash"):
+        assert fe["governed_response_hash"] == _sha256_governed(visible)

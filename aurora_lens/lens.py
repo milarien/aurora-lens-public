@@ -10822,7 +10822,13 @@ class Lens:
                 extraction=extraction,
             )
             if _fin_probe_gate is not None:
-                yield ("financial_determination_gate", _fin_probe_gate)
+                async for _evt in self._stream_emit_pre_llm_suppressed_response(
+                    _fin_probe_gate,
+                    turn,
+                    include_operator_detail=_stream_include_operator_detail,
+                    gate_event=("financial_determination_gate", _fin_probe_gate),
+                ):
+                    yield _evt
                 return
             _ambig_govern = self._governed_ambiguous_tokens_for_turn(
                 extraction,
