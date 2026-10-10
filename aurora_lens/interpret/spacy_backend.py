@@ -293,6 +293,25 @@ def _cataphoric_colon_reference_in_sent(head_token: Any) -> bool:
     return False
 
 
+def _is_relative_pronoun_in_relcl(token: Any) -> bool:
+    """True when *token* is a wh-relative inside a noun-modifying relcl, not deictic that/this.
+
+    spaCy parses "chest pain that has been going …" with WDT ``that`` as ``nsubj`` of
+    the relative-clause predicate; that must not enter the unresolved-referent registry.
+    Deictic ``that`` ("Should I do that?") remains ``DT``/``dobj`` at matrix scope.
+    """
+    if token.text.lower() not in ("that", "which", "who", "whom"):
+        return False
+    if token.tag_ not in ("WDT", "WP", "WP$"):
+        return False
+    tok = token.head
+    while tok is not token and tok.dep_ != "ROOT":
+        if tok.dep_ == "relcl":
+            return True
+        tok = tok.head
+    return False
+
+
 def _discourse_role_nouns_from_pef(pef: PEFState) -> set[str]:
     """Role/common-noun entities already committed in PEF (cross-turn antecedents)."""
     return {
@@ -2508,6 +2527,8 @@ class SpacyBackend(ExtractionBackend):
             if lower in _SUBJECT_OBJECT_PRONOUNS and token.dep_ in (
                 "nsubj", "nsubjpass", "dobj", "pobj"
             ):
+                if _is_relative_pronoun_in_relcl(token):
+                    continue
                 if lower in {"this", "that"}:
                     # Near-demonstratives presuppose an antecedent. With none bound,
                     # the reference stays unresolved; it is not assigned a target.

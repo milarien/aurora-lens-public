@@ -366,6 +366,19 @@ class TestAmbiguousReferentDetection:
         )
         assert "the key" in result.ambiguous_referents
 
+    def test_relative_clause_that_not_ambiguous_referent(self, backend, pef):
+        """WDT *that* inside a noun-modifying relcl is not deictic unresolved *that*."""
+        text = (
+            "I have chest pain that has been going on for an hour. "
+            "Should I go to hospital?"
+        )
+        result = asyncio.run(backend.extract(text, pef))
+        assert "that" not in result.ambiguous_referents
+
+    def test_deictic_that_still_ambiguous_without_antecedent(self, backend, pef):
+        result = asyncio.run(backend.extract("Should I do that?", pef))
+        assert "that" in result.ambiguous_referents
+
     def test_lr_s3_exact_prompt_no_the_roles_ambiguous_referent(self, backend, pef):
         """Composition lr_s3: instructional locality clause must not emit *the roles*."""
         lr_s3 = (
