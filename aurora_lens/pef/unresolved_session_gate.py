@@ -15,7 +15,7 @@ from aurora_lens.govern.governed_copy import is_attribution_referent_query
 from aurora_lens.interpret.turn_act import TurnAct, _looks_like_clarification_inquiry_meta
 from aurora_lens.pef.unresolved_referents import (
     STATUS_OPEN,
-    STATUS_RESOLVED,
+    STATUS_DISMISSED,
     UnresolvedReferentEntry,
     open_entries,
     open_registry_tokens_in_text,
@@ -220,8 +220,9 @@ def dismiss_open_unresolved_referents(pef: PEFState, *, reason: str = "session_r
     for entry in pef.unresolved_referent_registry:
         if entry.status != STATUS_OPEN:
             continue
-        entry.status = STATUS_RESOLVED
-        entry.resolved_entity = reason
+        entry.status = STATUS_DISMISSED
+        entry.resolved_entity = None
+        entry.resolution_mode = reason + "_disposition"
         count += 1
     return count
 
@@ -241,8 +242,12 @@ def _normalized_phrase(text: str) -> str:
 
 
 def is_session_reset_request(user_text: str) -> bool:
-    norm = _normalized_phrase(user_text)
-    return any(p in norm for p in _SESSION_RESET_PHRASES)
+    # A standalone control command supplies disposition authority. Quoted,
+    # reported, interrogative and compound consequence requests do not.
+    command = " ".join(user_text.strip().lower().rstrip(".!").split())
+    if command.startswith("please "):
+        command = command[len("please "):]
+    return command in _SESSION_RESET_PHRASES
 
 
 def is_meta_safe_turn(user_text: str) -> bool:

@@ -40,6 +40,7 @@ from aurora_lens.pef.state import (
     canonicalize_relation,
 )
 from aurora_lens.pef.artifact_layer import ArtifactFrame, FrameKind
+from aurora_lens.pef.hold_disposition import HoldDisposition
 from aurora_lens.pef.at_read import at_basis_snapshot
 from aurora_lens.pef.entity import Entity
 from aurora_lens.pef.frame_detector import detect_frame_transition
@@ -6068,6 +6069,47 @@ class Lens:
         )
         return gate is not None and gate.allow_through
 
+    async def _maybe_apply_session_reset_control(self, *, turn, history_user_input, ext_flags):
+        if not is_session_reset_request(history_user_input):
+            return None
+        pending = self._pef.pending_clarification
+        context = self._pef.hiring_criterion_context
+        if not pending and context is None:
+            return None
+        # The existing interpretation reset is a disposition, not a binding.
+        # Approval/referent holds have no corresponding closure basis here.
+        can_close = _pending_is_interpretation_limit(pending)
+        flags = [] if can_close else _pending_ambiguity_continuation_flags(pending or {})
+        if not can_close and not flags:
+            return None
+        decision = await self._bridge.decide(flags + list(ext_flags), history_user_input, self._pef)
+        decision.pre_llm = True
+        if can_close and decision.action == InterventionAction.PASS:
+            self._pef.hold_dispositions.append(HoldDisposition(
+                turn=turn, control=history_user_input, pending=copy.deepcopy(pending),
+                hiring_criterion_context=context.to_dict() if context else None,
+            ))
+            dismiss_open_unresolved_referents(self._pef)
+            self._pef.hiring_criterion_context = None
+            _clear_epistemic_hold_ambiguity(self._pef)
+            response = "Previous unresolved interpretation context closed by your explicit reset request. Its claims remain uncommitted; no screening or approval is authorised. A repeated request will be assessed again."
+        elif not can_close and not ext_flags:
+            response = "The earlier approval or referent hold remains unresolved. Reset does not establish its binding or authorise approval; no held claim has been committed."
+        else:
+            decision.original_response = ""
+            response = await self._bridge.intervene(decision, self._config.adapter,
+                history_user_input, self._pef.to_context_summary())
+        decision.governed_response = response
+        decision.corrected_response = response
+        _apply_epistemic_hold_after_non_admit(self._pef, decision, turn)
+        self._bridge.log_decision(decision, turn=turn, pef_context=self._pef.to_context_summary(),
+            pre_llm=True, pef_snapshot=self._pef.to_dict(), at_verification_basis=self._audit_at_basis(),
+            **self._audit_linkage_kwargs(decision))
+        self._history.extend([{"role":"user", "content":history_user_input}, {"role":"assistant", "content":response}])
+        return LensResult(response=response, flags=flags + list(ext_flags),
+            pef_snapshot=self._pef.to_context_summary(), turn=turn, span=Span.PRESENT,
+            model="", action=decision.action, decision=decision, original_response=None)
+
     async def _maybe_apply_hiring_criterion_gate(
         self, *, turn: int, history_user_input: str, ext_flags: list,
     ) -> LensResult | None:
@@ -6333,10 +6375,9 @@ class Lens:
         if binding_resumed:
             return None
         if is_session_reset_request(history_user_input):
+            if self._pef.pending_clarification:
+                return None
             dismiss_open_unresolved_referents(self._pef)
-            self._pef.hiring_criterion_context = None
-            if _pending_is_interpretation_limit(self._pef.pending_clarification):
-                _clear_epistemic_hold_ambiguity(self._pef)
             return None
 
         gate = evaluate_unresolved_session_gate(
@@ -8229,6 +8270,12 @@ class Lens:
         if _stop_cont is not None:
             return _stop_cont
 
+        _reset_control = await self._maybe_apply_session_reset_control(
+            turn=turn, history_user_input=history_user_input, ext_flags=external_flags or [],
+        )
+        if _reset_control is not None:
+            return _reset_control
+
         _criterion_result = await self._maybe_apply_hiring_criterion_gate(
             turn=turn, history_user_input=history_user_input, ext_flags=external_flags or [],
         )
@@ -10079,6 +10126,13 @@ class Lens:
         )
         if _stop_cont_stream is not None:
             yield ("clarification_continuation", _stop_cont_stream)
+            return
+
+        _reset_control = await self._maybe_apply_session_reset_control(
+            turn=turn, history_user_input=history_user_input, ext_flags=external_flags or [],
+        )
+        if _reset_control is not None:
+            yield ("clarification_continuation", _reset_control)
             return
 
         _criterion_result = await self._maybe_apply_hiring_criterion_gate(
