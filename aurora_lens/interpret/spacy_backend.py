@@ -1246,6 +1246,20 @@ class SpacyBackend(ExtractionBackend):
             if token.dep_ not in self._ENTITY_POSITION_DEPS:
                 continue
             text = token.text
+            compound_prefix = sorted(
+                (
+                    child
+                    for child in token.children
+                    if child.dep_ == "compound"
+                    and child.i < token.i
+                    and child.pos_ == "PROPN"
+                ),
+                key=lambda child: child.i,
+            )
+            if compound_prefix:
+                text = " ".join(child.text for child in compound_prefix) + " " + token.text
+                for child in compound_prefix:
+                    ner_token_indices.add(child.i)
             if text.lower() not in seen:
                 seen.add(text.lower())
                 mentions.append(text)
