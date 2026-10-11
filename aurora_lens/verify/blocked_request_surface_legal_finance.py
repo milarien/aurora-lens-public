@@ -460,6 +460,7 @@ def surface_historical_market_data_lookup(collapsed: str) -> bool:
 
 def surface_finance_informational_leading(lower_strip: str) -> bool:
     s = lower_strip.strip()
+    wrapped = f" {s} "
     return (
         s.startswith("what is ")
         or s.startswith("what are ")
@@ -468,6 +469,13 @@ def surface_finance_informational_leading(lower_strip: str) -> bool:
         or s.startswith("define ")
         or s == "explain"
         or s.startswith("explain,")
+        or s.startswith("what factors ")
+        or (s.startswith("what ") and " generally " in wrapped and " my " not in wrapped)
+        or (
+            " when someone " in wrapped
+            and s.startswith("what ")
+            and " my " not in wrapped
+        )
     )
 
 

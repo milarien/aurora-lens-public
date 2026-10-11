@@ -283,17 +283,31 @@ def _build_semantic_transactions(
         # Phase 2 / 2b: possessive-NP or bare pronoun subject with unresolved referent.
         # Only fires when Phase 1 did not already block this claim.
         elif ambiguous_lower:
+            rel_norm = canonicalize_relation(claim.relation)
+            if rel_norm == "APPROVE":
+                # Attributed approval while referents are open is not verified authority.
+                tx.allowed_commit = False
+                tx.held_reason = "UNRESOLVED_REFERENT"
             poss_lemmas = _possessive_lemmas_in_surface(claim.subject)
-            if poss_lemmas and (poss_lemmas & ambiguous_lower):
+            if tx.allowed_commit and poss_lemmas and (poss_lemmas & ambiguous_lower):
                 # Phase 2: possessive-NP subject (e.g. "his wallet") — possessor is ambiguous.
                 unresolved_poss = next(iter(poss_lemmas & ambiguous_lower))
                 tx.allowed_commit = False
                 tx.unresolved_possessor = unresolved_poss
                 tx.held_reason = "UNRESOLVED_POSSESSOR"
-            elif claim.subject.strip().lower() in ambiguous_lower:
+            elif tx.allowed_commit and claim.subject.strip().lower() in ambiguous_lower:
                 # Phase 2b: bare pronoun subject (e.g. "he") is itself an ambiguous token.
                 tx.allowed_commit = False
                 tx.held_reason = "UNRESOLVED_REFERENT"
+            elif tx.allowed_commit:
+                obj_low = str(claim.obj or "").strip().lower()
+                if obj_low in {"this", "that", "these", "those"} and any(
+                    ar == obj_low or ar.startswith(f"{obj_low} ")
+                    for ar in ambiguous_lower
+                ):
+                    # Phase 2c: object demonstrative unresolved (e.g. APPROVE this).
+                    tx.allowed_commit = False
+                    tx.held_reason = "UNRESOLVED_REFERENT"
 
         # Phase 3: possession classification — only when pef provided and claim not blocked.
         if pef is not None and tx.allowed_commit:

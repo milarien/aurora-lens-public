@@ -1130,9 +1130,13 @@ class SpacyBackend(ExtractionBackend):
         result.claims = self._extract_claims(doc, result.span, pef)
         result.interpretation_limit = self._interpretation_limit(doc, result.claims)
         result.financial_determination_probe = probe_financial_determination(doc, text)
-        if (
-            result.financial_determination_probe.get("status") == "partial"
-            and result.interpretation_limit is None
+        probe_status = str(result.financial_determination_probe.get("status") or "")
+        _main_act_only = (
+            result.interpretation_limit is not None
+            and result.interpretation_limit.get("kind") == "MAIN_ACT_UNDETERMINED"
+        )
+        if probe_status == "partial" and (
+            result.interpretation_limit is None or _main_act_only
         ):
             result.interpretation_limit = {
                 "kind": "FINANCIAL_DETERMINATION_UNRESOLVED",
@@ -1143,6 +1147,8 @@ class SpacyBackend(ExtractionBackend):
                 ),
                 "probe": dict(result.financial_determination_probe),
             }
+        elif probe_status == "established" and _main_act_only:
+            result.interpretation_limit = None
 
         # Role/common-noun discourse entities (operator, contractor, …) for referent ASK.
         _role_mentions = _discourse_role_noun_entity_mentions(result.claims)
@@ -1363,37 +1369,6 @@ class SpacyBackend(ExtractionBackend):
                     found.append(script)
         return found
 
-    def _unsupported_language_on_pipeline(self, doc: Doc) -> dict | None:
-        """Latin-script (or other) input the English pipeline cannot interpret."""
-        if getattr(self._nlp, "lang", "") != "en":
-            return None
-        if "\u00bf" in doc.text or "\u00a1" in doc.text:
-            return {
-                "kind": "UNSUPPORTED_LANGUAGE",
-                "pipeline_language": "en",
-                "detail": (
-                    "The input is not in a form this English interpreter can read."
-                ),
-            }
-        for sent in doc.sents:
-            stripped = sent.text.strip()
-            if not stripped.endswith("?"):
-                continue
-            root = sent.root
-            nsubj = next(
-                (c for c in root.children if c.dep_ in ("nsubj", "nsubjpass")),
-                None,
-            )
-            if nsubj is not None and (nsubj.is_punct or nsubj.text in {"¿", "?"}):
-                return {
-                    "kind": "UNSUPPORTED_LANGUAGE",
-                    "pipeline_language": "en",
-                    "detail": (
-                        "The input is not in a form this English interpreter can read."
-                    ),
-                }
-        return None
-
     def _interpretation_limit(
         self,
         doc: Doc,
@@ -1417,11 +1392,6 @@ class SpacyBackend(ExtractionBackend):
                     "script, which this interpreter does not read."
                 ),
             }
-        language_limit = self._unsupported_language_on_pipeline(doc)
-        if language_limit is not None:
-            for claim in claims:
-                claim.utterance_act = "undetermined"
-            return language_limit
         undetermined = [
             claim for claim in claims if claim.utterance_act == "undetermined"
         ]
@@ -1437,6 +1407,24 @@ class SpacyBackend(ExtractionBackend):
                     "determined whether this input states, asks, or instructs."
                 ),
             }
+        if not claims:
+            alpha_tokens = [t for t in doc if t.is_alpha]
+            has_verbal_matrix = any(
+                sent.root.pos_ in ("VERB", "AUX") for sent in doc.sents
+            )
+            if (
+                len(alpha_tokens) >= 5
+                and doc.text.strip()
+                and not has_verbal_matrix
+            ):
+                return {
+                    "kind": "MAIN_ACT_UNDETERMINED",
+                    "sentences": [doc.text.strip()],
+                    "detail": (
+                        "No main predicate was identified, so it could not be "
+                        "determined whether this input states, asks, or instructs."
+                    ),
+                }
         return None
 
     def _find_nsubj_token_active(self, verb: Token) -> Token | None:

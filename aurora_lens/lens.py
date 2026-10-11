@@ -4309,7 +4309,11 @@ def _apply_epistemic_hold_after_non_admit(pef: PEFState, decision: GovernanceDec
             # An ambiguity contain must not replace a separate refusal or stop.
             return
     _cap = _primary_allowed_continuation(decision)
-    if decision.interaction_open and _cap:
+    _pre_llm = bool(getattr(decision, "pre_llm", False))
+    _skip_finance_continuation = (
+        decision.action == InterventionAction.HARD_STOP and not _pre_llm
+    )
+    if decision.interaction_open and _cap and not _skip_finance_continuation:
         pef.active_continuation_capability = _cap
         # Only derive new context if we don't already have one for this capability,
         # or if the new decision provides a more specific one.

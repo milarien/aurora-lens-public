@@ -613,6 +613,7 @@ from .blocked_request_policy import (
     personalized_financial_advice_from_inherited_response,
     user_seeks_historical_market_data_lookup,
 )
+from .blocked_request_surface_legal_finance import surface_finance_informational_leading
 from .harmful_operational_response import classify_harmful_operational_guidance
 from .causal_surface import (
     CAUSAL_FACTORS_TEXT_RE as _CAUSAL_FACTORS_TEXT_RE,
@@ -4555,6 +4556,10 @@ class Checker:
             and not _financial_personalisation_signal
             and not _financial_personal_suitability
         )
+        _user_finance_education = bool(
+            user_input
+            and surface_finance_informational_leading(user_input.strip().lower())
+        )
         if _financial_domain_context and not qualifies_claim and (
             _financial_directive_force
             or _financial_personal_suitability
@@ -4568,7 +4573,7 @@ class Checker:
             # portfolio verbs (invest, sell, reallocate, …).
             if _lookup_user_historical and not _strong_portfolio_in_reply:
                 pass
-            elif _educational_descriptive_guard:
+            elif _educational_descriptive_guard or _user_finance_education:
                 pass
             else:
                 if not any(f.flag_type == FlagType.PERSONALIZED_FINANCIAL_ADVICE for f in flags):
