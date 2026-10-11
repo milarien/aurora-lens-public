@@ -1363,6 +1363,37 @@ class SpacyBackend(ExtractionBackend):
                     found.append(script)
         return found
 
+    def _unsupported_language_on_pipeline(self, doc: Doc) -> dict | None:
+        """Latin-script (or other) input the English pipeline cannot interpret."""
+        if getattr(self._nlp, "lang", "") != "en":
+            return None
+        if "\u00bf" in doc.text or "\u00a1" in doc.text:
+            return {
+                "kind": "UNSUPPORTED_LANGUAGE",
+                "pipeline_language": "en",
+                "detail": (
+                    "The input is not in a form this English interpreter can read."
+                ),
+            }
+        for sent in doc.sents:
+            stripped = sent.text.strip()
+            if not stripped.endswith("?"):
+                continue
+            root = sent.root
+            nsubj = next(
+                (c for c in root.children if c.dep_ in ("nsubj", "nsubjpass")),
+                None,
+            )
+            if nsubj is not None and (nsubj.is_punct or nsubj.text in {"¿", "?"}):
+                return {
+                    "kind": "UNSUPPORTED_LANGUAGE",
+                    "pipeline_language": "en",
+                    "detail": (
+                        "The input is not in a form this English interpreter can read."
+                    ),
+                }
+        return None
+
     def _interpretation_limit(
         self,
         doc: Doc,
@@ -1386,6 +1417,11 @@ class SpacyBackend(ExtractionBackend):
                     "script, which this interpreter does not read."
                 ),
             }
+        language_limit = self._unsupported_language_on_pipeline(doc)
+        if language_limit is not None:
+            for claim in claims:
+                claim.utterance_act = "undetermined"
+            return language_limit
         undetermined = [
             claim for claim in claims if claim.utterance_act == "undetermined"
         ]

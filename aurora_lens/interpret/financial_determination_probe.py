@@ -78,6 +78,13 @@ def _personal_evidence(doc: Any, act_tokens: list[Any]) -> list[str]:
             out.append(_evidence(tok))
         elif _is_finance_concern(tok.head):
             out.append(f"poss→{_evidence(tok)}")
+    for tok in doc:
+        if tok.dep_ == "nsubj" and tok.text.lower() == "i":
+            out.append(f"subject-I {_evidence(tok)}")
+        if tok.dep_ == "pobj" and tok.text.lower() == "me":
+            head = tok.head
+            if head.dep_ == "prep" and head.text.lower() == "for":
+                out.append(f"for-me {_evidence(tok)}")
     for act in act_tokens:
         for t in act.subtree:
             if t.text.lower() == "my":
@@ -133,6 +140,17 @@ def _allocation_choice_evidence(doc: Any) -> list[str]:
         head = tok.head
         if head.lemma_.lower() in _ALLOCATION_CHOICE_LEMMAS:
             out.append(f"move/stay disjunction {_evidence(tok)}")
+    for sent in doc.sents:
+        sent_text = sent.text.lower()
+        if " or " not in sent_text:
+            continue
+        has_move = any(
+            t.lemma_.lower() in ("move", "moving") and t.pos_ in ("VERB", "AUX", "NOUN")
+            for t in sent
+        )
+        has_stay = any(t.lemma_.lower() == "stay" for t in sent)
+        if has_move and has_stay:
+            out.append("gerund move/stay disjunction in sentence")
     return list(dict.fromkeys(out))
 
 

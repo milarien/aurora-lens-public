@@ -442,7 +442,7 @@ def _interpretation_limit_clarification(limit: dict, original_input: str) -> str
     """Governed clarification naming what the interpreter could not read."""
     kind = str(limit.get("kind") or "")
     detail = str(limit.get("detail") or "This input could not be interpreted.")
-    if kind == "UNSUPPORTED_SCRIPT":
+    if kind in ("UNSUPPORTED_SCRIPT", "UNSUPPORTED_LANGUAGE"):
         ask = "Please rephrase your question in English."
     elif kind == "FINANCIAL_DETERMINATION_UNRESOLVED":
         ask = (
