@@ -194,3 +194,32 @@ def prepare_metadata_for_build_wheel(
         metadata_directory=metadata_directory,
         config_settings=config_settings,
     )
+
+
+def build_editable(
+    wheel_directory: str,
+    config_settings: dict[str, str] | None = None,
+    metadata_directory: str | None = None,
+) -> str:
+    _guard()
+    return _setuptools_build_meta.build_editable(
+        wheel_directory=wheel_directory,
+        config_settings=config_settings,
+        metadata_directory=metadata_directory,
+    )
+
+
+def get_requires_for_build_editable(config_settings: dict[str, str] | None = None) -> list[str]:
+    _guard()
+    return _setuptools_build_meta.get_requires_for_build_editable(config_settings=config_settings)
+
+
+def prepare_metadata_for_build_editable(
+    metadata_directory: str,
+    config_settings: dict[str, str] | None = None,
+) -> str:
+    _guard()
+    return _setuptools_build_meta.prepare_metadata_for_build_editable(
+        metadata_directory=metadata_directory,
+        config_settings=config_settings,
+    )
