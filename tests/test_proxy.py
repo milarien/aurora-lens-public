@@ -17,6 +17,8 @@ import pytest
 
 from tests.skip_reasons import SKIP_SPACY_MODULE, SKIP_STARLETTE_HTTP_TESTCLIENT
 
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
 from aurora_lens.proxy.config import (
     ProxyConfig, UpstreamConfig, ListenConfig, GovernanceConfig,
     CorsConfig, HardeningConfig, load_config,
@@ -4113,7 +4115,7 @@ class TestPhaseDAuditIntegrity:
             [__import__("sys").executable, "-m", "aurora_lens.scripts.verify_audit", "--path", str(path), "--key", key.decode()],
             capture_output=True,
             text=True,
-            cwd=str(tmp_path),
+            cwd=str(_REPO_ROOT),
         )
         assert result.returncode == 0
         assert "OK" in result.stdout
@@ -4144,7 +4146,7 @@ class TestPhaseDAuditIntegrity:
             [__import__("sys").executable, "-m", "aurora_lens.scripts.verify_audit", "--path", str(path), "--key", key.decode()],
             capture_output=True,
             text=True,
-            cwd=str(tmp_path),
+            cwd=str(_REPO_ROOT),
         )
         assert result.returncode == 0
         assert "OK" in result.stdout
@@ -4166,7 +4168,7 @@ class TestPhaseDAuditIntegrity:
             [__import__("sys").executable, "-m", "aurora_lens.scripts.verify_audit", "--path", str(path), "--key", key.decode(), "--no-replay"],
             capture_output=True,
             text=True,
-            cwd=str(tmp_path),
+            cwd=str(_REPO_ROOT),
         )
         assert result.returncode == 0
         assert "OK" in result.stdout
@@ -4191,7 +4193,7 @@ class TestPhaseDAuditIntegrity:
             [__import__("sys").executable, "-m", "aurora_lens.scripts.verify_audit", "--path", str(path), "--key", key.decode()],
             capture_output=True,
             text=True,
-            cwd=str(tmp_path),
+            cwd=str(_REPO_ROOT),
         )
         assert result.returncode == 1
         assert "FAIL" in result.stderr
@@ -4217,7 +4219,7 @@ class TestPhaseDAuditIntegrity:
             ],
             capture_output=True,
             text=True,
-            cwd=str(tmp_path),
+            cwd=str(_REPO_ROOT),
         )
         assert result.returncode == 0
         lines = out_path.read_text().strip().splitlines()
