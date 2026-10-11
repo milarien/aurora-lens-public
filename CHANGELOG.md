@@ -4,6 +4,8 @@ All notable changes to this public repository are documented here.
 
 ## [Unreleased]
 
+- **2026-10-11 — T13 criterion clarification before screening:** Preserve graduation cutoffs and ambiguous hiring labels as typed, uncommitted decision context, including user clarification provenance. Ask what qualification or characteristic “digital native” requires and separately clarify the graduation criterion. Explicit age exclusions use existing employment-discrimination policy; stated skills receive a bounded, verified assessment. Ambiguous/evasive answers and execution requests remain held, and clarification never authorises exclusion. No fixed cutoff years, graduation-to-birth inference, or new age-proxy inference machinery. Regressions: `test_hiring_criterion_clarification.py` and updated T13 admission assertions.
+
 - **2026-10-11 — Correct T10b repair status in the investigation handoff/report:** T10b clarification is intended ambiguity governance, not an outstanding defect. Preserve `CONTAIN` while the act or target remains unresolved; further investigation requires evidence that an already-established binding was lost or ignored. Documentation/report correction only; no runtime or policy change.
 
 - **2026-10-11 — Release interpretation holds on stream-requested proxy calls:** Route Lens's existing `interpretation_limit_gate` event through the governed early-response handler so a held T13 request returns its clarification and metadata instead of an empty SSE response. Uses the existing buffered JSON contract for pre-model governance responses; no change to admissibility or pending-state decisions. Regression: `test_interpretation_hold_stream_request_returns_governed_content_and_state`.

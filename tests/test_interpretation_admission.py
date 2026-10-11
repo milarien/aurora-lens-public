@@ -360,15 +360,16 @@ async def test_explicit_reset_discards_held_input() -> None:
 
 
 @pytest.mark.asyncio
-async def test_clause_without_main_predicate_is_held() -> None:
+async def test_hiring_criterion_basis_is_held_before_screening() -> None:
     lens, adapter = _lens()
     result = await lens.process(T13)
     assert result.action == InterventionAction.CONTAIN
     assert adapter.calls == 0
     assert _world(lens) == ([], [])
     pending = lens.pef.pending_clarification
-    assert pending["interpretation_limit"]["kind"] == "MAIN_ACT_UNDETERMINED"
-    assert {c["held_reason"] for c in pending["blocked_claims"]} == {"INTERPRETATION_LIMIT"}
+    assert pending["interpretation_limit"]["kind"] == "HIRING_CRITERION_BASIS_UNRESOLVED"
+    assert pending["blocked_claims"] == []
+    assert lens.pef.hiring_criterion_context.criteria[0].year == "2000"
 
 
 @pytest.mark.asyncio
@@ -508,7 +509,7 @@ async def test_discussion_continues_while_that_stays_unbound() -> None:
     assert _world(lens) == ([], [])
     pending = lens.pef.pending_clarification
     assert pending["original_question"] == T13
-    assert pending["interpretation_limit"]["kind"] == "MAIN_ACT_UNDETERMINED"
+    assert pending["interpretation_limit"]["kind"] == "HIRING_CRITERION_BASIS_UNRESOLVED"
     assert ("that", "open", None) in _open_referents(lens)
 
 
@@ -536,7 +537,7 @@ async def test_second_clarification_keeps_the_open_matter() -> None:
     pending = lens.pef.pending_clarification
     assert pending["failed_constraint"] == "INTERPRETATION_LIMIT"
     assert pending["original_question"] == T13
-    assert pending["interpretation_limit"]["kind"] == "MAIN_ACT_UNDETERMINED"
+    assert pending["interpretation_limit"]["kind"] == "HIRING_CRITERION_BASIS_UNRESOLVED"
     assert ("that request", "open", None) in _open_referents(lens)
 
 

@@ -99,6 +99,9 @@ from aurora_lens.interpret.comparative_question_probe import (
     merge_structural_comparative_question_probe,
 )
 from aurora_lens.interpret.schema import ExtractedClaim, ExtractionResult
+from aurora_lens.interpret.hiring_criterion_scope import (
+    capture_hiring_criteria, apply_criterion_evidence, criterion_clarification, skills_assessment,
+)
 from aurora_lens.verify.blocked_request_policy import (
     classify_agency_context_followup,
     evaluate_blocked_act_request,
@@ -6065,6 +6068,109 @@ class Lens:
         )
         return gate is not None and gate.allow_through
 
+    async def _maybe_apply_hiring_criterion_gate(
+        self, *, turn: int, history_user_input: str, ext_flags: list,
+    ) -> LensResult | None:
+        """Clarify an uncommitted criterion; evidence cannot authorize screening."""
+        nlp = getattr(self._backend, "nlp", None)
+        context = self._pef.hiring_criterion_context
+        candidate = capture_hiring_criteria(history_user_input, nlp)
+        execution_requested = candidate is not None
+        if context is None:
+            if candidate is None or not candidate.criteria:
+                return None
+            context = candidate
+            self._pef.hiring_criterion_context = context
+        elif candidate is None:
+            matched = apply_criterion_evidence(context, history_user_input, turn, nlp)
+            # An imperative to execute an unresolved criterion is not clarification.
+            # Preserve its referent separately; do not pretend "do it" authorizes it.
+            doc = nlp(history_user_input) if nlp else []
+            tokens = [" ".join(t.text for t in c.subtree) for verb in doc
+                      if verb.text.lower() in {"do", "screen", "shortlist", "proceed"}
+                      for c in verb.children if c.lower_ in {"it", "that", "them"}
+                      or (c.dep_ == "dobj" and any(t.lower_ == "that" for t in c.children))]
+            if tokens:
+                register_unresolved_referents(self._pef, turn=turn, utterance=history_user_input,
+                    tokens=tokens, blocked_proposition=context.original_question)
+                matched = True
+                execution_requested = True
+            if not matched:
+                return None
+        # A second screening request cannot replace the first open decision context.
+        age = [c for c in context.criteria if c.basis == "age_exclusion"]
+        unresolved = [c for c in context.criteria if c.basis == "unresolved"]
+        if age or context.status == "refused":
+            flags = [Flag(
+                flag_type=FlagType.EMPLOYMENT_DISCRIMINATION_FACILITATION,
+                entity_name="employment_discrimination",
+                claim="Requested hiring criterion explicitly excludes on age",
+                evidence=repr([c.evidence for c in age]), severity="error",
+                rule_id="checker.employment_clarified_age_selection",
+            )]
+            context.status = "refused"
+            body = None
+        elif unresolved or execution_requested:
+            limit_kind = "HIRING_CRITERION_BASIS_UNRESOLVED" if unresolved else "HIRING_SCREENING_BASIS_UNESTABLISHED"
+            flags = [_interpretation_limit_flag({
+                "kind": limit_kind,
+                "detail": "Criterion meaning or admissible screening basis remains unresolved.",
+            })]
+            context.status = "held"
+            body = criterion_clarification(context) if unresolved else (
+                "The stated qualifications have been assessed, but screening remains held: "
+                "the role requirements and an admissible basis for the requested exclusion "
+                "have not been established. Clarification of meaning does not authorise exclusion."
+            )
+        else:
+            # Assessment of the stated qualification is not execution of the exclusion.
+            body = skills_assessment(context)
+            flags = await self._checker.check(body, self._pef)
+            context.status = "assessed"
+        flags += self._check_blocked_act_request(history_user_input) + list(ext_flags)
+        decision = await self._bridge.decide(flags, history_user_input, self._pef)
+        decision.pre_llm = True
+        if body and not ext_flags and (
+            (context.status == "held" and decision.action == InterventionAction.CONTAIN
+             and all(f.flag_type == FlagType.INTERPRETATION_LIMIT for f in flags))
+            or (context.status == "assessed" and not flags and decision.action == InterventionAction.PASS)
+        ):
+            decision.original_response = ""
+            decision.corrected_response = body
+            decision.governed_response = body
+        response = decision.governed_response or ""
+        if context.status == "held":
+            _assign_pending_without_replacing_other_matter(self._pef, {
+                "original_question": context.original_question,
+                "failed_constraint": "INTERPRETATION_LIMIT",
+                "interpretation_limit": {"kind": limit_kind},
+                "clarification_prompt": body,
+                "unresolved_entity_ids": [], "ambiguous_referents": [],
+                "candidate_entities": [], "blocked_claims": [], "turn": turn,
+            })
+        elif context.status == "assessed" and decision.action == InterventionAction.PASS and self._pef.pending_clarification and (
+            self._pef.pending_clarification.get("original_question") == context.original_question
+            and _pending_is_interpretation_limit(self._pef.pending_clarification)
+        ):
+            # Meaning is resolved; the requested exclusion still has no admitted
+            # screening basis. An informational assessment cannot discharge it.
+            _assign_pending_without_replacing_other_matter(self._pef, {
+                **self._pef.pending_clarification,
+                "interpretation_limit": {"kind": "HIRING_SCREENING_BASIS_UNESTABLISHED"},
+                "clarification_prompt": "Establish the role requirements and admissible screening basis before screening proceeds.",
+            })
+        _apply_epistemic_hold_after_non_admit(self._pef, decision, turn)
+        self._bridge.log_decision(
+            decision, turn=turn, pef_context=self._pef.to_context_summary(), pre_llm=True,
+            pef_snapshot=self._pef.to_dict(), at_verification_basis=self._audit_at_basis(),
+            **self._audit_linkage_kwargs(decision),
+        )
+        self._history.extend([{"role": "user", "content": history_user_input},
+                              {"role": "assistant", "content": response}])
+        return LensResult(response=response, flags=flags, pef_snapshot=self._pef.to_context_summary(),
+                          turn=turn, span=Span.PRESENT, model="", action=decision.action,
+                          decision=decision, original_response=None)
+
     async def _maybe_apply_interpretation_limit_gate(
         self,
         *,
@@ -6221,6 +6327,7 @@ class Lens:
             return None
         if is_session_reset_request(history_user_input):
             dismiss_open_unresolved_referents(self._pef)
+            self._pef.hiring_criterion_context = None
             if _pending_is_interpretation_limit(self._pef.pending_clarification):
                 _clear_epistemic_hold_ambiguity(self._pef)
             return None
@@ -8115,6 +8222,12 @@ class Lens:
         if _stop_cont is not None:
             return _stop_cont
 
+        _criterion_result = await self._maybe_apply_hiring_criterion_gate(
+            turn=turn, history_user_input=history_user_input, ext_flags=external_flags or [],
+        )
+        if _criterion_result is not None:
+            return _criterion_result
+
         # Step 1.5: Clarification resolution
         #
         # If the previous turn ended in ASK (pre- or post-LLM CONTAIN), test
@@ -9959,6 +10072,13 @@ class Lens:
         )
         if _stop_cont_stream is not None:
             yield ("clarification_continuation", _stop_cont_stream)
+            return
+
+        _criterion_result = await self._maybe_apply_hiring_criterion_gate(
+            turn=turn, history_user_input=history_user_input, ext_flags=external_flags or [],
+        )
+        if _criterion_result is not None:
+            yield ("clarification_continuation", _criterion_result)
             return
 
         # Clarification resolution — mirrors the same block in process().

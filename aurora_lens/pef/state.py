@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from aurora_lens.interpret.schema import ContinuationTransaction
 
 from .artifact_layer import ArtifactFrame
+from .hiring_criterion import HiringCriterionContext
 from .span import Span
 from .entity import Entity, EchoTrace, TurnBindings
 from .temporal_commitment import (
@@ -523,6 +524,8 @@ class PEFState:
     # Not all keys are present in every instance; the binding-resolution code
     # in lens.py uses .get() with defaults for backward compatibility.
     pending_clarification: dict | None = field(default=None)
+    # Requested criteria and clarification evidence are not admitted world facts.
+    hiring_criterion_context: HiringCriterionContext | None = field(default=None)
     # Phase 6: typed hold wrapper; set alongside pending_clarification when available.
     # Not serialized — reconstructed from pending_clarification via from_pending_dict().
     pending_transaction: ContinuationTransaction | None = field(default=None, repr=False)
@@ -838,6 +841,9 @@ class PEFState:
             "session_id": self.session_id,
             "name_index": dict(sorted(self.name_index.items())),
             "pending_clarification": self.pending_clarification,
+            "hiring_criterion_context": (
+                self.hiring_criterion_context.to_dict() if self.hiring_criterion_context else None
+            ),
             "epistemic_hold": self.epistemic_hold,
             "active_continuation_capability": self.active_continuation_capability,
             "active_continuation_context": self.active_continuation_context,
@@ -903,6 +909,7 @@ class PEFState:
             session_id=session_id,
             name_index=name_index,
             pending_clarification=pending_clarification,
+            hiring_criterion_context=HiringCriterionContext.from_dict(data.get("hiring_criterion_context")),
             epistemic_hold=epistemic_hold,
             active_continuation_capability=active_continuation_capability,
             active_continuation_context=active_continuation_context,

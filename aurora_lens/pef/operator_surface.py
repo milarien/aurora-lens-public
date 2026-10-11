@@ -145,6 +145,9 @@ def build_operator_pef_surface(
     else:
         out["pending_clarification"] = {"active": False}
 
+    if pef.hiring_criterion_context:
+        out["hiring_criterion_context"] = pef.hiring_criterion_context.to_dict()
+
     if hold:
         out["epistemic_hold"] = {
             "active": True,
