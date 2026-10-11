@@ -1,5 +1,7 @@
 # Changelog
 
+- **2026-10-12 — Contain dependent execution after reset:** The additional replay diagnostic found that “Do it” could reach the model after T13 context was closed. A closed-unresolved disposition cannot supply an execution binding. Hold unbound execution requests after disposition or against an unresolved approval, retain their referent and existing pending matter, and preserve independently applicable blocked-act findings. Existing active T13 and established-binding paths retain their owners. Normal/streamed tests verify no model call or approval admission on anaphoric replay.
+
 All notable changes to this public repository are documented here.
 
 ## [Unreleased]

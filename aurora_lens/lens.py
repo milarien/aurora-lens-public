@@ -6110,6 +6110,59 @@ class Lens:
             pef_snapshot=self._pef.to_context_summary(), turn=turn, span=Span.PRESENT,
             model="", action=decision.action, decision=decision, original_response=None)
 
+    async def _maybe_apply_unbound_held_execution(self, *, turn, history_user_input, ext_flags):
+        pending = self._pef.pending_clarification
+        approval_hold = bool(pending) and any(c.get("relation") == "APPROVE" for c in pending.get("blocked_claims", []))
+        if self._pef.hiring_criterion_context is not None:
+            return None  # Its existing criterion gate owns the open matter.
+        if not approval_hold and not self._pef.hold_dispositions:
+            return None
+        nlp = getattr(self._backend, "nlp", None)
+        if nlp is None:
+            return None
+        doc = nlp(history_user_input)
+        dependent = any(
+            t.dep_ == "ROOT" and t.text.lower() in {"do", "proceed", "execute", "screen", "shortlist", "approve", "confirm"}
+            and not any(c.dep_ in {"nsubj", "nsubjpass", "neg"} for c in t.children)
+            and (any(c.lower_ in {"it", "that", "them"} for c in t.children)
+                 or (t.lemma_.lower() == "proceed" and not any(c.dep_ == "dobj" for c in t.children)))
+            for t in doc
+        )
+        if not dependent:
+            return None
+        tokens = [c.lower_ for t in doc for c in t.children if c.lower_ in {"it", "that", "them"}]
+        if tokens and all(token in self._pef.discourse_referent_bindings for token in tokens):
+            return None
+        register_unresolved_referents(self._pef, turn=turn, utterance=history_user_input,
+                                     tokens=tokens, blocked_proposition=history_user_input)
+        # Neither an open hold nor a closed-unresolved disposition establishes
+        # the referent of an execution request. Do not infer its target from history.
+        limit = {"kind": "HELD_EXECUTION_BINDING_UNRESOLVED",
+                 "detail": "Prior unresolved context supplies no admissible execution binding."}
+        flags = [_interpretation_limit_flag(limit)] + self._check_blocked_act_request(history_user_input) + list(ext_flags)
+        decision = await self._bridge.decide(flags, history_user_input, self._pef)
+        decision.pre_llm = True
+        if decision.action == InterventionAction.CONTAIN and not ext_flags and all(f.flag_type == FlagType.INTERPRETATION_LIMIT for f in flags):
+            response = "Clarify the action and target you want to execute. Prior unresolved context, including context closed by reset, does not establish a binding or authorise screening or approval. No held claim has been committed."
+        else:
+            decision.original_response = ""
+            response = await self._bridge.intervene(decision, self._config.adapter,
+                history_user_input, self._pef.to_context_summary())
+        decision.governed_response = response
+        decision.corrected_response = response
+        _assign_pending_without_replacing_other_matter(self._pef, {
+            "original_question": history_user_input, "failed_constraint": "INTERPRETATION_LIMIT",
+            "interpretation_limit": limit, "blocked_claims": [], "turn": turn,
+            "unresolved_entity_ids": [], "ambiguous_referents": [], "candidate_entities": [],
+        })
+        _apply_epistemic_hold_after_non_admit(self._pef, decision, turn)
+        self._bridge.log_decision(decision, turn=turn, pef_context=self._pef.to_context_summary(),
+            pre_llm=True, pef_snapshot=self._pef.to_dict(), at_verification_basis=self._audit_at_basis(),
+            **self._audit_linkage_kwargs(decision))
+        self._history.extend([{"role":"user", "content":history_user_input}, {"role":"assistant", "content":response}])
+        return LensResult(response=response, flags=flags, pef_snapshot=self._pef.to_context_summary(),
+            turn=turn, span=Span.PRESENT, model="", action=decision.action, decision=decision, original_response=None)
+
     async def _maybe_apply_hiring_criterion_gate(
         self, *, turn: int, history_user_input: str, ext_flags: list,
     ) -> LensResult | None:
@@ -8276,6 +8329,12 @@ class Lens:
         if _reset_control is not None:
             return _reset_control
 
+        _held_execution = await self._maybe_apply_unbound_held_execution(
+            turn=turn, history_user_input=history_user_input, ext_flags=external_flags or [],
+        )
+        if _held_execution is not None:
+            return _held_execution
+
         _criterion_result = await self._maybe_apply_hiring_criterion_gate(
             turn=turn, history_user_input=history_user_input, ext_flags=external_flags or [],
         )
@@ -10133,6 +10192,13 @@ class Lens:
         )
         if _reset_control is not None:
             yield ("clarification_continuation", _reset_control)
+            return
+
+        _held_execution = await self._maybe_apply_unbound_held_execution(
+            turn=turn, history_user_input=history_user_input, ext_flags=external_flags or [],
+        )
+        if _held_execution is not None:
+            yield ("clarification_continuation", _held_execution)
             return
 
         _criterion_result = await self._maybe_apply_hiring_criterion_gate(
