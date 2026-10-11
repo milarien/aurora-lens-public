@@ -25,6 +25,7 @@ def reset_request_scoped_context_vars():
     in the same worker (order-dependent failures).
     """
     from aurora_lens.context import (
+        domain_var,
         execution_task_var,
         governance_mode_override_var,
         metadata_policy_override_var,
@@ -39,6 +40,7 @@ def reset_request_scoped_context_vars():
     t_mp = metadata_policy_override_var.set(None)
     t_si = session_id_var.set(None)
     t_rq = request_hash_var.set(None)
+    t_dv = domain_var.set(None)
     yield
     request_metadata_var.reset(t_rm)
     execution_task_var.reset(t_et)
@@ -46,6 +48,7 @@ def reset_request_scoped_context_vars():
     metadata_policy_override_var.reset(t_mp)
     session_id_var.reset(t_si)
     request_hash_var.reset(t_rq)
+    domain_var.reset(t_dv)
 
 
 @pytest.fixture(autouse=True)

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 import pytest
 
 from aurora_lens.config import LensConfig
@@ -46,7 +48,7 @@ def _certified_alternate_profile(**overrides: object) -> ProviderProfile:
         supports_tools=True,
         supports_structured_output=True,
         context_window_tokens=32768,
-        last_validated_at="2026-09-28T10:00:00+10:00",
+        last_validated_at=datetime.now(timezone.utc).isoformat(),
         status=VALIDATED_CURRENT,
     )
     if not overrides:
