@@ -2928,7 +2928,7 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
                             headers=_err_headers(session_id),
                         )
                     kind, payload = first
-                    if kind in ("extraction_failed", "clarification_continuation", "blocked_act"):
+                    if kind in ("extraction_failed", "clarification_continuation", "blocked_act", "interpretation_limit_gate"):
                         sessions.persist(session_id, lens)
                         try:
                             lock_ctx.__exit__(None, None, None)
@@ -2936,7 +2936,7 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
                             pass
                         _outcome_label = (
                             "CLARIFICATION_CONTINUATION" if kind == "clarification_continuation"
-                            else payload.action.name if kind == "blocked_act"
+                            else payload.action.name if kind in ("blocked_act", "interpretation_limit_gate")
                             else "EXTRACTION_FAILED"
                         )
                         metrics.inc("chat_completions_total", labels={"outcome": _outcome_label})

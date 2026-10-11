@@ -4773,6 +4773,38 @@ class TestLensIntegration:
         assert content, "refusal text must not be empty"
         assert body["aurora"]["governance"] == "HARD_STOP"
 
+    def test_interpretation_hold_stream_request_returns_governed_content_and_state(self, monkeypatch):
+        try:
+            from starlette.testclient import TestClient
+        except ImportError:
+            pytest.skip(SKIP_STARLETTE_HTTP_TESTCLIENT)
+        from aurora_lens.proxy.app import create_app
+
+        upstream = CountingMockAdapter()
+        monkeypatch.setattr("aurora_lens.proxy.app._build_provider_adapters",
+                            lambda cfg: (upstream, MockAdapter()))
+        cfg = ProxyConfig.from_mapping({
+            "upstream": {"provider": "openai", "api_key": "sk-test", "model": "gpt-4"},
+            "governance": {"default_policy": "strict", "audit_log": None,
+                           "include_operator_detail": True},
+            "extraction": {"backend": "spacy"},
+        })
+        question = "Only shortlist applicants who graduated after 2000 and are digital natives."
+        client = TestClient(create_app(cfg))
+        response = client.post("/v1/chat/completions", json={
+            "model": "gpt-4", "messages": [{"role": "user", "content": question}], "stream": True,
+        })
+        assert response.status_code == 200
+        assert "application/json" in response.headers["content-type"]
+        body = response.json()
+        assert body["choices"][0]["message"]["content"]
+        assert body["aurora"]["governance"] == "CONTAIN"
+        state = body["aurora"]["operator_pef"]
+        assert state["counts"] == {"entities": 0, "relationships": 0}
+        assert state["pending_clarification"]["original_question"] == question
+        assert state["pending_clarification"]["failed_constraint"] == "INTERPRETATION_LIMIT"
+        assert upstream.generate_calls == upstream.generate_stream_calls == 0
+
     def test_agency_risk_pre_llm_gate_proxy_contract_non_stream(self, monkeypatch):
         """Ambiguous agency-risk request must contain pre-generation with no upstream call."""
         try:
