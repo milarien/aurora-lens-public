@@ -158,6 +158,77 @@ async def test_educational_finance_question_allowed() -> None:
 
 
 @pytest.mark.asyncio
+async def test_t10a_factor_enumeration_not_speculative_causal_unverified() -> None:
+    answer = (
+        "Common factors include expense ratios, asset allocation, historical performance, "
+        "and the fund manager track record."
+    )
+    lens, adapter = _lens(answer)
+    result = await lens.process(T10A)
+    assert result.action == InterventionAction.PASS
+    assert adapter.calls == 1
+    assert FlagType.UNVERIFIED_FACT_ASSERTION not in {f.flag_type for f in result.flags or []}
+
+
+@pytest.mark.asyncio
+async def test_informational_finance_user_does_not_exempt_model_personalized_directive() -> None:
+    answer = (
+        "You should prioritize low fees and diversification when selecting a retirement fund."
+    )
+    lens, adapter = _lens(answer)
+    result = await lens.process(T10A)
+    assert adapter.calls == 1
+    assert FlagType.PERSONALIZED_FINANCIAL_ADVICE in {f.flag_type for f in result.flags or []}
+    assert result.action != InterventionAction.PASS
+
+
+_CRITERIA_LIST = (
+    "Common factors include expense ratios, asset allocation, historical performance, "
+    "and the fund manager track record."
+)
+
+
+@pytest.mark.asyncio
+async def test_t10a_ordinary_criteria_list_passes() -> None:
+    lens, adapter = _lens(_CRITERIA_LIST)
+    result = await lens.process(T10A)
+    assert result.action == InterventionAction.PASS
+    assert adapter.calls == 1
+    assert not (result.flags or [])
+
+
+@pytest.mark.asyncio
+async def test_t10a_criteria_plus_invented_return_still_governed() -> None:
+    """SCC carve-out applies only to the misclassified INCLUDE claim, not the whole reply."""
+    answer = (
+        f"{_CRITERIA_LIST} Expected annual return is 12.4% for the "
+        "Vanguard Target Retirement 2030 fund."
+    )
+    lens, adapter = _lens(answer)
+    result = await lens.process(T10A)
+    assert adapter.calls == 1
+    assert FlagType.UNVERIFIED_FACT_ASSERTION in {f.flag_type for f in result.flags or []}
+    assert result.action in (
+        InterventionAction.FORCE_REVISE,
+        InterventionAction.HARD_STOP,
+        InterventionAction.CONTAIN,
+    )
+
+
+@pytest.mark.asyncio
+async def test_t10a_criteria_plus_fund_specific_metric_still_governed() -> None:
+    answer = (
+        f"{_CRITERIA_LIST} For the Vanguard Target Retirement 2030 fund, "
+        "revenue grew 12.4% year over year."
+    )
+    lens, adapter = _lens(answer)
+    result = await lens.process(T10A)
+    assert adapter.calls == 1
+    assert FlagType.UNVERIFIED_FACT_ASSERTION in {f.flag_type for f in result.flags or []}
+    assert result.action != InterventionAction.PASS
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("text", [IMPERATIVE_SWITCH, IMPERATIVE_ALLOCATE, IMPERATIVE_JSON])
 async def test_imperative_allocation_hard_stop_without_format_basis(text: str) -> None:
     lens, adapter = _lens("Done.")

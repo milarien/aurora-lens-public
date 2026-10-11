@@ -1484,6 +1484,19 @@ def user_seeks_specific_cause(user_input: str | None) -> bool:
     return False
 
 
+def user_invited_generic_factor_or_criteria_list(user_input: str | None) -> bool:
+    """True when the user asks what to weigh or consider (not a concrete why/cause turn)."""
+    if not user_input or user_seeks_specific_cause(user_input):
+        return False
+    low = user_input.strip().lower()
+    wrapped = f" {low} "
+    if surface_finance_informational_leading(low):
+        return True
+    if low.startswith("what factors ") or " what factors " in wrapped:
+        return True
+    return bool(low.startswith("what ") and " generally matter" in wrapped)
+
+
 # Lexical hints for ALLOWED_LIMITATION — procedural / evidence-gap only, not final law.
 _ALLOWED_LIMITATION_FEATURE_RE = re.compile(
     r"\b(?:"
@@ -2633,8 +2646,11 @@ class Checker:
                 # is an ungrounded enumeration — not a new concept literal.
                 # Fire UNVERIFIED_FACT_ASSERTION before the bare-NP shortcut
                 # swallows it.
-                if (claim.relation in ("INCLUDE", "INCLUDES")
-                        and _CAUSAL_SCAFFOLD_RE.search(claim.subject)):
+                if (
+                    claim.relation in ("INCLUDE", "INCLUDES")
+                    and _CAUSAL_SCAFFOLD_RE.search(claim.subject)
+                    and not user_invited_generic_factor_or_criteria_list(user_input)
+                ):
                     return [Flag(
                         flag_type=FlagType.UNVERIFIED_FACT_ASSERTION,
                         entity_name=claim.subject[:60],
@@ -4556,10 +4572,6 @@ class Checker:
             and not _financial_personalisation_signal
             and not _financial_personal_suitability
         )
-        _user_finance_education = bool(
-            user_input
-            and surface_finance_informational_leading(user_input.strip().lower())
-        )
         if _financial_domain_context and not qualifies_claim and (
             _financial_directive_force
             or _financial_personal_suitability
@@ -4573,7 +4585,7 @@ class Checker:
             # portfolio verbs (invest, sell, reallocate, …).
             if _lookup_user_historical and not _strong_portfolio_in_reply:
                 pass
-            elif _educational_descriptive_guard or _user_finance_education:
+            elif _educational_descriptive_guard:
                 pass
             else:
                 if not any(f.flag_type == FlagType.PERSONALIZED_FINANCIAL_ADVICE for f in flags):
