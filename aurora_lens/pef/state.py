@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 from .artifact_layer import ArtifactFrame
 from .hiring_criterion import HiringCriterionContext
 from .hold_disposition import HoldDisposition
+from .translation_candidate import TranslationCandidate
 from .span import Span
 from .entity import Entity, EchoTrace, TurnBindings
 from .temporal_commitment import (
@@ -528,6 +529,7 @@ class PEFState:
     # Requested criteria and clarification evidence are not admitted world facts.
     hiring_criterion_context: HiringCriterionContext | None = field(default=None)
     hold_dispositions: list[HoldDisposition] = field(default_factory=list)
+    translation_candidates: list[TranslationCandidate] = field(default_factory=list)
     # Phase 6: typed hold wrapper; set alongside pending_clarification when available.
     # Not serialized — reconstructed from pending_clarification via from_pending_dict().
     pending_transaction: ContinuationTransaction | None = field(default=None, repr=False)
@@ -844,6 +846,7 @@ class PEFState:
             "name_index": dict(sorted(self.name_index.items())),
             "pending_clarification": self.pending_clarification,
             "hold_dispositions": [item.to_dict() for item in self.hold_dispositions],
+            "translation_candidates": [item.to_dict() for item in self.translation_candidates],
             "hiring_criterion_context": (
                 self.hiring_criterion_context.to_dict() if self.hiring_criterion_context else None
             ),
@@ -913,6 +916,7 @@ class PEFState:
             name_index=name_index,
             pending_clarification=pending_clarification,
             hold_dispositions=[HoldDisposition.from_dict(item) for item in data.get("hold_dispositions", [])],
+            translation_candidates=[TranslationCandidate.from_dict(item) for item in data.get("translation_candidates", [])],
             hiring_criterion_context=HiringCriterionContext.from_dict(data.get("hiring_criterion_context")),
             epistemic_hold=epistemic_hold,
             active_continuation_capability=active_continuation_capability,

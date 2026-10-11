@@ -1332,6 +1332,7 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
             max_stream_bytes=cfg.hardening.stream_max_kb * 1024 if cfg.hardening.stream_max_kb > 0 else 0,
             include_operator_detail=cfg.governance.include_operator_detail,
             rag_retrieval_aware_referents=False,
+            enable_translation_candidates=os.environ.get("AURORA_LENS_TRANSLATION_CANDIDATES", "1") == "1",
             enable_state_native_delegation=True,
             sovereign_provider_registry=sovereign_registry,
             sovereign_enforce_provider_route=(

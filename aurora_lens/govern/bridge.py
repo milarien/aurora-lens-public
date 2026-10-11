@@ -2348,6 +2348,8 @@ class BuiltinBridge(GovernanceBridge):
 
         if decision.epistemic_state is not None:
             entry["epistemic_state"] = decision.epistemic_state
+        if decision.transformation_attempt is not None:
+            entry["transformation_attempt"] = dict(decision.transformation_attempt)
 
         if decision.admissibility_basis is not None:
             entry["admissibility_basis"] = decision.admissibility_basis

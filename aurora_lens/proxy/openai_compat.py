@@ -81,7 +81,12 @@ def _merge_operator_plane_telemetry(
     usage = result.usage if isinstance(result.usage, dict) else {}
     ct = wire_nonneg_int(usage.get("completion_tokens") or usage.get("output_tokens") or 0)
     draft = (getattr(result, "upstream_model_draft", None) or "").strip()
-    llm_called = bool(ct > 0 or draft)
+    translation_calls = result.translation_calls
+    llm_called = bool(ct > 0 or draft or translation_calls)
+    if translation_calls:
+        aurora["translation_calls"] = translation_calls
+        aurora["answer_generation_called"] = False
+        aurora["model_call_purpose"] = "translation_only"
     aurora["llm_called"] = llm_called
     _rp_hint = getattr(result, "telemetry_release_path", None)
     if isinstance(_rp_hint, str) and _rp_hint.strip():
@@ -214,7 +219,9 @@ def _merge_operator_plane_gate_invariants(
     constraints = _operator_failed_constraints(aurora, action=action, result=result)
     aurora["llm_invoked"] = llm_called
     aurora["model_invoked"] = llm_called
-    aurora["candidate_produced"] = llm_called
+    aurora["candidate_produced"] = llm_called and not bool(result.translation_calls)
+    if result.translation_calls:
+        blocked_phase = "interpretation_admission"
     aurora["released"] = released
     aurora["blocked_phase"] = blocked_phase
     aurora["failed_constraints"] = constraints

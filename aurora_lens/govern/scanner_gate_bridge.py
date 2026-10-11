@@ -549,6 +549,8 @@ class AuroraScannerGateBridge(GovernanceBridge):
 
         if decision.epistemic_state is not None:
             payload["epistemic_state"] = decision.epistemic_state
+        if decision.transformation_attempt is not None:
+            payload["transformation_attempt"] = dict(decision.transformation_attempt)
 
         if at_verification_basis is not None:
             decision.at_verification_basis = at_verification_basis
@@ -897,6 +899,8 @@ class AuroraScannerGateBridge(GovernanceBridge):
 
         if decision.epistemic_state is not None:
             entry["epistemic_state"] = decision.epistemic_state
+        if decision.transformation_attempt is not None:
+            entry["transformation_attempt"] = dict(decision.transformation_attempt)
 
         if at_verification_basis is not None:
             decision.at_verification_basis = at_verification_basis

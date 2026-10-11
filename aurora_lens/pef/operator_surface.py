@@ -147,6 +147,8 @@ def build_operator_pef_surface(
 
     if pef.hiring_criterion_context:
         out["hiring_criterion_context"] = pef.hiring_criterion_context.to_dict()
+    if pef.translation_candidates:
+        out["translation_candidates"] = [item.to_dict() for item in pef.translation_candidates]
     if pef.hold_dispositions:
         out["hold_dispositions"] = [item.to_dict() for item in pef.hold_dispositions]
 

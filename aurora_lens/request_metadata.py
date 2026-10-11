@@ -88,6 +88,7 @@ class RequestMetadata:
     policy_profile: str | None = None
     user_role: str | None = None
     provider_route: ProviderRouteRequest | None = None
+    translation_required: bool = False
 
 
 def request_metadata_snapshot(meta: RequestMetadata | None) -> dict[str, Any] | None:
@@ -111,6 +112,7 @@ def request_metadata_snapshot(meta: RequestMetadata | None) -> dict[str, Any] | 
         "policy_profile": meta.policy_profile,
         "user_role": meta.user_role,
         "provider_route": provider_route,
+        **({"translation_required": True} if meta.translation_required else {}),
     }
 
 
@@ -168,4 +170,5 @@ def parse_request_metadata(raw: Any) -> RequestMetadata | None:
         policy_profile=_opt_str(raw.get("policy_profile")),
         user_role=_opt_str(raw.get("user_role")),
         provider_route=_parse_provider_route(raw.get("provider_route")),
+        translation_required=raw.get("translation_required") is True,
     )

@@ -34,6 +34,10 @@ class LensConfig:
     # Whether to auto-update PEF state from user input
     auto_interpret: bool = True
 
+    # Obtain quarantined candidates for input already held by the interpreter.
+    # Explicit translation_required metadata also opts in; never grants fidelity.
+    enable_translation_candidates: bool = False
+
     # Whether to verify LLM responses (post-LLM checker). Request-side
     # :meth:`~aurora_lens.verify.checker.Checker.check_blocked_act_request` in
     # :class:`~aurora_lens.lens.Lens` runs regardless of this flag.

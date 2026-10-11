@@ -286,6 +286,9 @@ class GovernanceDecision:
     # Audit telemetry: epistemic posture of the governed outcome (distinct from action alone).
     epistemic_state: str | None = None
 
+    # Untrusted transformation attempt, separate from answer generation.
+    transformation_attempt: dict[str, object] | None = None
+
     # Pre-LLM block indicator (request-side gated)
     pre_llm: bool = False
 

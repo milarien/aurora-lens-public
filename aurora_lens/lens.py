@@ -17,6 +17,8 @@ from enum import Enum, auto
 from dataclasses import dataclass, field, replace
 
 from aurora_lens.config import LensConfig
+from aurora_lens.pef.translation_candidate import TranslationCandidate
+from aurora_lens.interpret.translation_candidate import obtain_candidate, digest
 from aurora_lens.context import domain_var, get_execution_task, get_request_metadata, request_prompt_var, trace_id_var
 from aurora_lens.govern.candidate_release import (
     adjudicate_candidate_release,
@@ -4577,6 +4579,7 @@ class LensResult:
     operator_request_domain: str | None = None
     # Operator telemetry override (e.g. medical demo deterministic retrieval).
     telemetry_release_path: str | None = None
+    translation_calls: int = 0
 
 
 class LensRoute(str, Enum):
@@ -6273,6 +6276,79 @@ class Lens:
                           turn=turn, span=Span.PRESENT, model="", action=decision.action,
                           decision=decision, original_response=None)
 
+    async def _translation_candidate_hold(self, *, turn, source_text, trigger, ext_flags):
+        # Translation is not a lawful continuation out of a final refusal.
+        stopped = self._maybe_return_epistemic_stop_continuation_sync(
+            history_user_input=source_text, turn=turn)
+        if stopped is not None:
+            return stopped
+        record = TranslationCandidate(turn=turn, source_text=source_text,
+            trigger=trigger, source_sha256=digest(source_text))
+        self._pef.translation_candidates.append(record)
+        limit = {"kind": "TRANSLATION_FIDELITY_UNESTABLISHED",
+                 "detail": "No independent translation fidelity or language capability verifier is available."}
+        flags = [_interpretation_limit_flag(limit)] + self._check_blocked_act_request(source_text) + list(ext_flags)
+        decision = await self._bridge.decide(flags, source_text, self._pef)
+        if decision.action in (InterventionAction.PASS, InterventionAction.SOFT_CORRECT):
+            decision = replace(decision, action=InterventionAction.CONTAIN,
+                pathway_id="P_ASK_MISSING_FACT", output_mode="clarification_request",
+                interaction_open=True, commitment_closed=True)
+        _assign_pending_without_replacing_other_matter(self._pef, {
+            "original_question": source_text, "failed_constraint": "INTERPRETATION_LIMIT",
+            "interpretation_limit": limit, "blocked_claims": [], "turn": turn,
+            "unresolved_entity_ids": [], "ambiguous_referents": [], "candidate_entities": []})
+        _apply_epistemic_hold_after_non_admit(self._pef, decision, turn)
+        decision.transformation_attempt = {"call_purpose": "translation_only", "calls": 0,
+            "source_sha256": record.source_sha256, "fidelity": "unestablished", "status": "held"}
+        # Persist the source hold before the transformation call. The PEF snapshot
+        # records call_purpose separately from any answer-generation candidate.
+        self._bridge.log_decision(decision, turn=turn, pre_llm=True,
+            pef_snapshot=self._pef.to_dict(), pef_context=self._pef.to_context_summary(),
+            at_verification_basis=self._audit_at_basis(), **self._audit_linkage_kwargs(decision))
+        if decision.action == InterventionAction.CONTAIN:
+            await obtain_candidate(record, self._config.adapter)
+            if record.candidate_text is not None:
+                try:
+                    candidate_pef = copy.deepcopy(self._pef)
+                    candidate = await self._backend.extract(record.candidate_text, candidate_pef)
+                    record.candidate_interpretation_limit = candidate.interpretation_limit
+                    # Existing policy and admission checks on a quarantined copy.
+                    # Findings are provisional: fidelity has not been established.
+                    found = self._check_blocked_act_request(record.candidate_text)
+                    financial = personalized_financial_advice_from_probe(candidate.financial_determination_probe)
+                    if financial is not None:
+                        found.append(financial)
+                    record.candidate_policy_flags = sorted({f.flag_type.name for f in found})
+                    if any(not tx.allowed_commit for tx in _build_semantic_transactions(candidate)):
+                        record.candidate_policy_flags.append("SEMANTIC_ADMISSION_HELD")
+                except Exception as exc:
+                    record.failure = "candidate_interpretation_" + type(exc).__name__
+                    record.status = "failed"
+        response = ("The original request remains held. A candidate English translation cannot establish "
+                    "its own fidelity or resolve references and ambiguity. Please restate the request in English, "
+                    "preserving actors, negation, quantities, dates, conditions and unresolved references. "
+                    "No translated claim or instruction has been admitted or authorised.")
+        if decision.action != InterventionAction.CONTAIN:
+            decision.original_response = ""
+            response = await self._bridge.intervene(decision, self._config.adapter,
+                source_text, self._pef.to_context_summary())
+        decision.governed_response = response
+        decision.corrected_response = response
+        decision.pre_llm = not bool(record.calls)
+        self._attach_provider_route_audit(decision, adapter_called=bool(record.calls))
+        decision.transformation_attempt = {"call_purpose": "translation_only", "calls": record.calls,
+            "source_sha256": record.source_sha256, "candidate_sha256": record.candidate_sha256,
+            "model": record.model, "status": record.status, "fidelity": record.fidelity,
+            "failure": record.failure, "answer_generation_calls": 0}
+        self._bridge.log_decision(decision, turn=turn, pre_llm=not bool(record.calls),
+            pef_snapshot=self._pef.to_dict(), pef_context=self._pef.to_context_summary(),
+            at_verification_basis=self._audit_at_basis(), **self._audit_linkage_kwargs(decision))
+        self._history.extend([{"role": "user", "content": source_text}, {"role": "assistant", "content": response}])
+        return LensResult(response=response, flags=flags, pef_snapshot=self._pef.to_context_summary(),
+            turn=turn, span=Span.PRESENT, model=record.model or "", action=decision.action,
+            decision=decision, original_response=None, translation_calls=record.calls,
+            telemetry_release_path="translation_held")
+
     async def _maybe_apply_interpretation_limit_gate(
         self,
         *,
@@ -6287,6 +6363,9 @@ class Lens:
         limit = extraction.interpretation_limit
         if not limit:
             return None
+        if self._config.enable_translation_candidates and limit.get("kind") in {"UNSUPPORTED_SCRIPT", "MAIN_ACT_UNDETERMINED"}:
+            return await self._translation_candidate_hold(turn=turn, source_text=history_user_input,
+                trigger=limit["kind"], ext_flags=ext_flags)
         interp_flags = [_interpretation_limit_flag(limit)]
         if ext_flags:
             interp_flags = interp_flags + list(ext_flags)
@@ -8264,6 +8343,10 @@ class Lens:
         ):
             return _sovereign_result
 
+        if self.request_metadata and self.request_metadata.translation_required:
+            return await self._translation_candidate_hold(turn=turn, source_text=history_user_input,
+                trigger="explicit_translation_required", ext_flags=external_flags or [])
+
         # Classify user act once per turn (routing source of truth for REVISE / CLARIFY gates).
         turn_act = classify_turn_act(history_user_input)
         if turn_act != TurnAct.REVISE and _looks_like_explicit_correction_phrase(
@@ -10129,6 +10212,12 @@ class Lens:
         )
         if _sovereign_stream is not None:
             yield ("sovereign_provider_route", _sovereign_stream)
+            return
+
+        if self.request_metadata and self.request_metadata.translation_required:
+            result = await self._translation_candidate_hold(turn=turn, source_text=history_user_input,
+                trigger="explicit_translation_required", ext_flags=external_flags or [])
+            yield ("clarification_continuation", result)
             return
 
         turn_act = classify_turn_act(history_user_input)
