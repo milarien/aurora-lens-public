@@ -6130,14 +6130,21 @@ class Lens:
         flags += self._check_blocked_act_request(history_user_input) + list(ext_flags)
         decision = await self._bridge.decide(flags, history_user_input, self._pef)
         decision.pre_llm = True
-        if body and not ext_flags and (
+        custom_body = body and not ext_flags and (
             (context.status == "held" and decision.action == InterventionAction.CONTAIN
              and all(f.flag_type == FlagType.INTERPRETATION_LIMIT for f in flags))
             or (context.status == "assessed" and not flags and decision.action == InterventionAction.PASS)
-        ):
+        )
+        if custom_body:
             decision.original_response = ""
             decision.corrected_response = body
             decision.governed_response = body
+        else:
+            decision.original_response = body if context.status == "assessed" else ""
+            decision.governed_response = _maybe_sanitize_governed_clarification_action(
+                await self._bridge.intervene(decision, self._config.adapter,
+                    history_user_input, self._pef.to_context_summary())
+            )
         response = decision.governed_response or ""
         if context.status == "held":
             _assign_pending_without_replacing_other_matter(self._pef, {
