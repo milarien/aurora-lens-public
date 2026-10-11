@@ -3243,7 +3243,7 @@ class TestEpistemicHoldRefusalStopDurability:
         )
         assert pef.epistemic_hold is None
 
-    def test_apply_non_admit_supersedes_prior_hold(self):
+    def test_apply_non_admit_changes_posture_without_discharging_prior_matter(self):
         from aurora_lens.govern.decision import GovernanceDecision, InterventionAction
         from aurora_lens.lens import _apply_epistemic_hold_after_non_admit
         from aurora_lens.pef.state import (
@@ -3274,7 +3274,7 @@ class TestEpistemicHoldRefusalStopDurability:
             cid="cid-new",
         )
         _apply_epistemic_hold_after_non_admit(pef, d, turn=3)
-        assert pef.pending_clarification is None
+        assert pef.pending_clarification == {"original_question": "q"}
         assert pef.epistemic_hold is not None
         assert pef.epistemic_hold["mode"] == EPISTEMIC_MODE_STOP
         assert pef.epistemic_hold["interaction_open"] is False
@@ -6049,7 +6049,8 @@ class TestProcessStreamAuditMaterialParity:
         assert _governance_material_audit_row(a) == _governance_material_audit_row(b)
 
     @pytest.mark.asyncio
-    async def test_pre_llm_unresolved_comparand_parity(self, tmp_path: Path) -> None:
+    @pytest.mark.parametrize("prior_matter", [False, True])
+    async def test_pre_llm_unresolved_comparand_parity(self, tmp_path: Path, prior_matter) -> None:
         FakeStreamingAdapter, _collect_stream, _ = _load_streaming_governance_helpers()
         sync_log = tmp_path / "c.jsonl"
         stream_log = tmp_path / "d.jsonl"
@@ -6075,8 +6076,18 @@ class TestProcessStreamAuditMaterialParity:
             )
         )
         q = "Which stick is bigger?"
+        if prior_matter:
+            for lens in (sl, t_l):
+                lens.pef.pending_clarification = {
+                    "original_question": "prior unreadable request",
+                    "failed_constraint": "INTERPRETATION_LIMIT",
+                    "interpretation_limit": {"kind": "MAIN_ACT_UNDETERMINED"},
+                }
         await sl.process(q)
         await _collect_stream(t_l, q)
+        if prior_matter:
+            for lens in (sl, t_l):
+                assert lens.pef.pending_clarification["original_question"] == "prior unreadable request"
         a = _read_last_jsonl_object(sync_log)
         b = _read_last_jsonl_object(stream_log)
         assert a["stream"] is False and b["stream"] is True
@@ -6577,12 +6588,14 @@ class TestProcessStreamAuditMaterialParity:
         assert adapter._call_count == 0
 
     @pytest.mark.asyncio
-    async def test_medical_refusal_context_survives_stale_pending_clarification(self):
+    @pytest.mark.parametrize("stream", [False, True])
+    @pytest.mark.parametrize("auto_interpret", [False, True])
+    async def test_medical_refusal_context_survives_stale_pending_clarification(self, stream, auto_interpret):
         adapter = MockAdapter(responses=["NEVER_RETURNED"])
         lens = Lens(
             LensConfig(
                 adapter=adapter,
-                auto_interpret=False,
+                auto_interpret=auto_interpret,
                 auto_verify=True,
             )
         )
@@ -6602,15 +6615,20 @@ class TestProcessStreamAuditMaterialParity:
         )
         assert blocked.decision is not None
         assert blocked.decision.action == InterventionAction.HARD_STOP
-        assert lens.pef.pending_clarification is None
+        assert lens.pef.pending_clarification["original_question"] == "Who is she?"
 
-        followup = await lens.process("what questions can I ask the doctor?")
+        if stream:
+            events = [event async for event in lens.process_stream("what questions can I ask the doctor?")]
+            followup = next(payload for kind, payload in events if kind == "clarification_continuation")
+        else:
+            followup = await lens.process("what questions can I ask the doctor?")
         text = followup.response.lower()
         assert "who 'she' refers to" not in text
         assert "anna or beth" not in text
         assert "what dose is appropriate" in text
         assert followup.decision is not None
         assert followup.decision.action == InterventionAction.CONTAIN
+        assert lens.pef.pending_clarification["original_question"] == "Who is she?"
 
     @pytest.mark.asyncio
     async def test_clarification_replay_give_projects_holder_to_recipient_not_giver(self):

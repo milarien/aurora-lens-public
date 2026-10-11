@@ -1859,9 +1859,17 @@ def _assign_pending_without_replacing_other_matter(pef: PEFState, new_pending: d
     existing = pef.pending_clarification
     if (
         isinstance(existing, dict)
-        and str(existing.get("failed_constraint") or "")
-        and str(existing.get("failed_constraint") or "")
-        != str(new_pending.get("failed_constraint") or "")
+        and (
+            (
+                str(existing.get("failed_constraint") or "")
+                and str(existing.get("failed_constraint") or "")
+                != str(new_pending.get("failed_constraint") or "")
+            )
+            or (
+                existing.get("original_question")
+                and existing.get("original_question") != new_pending.get("original_question")
+            )
+        )
     ):
         return
     pef.pending_clarification = new_pending
@@ -4299,7 +4307,7 @@ def _epistemic_hold_dict_for_decision(decision: GovernanceDecision, turn: int) -
 
 
 def _apply_epistemic_hold_after_non_admit(pef: PEFState, decision: GovernanceDecision, turn: int) -> None:
-    """Update durable epistemic holding after REFUSE/STOP/ASK. REFUSE/STOP supersede ambiguity."""
+    """Update the current hold posture without discharging an unresolved matter."""
     if decision.action in (InterventionAction.PASS, InterventionAction.SOFT_CORRECT):
         return
     if decision.action == InterventionAction.CONTAIN:
@@ -4327,9 +4335,8 @@ def _apply_epistemic_hold_after_non_admit(pef: PEFState, decision: GovernanceDec
         pef.active_continuation_capability = None
         pef.active_continuation_context = None
     if decision.action in (InterventionAction.FORCE_REVISE, InterventionAction.HARD_STOP):
-        # A held uninterpretable input stays open; a later refusal does not answer it.
-        if not _pending_is_interpretation_limit(pef.pending_clarification):
-            pef.pending_clarification = None
+        # Refusal/stop governs this turn; neither supplies a resolution or
+        # authorised disposition of a previously pending clarification.
         pef.epistemic_hold = _epistemic_hold_dict_for_decision(decision, turn)
         return
     if decision.action == InterventionAction.CONTAIN:
@@ -4467,7 +4474,7 @@ def _apply_state_native_pending_clarify(
     tr = clarify_context.get("typo_recovery")
     if isinstance(tr, dict):
         pending["typo_recovery"] = dict(tr)
-    pef.pending_clarification = pending
+    _assign_pending_without_replacing_other_matter(pef, pending)
 
 
 def _state_native_lens_status(outcome: "StateNativeOutcome") -> LensStatus:
@@ -7679,26 +7686,32 @@ class Lens:
                         and _primary.flag_type == FlagType.UNRESOLVED_REFERENT
                         and extraction is not None
                     ):
-                        self._pef.pending_clarification = _build_pending_unresolved_referent_dict(
+                        _assign_pending_without_replacing_other_matter(
                             self._pef,
-                            scope_text=user_input,
-                            original_question=user_input,
-                            extraction=extraction,
-                            ambiguous_tokens=_ambiguous_tokens_for_pending_payload(
-                                ambiguous_snapshot_merged_tokens=(
-                                    ambiguous_snapshot_merged_tokens
-                                ),
+                            _build_pending_unresolved_referent_dict(
+                                self._pef,
+                                scope_text=user_input,
+                                original_question=user_input,
                                 extraction=extraction,
+                                ambiguous_tokens=_ambiguous_tokens_for_pending_payload(
+                                    ambiguous_snapshot_merged_tokens=(
+                                        ambiguous_snapshot_merged_tokens
+                                    ),
+                                    extraction=extraction,
+                                ),
+                                turn=turn,
+                                detected_span=detected_span,
                             ),
-                            turn=turn,
-                            detected_span=detected_span,
                         )
                     else:
-                        self._pef.pending_clarification = _pending_payload_simple_contain(
-                            user_input=user_input,
-                            detected_span=detected_span,
-                            pef=self._pef,
-                            primary=_primary,
+                        _assign_pending_without_replacing_other_matter(
+                            self._pef,
+                            _pending_payload_simple_contain(
+                                user_input=user_input,
+                                detected_span=detected_span,
+                                pef=self._pef,
+                                primary=_primary,
+                            ),
                         )
 
         else:
@@ -7776,26 +7789,32 @@ class Lens:
                     and _primary.flag_type == FlagType.UNRESOLVED_REFERENT
                     and extraction is not None
                 ):
-                    self._pef.pending_clarification = _build_pending_unresolved_referent_dict(
+                    _assign_pending_without_replacing_other_matter(
                         self._pef,
-                        scope_text=user_input,
-                        original_question=user_input,
-                        extraction=extraction,
-                        ambiguous_tokens=_ambiguous_tokens_for_pending_payload(
-                            ambiguous_snapshot_merged_tokens=(
-                                ambiguous_snapshot_merged_tokens
-                            ),
+                        _build_pending_unresolved_referent_dict(
+                            self._pef,
+                            scope_text=user_input,
+                            original_question=user_input,
                             extraction=extraction,
+                            ambiguous_tokens=_ambiguous_tokens_for_pending_payload(
+                                ambiguous_snapshot_merged_tokens=(
+                                    ambiguous_snapshot_merged_tokens
+                                ),
+                                extraction=extraction,
+                            ),
+                            turn=turn,
+                            detected_span=detected_span,
                         ),
-                        turn=turn,
-                        detected_span=detected_span,
                     )
                 else:
-                    self._pef.pending_clarification = _pending_payload_simple_contain(
-                        user_input=user_input,
-                        detected_span=detected_span,
-                        pef=self._pef,
-                        primary=_primary,
+                    _assign_pending_without_replacing_other_matter(
+                        self._pef,
+                        _pending_payload_simple_contain(
+                            user_input=user_input,
+                            detected_span=detected_span,
+                            pef=self._pef,
+                            primary=_primary,
+                        ),
                     )
 
         if decision is not None:
@@ -7836,13 +7855,16 @@ class Lens:
                 if rag_pef_update_user_text is not None
                 else user_input
             )
-            self._pef.pending_clarification = _build_pending_unresolved_referent_dict(
+            _assign_pending_without_replacing_other_matter(
                 self._pef,
-                scope_text=_scope_ambig,
-                original_question=user_input,
-                extraction=extraction,
-                ambiguous_tokens=ambiguous_snapshot_merged_tokens,
-                detected_span=detected_span,
+                _build_pending_unresolved_referent_dict(
+                    self._pef,
+                    scope_text=_scope_ambig,
+                    original_question=user_input,
+                    extraction=extraction,
+                    ambiguous_tokens=ambiguous_snapshot_merged_tokens,
+                    detected_span=detected_span,
+                ),
             )
 
         if decision is not None:
@@ -8120,6 +8142,15 @@ class Lens:
             and str(self._pef.pending_clarification.get("failed_constraint") or "")
             == "UNRESOLVED_REFERENT"
         )
+        if self._pef.pending_clarification is not None and self._pef.active_continuation_capability:
+            # Retaining an older matter must not divert an authorised corridor.
+            # The existing handler governs intent changes and blocked requests;
+            # it does not resolve or discharge the retained clarification.
+            _active_cap_result = self._maybe_handle_active_continuation_sync(
+                user_input=user_input, history_user_input=history_user_input, turn=turn,
+            )
+            if _active_cap_result is not None:
+                return _active_cap_result
         if (
             self._pef.pending_clarification is not None
             and self._config.auto_interpret
@@ -8832,11 +8863,14 @@ class Lens:
                     )
                     _blocked_decision.corrected_response = _governed_text
                     _blocked_decision.governed_response = _governed_text
-                    self._pef.pending_clarification = _pending_payload_simple_contain(
-                        user_input=user_input,
-                        detected_span=Span.PRESENT,
-                        pef=self._pef,
-                        primary=_primary_blocked_flag,
+                    _assign_pending_without_replacing_other_matter(
+                        self._pef,
+                        _pending_payload_simple_contain(
+                            user_input=user_input,
+                            detected_span=Span.PRESENT,
+                            pef=self._pef,
+                            primary=_primary_blocked_flag,
+                        ),
                     )
                 else:
                     _governed_text = _maybe_sanitize_governed_clarification_action(
@@ -9229,36 +9263,39 @@ class Lens:
                 comp_decision.corrected_response = question
                 comp_decision.governed_response = question
                 _apply_epistemic_hold_after_non_admit(self._pef, comp_decision, turn)
-                self._pef.pending_clarification = {
-                    "original_question": user_input,
-                    "unresolved_entity_ids": [
-                        eid for eid, e in self._pef.entities.items()
-                        if not e.resolved
-                    ],
-                    "failed_constraint": "UNRESOLVED_COMPARAND",
-                    "candidate_entities": list(ca.candidates),
-                    "comparand_adjective": ca.adjective,
-                    "comparand_noun": ca.noun,
-                    "original_span": detected_span.value,
-                    "blocked_claims": [
-                        {
-                            "subject": c.subject,
-                            "relation": c.relation,
-                            "obj": c.obj,
-                            "span": c.span.value,
-                            "negated": c.negated,
-                            "evidence": c.evidence,
-                            "held_reason": "UNRESOLVED_COMPARAND",
-                            "comparand_adjective": ca.adjective,
-                            "comparand_noun": ca.noun,
-                        }
-                        for c in extraction.claims
-                        if (
-                            canonicalize_relation(c.relation) == "IS"
-                            and str(c.obj).strip().lower() == ca.adjective.lower()
-                        )
-                    ],
-                }
+                _assign_pending_without_replacing_other_matter(
+                    self._pef,
+                    {
+                        "original_question": user_input,
+                        "unresolved_entity_ids": [
+                            eid for eid, e in self._pef.entities.items()
+                            if not e.resolved
+                        ],
+                        "failed_constraint": "UNRESOLVED_COMPARAND",
+                        "candidate_entities": list(ca.candidates),
+                        "comparand_adjective": ca.adjective,
+                        "comparand_noun": ca.noun,
+                        "original_span": detected_span.value,
+                        "blocked_claims": [
+                            {
+                                "subject": c.subject,
+                                "relation": c.relation,
+                                "obj": c.obj,
+                                "span": c.span.value,
+                                "negated": c.negated,
+                                "evidence": c.evidence,
+                                "held_reason": "UNRESOLVED_COMPARAND",
+                                "comparand_adjective": ca.adjective,
+                                "comparand_noun": ca.noun,
+                            }
+                            for c in extraction.claims
+                            if (
+                                canonicalize_relation(c.relation) == "IS"
+                                and str(c.obj).strip().lower() == ca.adjective.lower()
+                            )
+                        ],
+                    },
+                )
                 self._bridge.log_decision(
                     comp_decision,
                     turn=turn,
@@ -9933,6 +9970,13 @@ class Lens:
             and str(self._pef.pending_clarification.get("failed_constraint") or "")
             == "UNRESOLVED_REFERENT"
         )
+        if self._pef.pending_clarification is not None and self._pef.active_continuation_capability:
+            _active_cap_result = self._maybe_handle_active_continuation_stream(
+                user_input=user_input, history_user_input=history_user_input, turn=turn,
+            )
+            if _active_cap_result is not None:
+                yield ("clarification_continuation", _active_cap_result)
+                return
         if (
             self._pef.pending_clarification is not None
             and self._config.auto_interpret
@@ -10649,11 +10693,14 @@ class Lens:
                     )
                     _blocked_decision.corrected_response = _governed_text
                     _blocked_decision.governed_response = _governed_text
-                    self._pef.pending_clarification = _pending_payload_simple_contain(
-                        user_input=user_input,
-                        detected_span=Span.PRESENT,
-                        pef=self._pef,
-                        primary=_primary_blocked_flag,
+                    _assign_pending_without_replacing_other_matter(
+                        self._pef,
+                        _pending_payload_simple_contain(
+                            user_input=user_input,
+                            detected_span=Span.PRESENT,
+                            pef=self._pef,
+                            primary=_primary_blocked_flag,
+                        ),
                     )
                 else:
                     _governed_text = _maybe_sanitize_governed_clarification_action(
@@ -11066,36 +11113,39 @@ class Lens:
                 comp_decision.corrected_response = question
                 comp_decision.governed_response = question
                 _apply_epistemic_hold_after_non_admit(self._pef, comp_decision, turn)
-                self._pef.pending_clarification = {
-                    "original_question": user_input,
-                    "unresolved_entity_ids": [
-                        eid for eid, e in self._pef.entities.items()
-                        if not e.resolved
-                    ],
-                    "failed_constraint": "UNRESOLVED_COMPARAND",
-                    "candidate_entities": list(ca.candidates),
-                    "comparand_adjective": ca.adjective,
-                    "comparand_noun": ca.noun,
-                    "original_span": detected_span.value,
-                    "blocked_claims": [
-                        {
-                            "subject": c.subject,
-                            "relation": c.relation,
-                            "obj": c.obj,
-                            "span": c.span.value,
-                            "negated": c.negated,
-                            "evidence": c.evidence,
-                            "held_reason": "UNRESOLVED_COMPARAND",
-                            "comparand_adjective": ca.adjective,
-                            "comparand_noun": ca.noun,
-                        }
-                        for c in extraction.claims
-                        if (
-                            canonicalize_relation(c.relation) == "IS"
-                            and str(c.obj).strip().lower() == ca.adjective.lower()
-                        )
-                    ],
-                }
+                _assign_pending_without_replacing_other_matter(
+                    self._pef,
+                    {
+                        "original_question": user_input,
+                        "unresolved_entity_ids": [
+                            eid for eid, e in self._pef.entities.items()
+                            if not e.resolved
+                        ],
+                        "failed_constraint": "UNRESOLVED_COMPARAND",
+                        "candidate_entities": list(ca.candidates),
+                        "comparand_adjective": ca.adjective,
+                        "comparand_noun": ca.noun,
+                        "original_span": detected_span.value,
+                        "blocked_claims": [
+                            {
+                                "subject": c.subject,
+                                "relation": c.relation,
+                                "obj": c.obj,
+                                "span": c.span.value,
+                                "negated": c.negated,
+                                "evidence": c.evidence,
+                                "held_reason": "UNRESOLVED_COMPARAND",
+                                "comparand_adjective": ca.adjective,
+                                "comparand_noun": ca.noun,
+                            }
+                            for c in extraction.claims
+                            if (
+                                canonicalize_relation(c.relation) == "IS"
+                                and str(c.obj).strip().lower() == ca.adjective.lower()
+                            )
+                        ],
+                    },
+                )
                 self._bridge.log_decision(
                     comp_decision,
                     turn=turn,
