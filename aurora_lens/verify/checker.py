@@ -35,6 +35,7 @@ from __future__ import annotations
 import re
 from aurora_lens.verify.medical_directive_scope import treatment_bindings
 from aurora_lens.verify.birth_screening_scope import birth_screening
+from aurora_lens.verify.credential_authority_scope import credential_validations
 from collections.abc import AsyncIterator
 from enum import Enum
 
@@ -2213,6 +2214,19 @@ class Checker:
                 flags.append(_inherited_pfa)
         flags.extend(self._check_pii_exposure(response_text))
         flags.extend(self._check_regulatory_claims(response_text))
+        credential_findings = credential_validations(response_text, user_input, getattr(self._backend, "nlp", None))
+        if credential_findings:
+            # A user's attributed description is not a credential attestation.
+            # This runtime has no external personal-credential verifier; never
+            # promote the description into a successful validation claim.
+            flags.append(Flag(
+                flag_type=FlagType.UNVERIFIED_REGULATORY_CLAIM,
+                entity_name="credential_authority",
+                claim="Response asserts externally verified personal credentials or authority without credential attestation",
+                evidence=repr(credential_findings),
+                severity="warning",
+                rule_id="checker.personal_credential_validation_unverified",
+            ))
         # Verify-or-refuse: education / workforce / enterprise personalised advice
         flags.extend(self._check_personalized_academic_advice(response_text, user_input))
         flags.extend(self._check_personalized_employment_advice(response_text, user_input))

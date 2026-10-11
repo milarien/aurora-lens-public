@@ -4,6 +4,8 @@ All notable changes to this public repository are documented here.
 
 ## [Unreleased]
 
+- **2026-10-11 - T07 credential validation release repair:** A reconstructed same-session live follow-up showed that the model could turn an attributed adviser licence into a claim of verified authority while runtime authority stayed GP. Added a structured personal credential-validation probe and existing unverified-regulatory governance, including affirmative inheritance from a personal verification question. The runtime does not authenticate personal credentials; attributed self-descriptions remain user-input provenance and unresolved approval still cannot commit. Tested in `test_credential_authority_scope.py` and the existing checker, finance, admission and canonical bridge suites.
+
 - **2026-10-11 - Scoped governance repairs:** Bind medical treatment actions to clinical objects using the existing parser, distinguish tax and chemical object senses, and retain medical governance in mixed-topic responses. Keep primary personalized-finance release copy on its own Governor corridor while preserving secondary findings and safety vetoes. Govern employment selection explicitly conditioned on birth dates without inferring age from proxies or fixing any cutoff year. Hold claimless input when the English parser has not established a lexical subject or imperative matrix. Preserve attributed adviser descriptions as user-input provenance and unresolved approval admission holds. Regression coverage: `test_medical_directive_scope.py`, `test_birth_screening_scope.py`, `test_release_domain_consistency.py`, and `test_interpretation_admission.py`.
 
 ## [3.0.1] — 2026-09-29
