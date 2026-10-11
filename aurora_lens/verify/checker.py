@@ -33,6 +33,8 @@ strings before interpret).
 from __future__ import annotations
 
 import re
+from aurora_lens.verify.medical_directive_scope import treatment_bindings
+from aurora_lens.verify.birth_screening_scope import birth_screening
 from collections.abc import AsyncIterator
 from enum import Enum
 
@@ -2589,7 +2591,11 @@ class Checker:
 
         Implementation: :func:`~aurora_lens.verify.blocked_request_policy.evaluate_blocked_act_request`.
         """
-        return evaluate_blocked_act_request(user_input, pef=pef)
+        flags = evaluate_blocked_act_request(user_input, pef=pef)
+        birth_findings = birth_screening(user_input, getattr(self._backend, "nlp", None))
+        if birth_findings and not any(f.flag_type == FlagType.EMPLOYMENT_DISCRIMINATION_FACILITATION for f in flags):
+            flags.extend(self._check_employment_discrimination(user_input))
+        return flags
 
     def _check_claim(
         self,
@@ -4606,8 +4612,7 @@ class Checker:
         # ── Second-person + directive gate ────────────────────────────────
         # General action-based patterns require both a second-person address
         # and an explicit directive verb to avoid false positives.
-        directive = bool(
-            re.search(
+        directive_pattern = re.compile(
                 r"\b(should|need\s+to|must|have\s+to|ought\s+to|aim\s+for|ensure|"
                 r"i\s+(?:\w+\s+)?recommend|i\s+(?:\w+\s+)?suggest|"
                 r"it\s+is\s+(?:[a-z]+\s+)?recommended|"
@@ -4616,9 +4621,8 @@ class Checker:
                 r"(?:might|may|could)\s+want\s+to|"
                 r"(?:would\s+)?makes?\s+(?:the\s+most\s+)?(?:financial\s+)?sense|"
                 r"(?:strongly\s+)?encourage|best\s+(?:option|course|approach)\s+for\s+you)\b",
-                lower,
-            )
         )
+        directive = bool(directive_pattern.search(lower))
 
         if not (second_person and directive):
             return flags  # return standalone signals collected above
@@ -4696,12 +4700,24 @@ class Checker:
         # avoid sodium hydroxide" is lab safety, not a treatment directive.
         # Without this guard, hazardous-chemistry prompts are misclassified as
         # PERSONALIZED_MEDICAL_ADVICE and routed to a clinician redirect.
-        if treatment_action and treatment_object and not _legal_context and not _chemistry_context and not (_safety_referral and not _dosing_directive):
+        medical_directive = treatment_action and treatment_object and not _legal_context and not _chemistry_context and not (_safety_referral and not _dosing_directive)
+        bindings = treatment_bindings(text, getattr(self._backend, "nlp", None))
+        if bindings is not None:
+            # Bind action and object before considering sentence-level address.
+            # Other domains and safety referrals elsewhere cannot exempt a
+            # genuine treatment instruction in a mixed-topic response.
+            medical_directive = any(
+                b.clinical and b.action is not None
+                and re.search(r"\b(?:you|your)\b", b.sentence.lower())
+                and directive_pattern.search(b.sentence.lower())
+                for b in bindings
+            )
+        if medical_directive:
             flags.append(Flag(
                 flag_type=FlagType.PERSONALIZED_MEDICAL_ADVICE,
                 entity_name="medical",
                 claim="Response issues a personalized medical treatment directive",
-                evidence="Second-person directive + treatment action + treatment object detected",
+                evidence=("Scoped treatment action/object binding: " + repr([b for b in bindings if b.clinical and b.action]) if bindings is not None else "Second-person directive + treatment action + treatment object detected (scope parser unavailable)"),
                 severity="warning",
             ))
 
@@ -5198,6 +5214,17 @@ class Checker:
         """
         if not text or len(text.strip()) < 20:
             return []
+
+        birth_findings = birth_screening(text, getattr(self._backend, "nlp", None))
+        if birth_findings:
+            return [Flag(
+                flag_type=FlagType.EMPLOYMENT_DISCRIMINATION_FACILITATION,
+                entity_name="employment_discrimination",
+                claim="Employment selection is explicitly conditioned on birth date",
+                evidence=repr(birth_findings),
+                severity="error",
+                rule_id="checker.employment_birth_date_selection",
+            )]
 
         action_m = _EMPLOYMENT_ACTION_RE.search(text)
         if not action_m:

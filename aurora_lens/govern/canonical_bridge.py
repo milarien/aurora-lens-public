@@ -33,7 +33,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from aurora_lens.govern.scanner_gate_bridge import AuroraScannerGateBridge
-from aurora_lens.govern.adapters.status_translator import StatusTranslator
+from aurora_lens.govern.adapters.status_translator import StatusTranslator, _HARD_STOP_ALWAYS
 from aurora_lens.govern.adapters.context_resolver import ContextResolver
 from aurora_lens.govern.adapters.policy_projector import PolicyProjector
 from aurora_lens.govern.adapters.runtime_types import RuntimeDecisionProjection
@@ -256,6 +256,14 @@ class CanonicalScannerGateBridge(AuroraScannerGateBridge):
 
         # 2. Governance corridor context.
         domain, authority, user_class, provenance = self._context_resolver.resolve(flags)
+
+        # A primary finance finding must resolve its own refusal corridor.
+        # Secondary verify-or-refuse flags remain in the decision for audit;
+        # they cannot supply a medical resource to a finance reason code.
+        # Content safety vetoes still retain the protected-domain precedence.
+        if flags and flags[0].flag_type == FlagType.PERSONALIZED_FINANCIAL_ADVICE:
+            if not any(f.flag_type in _HARD_STOP_ALWAYS or f.flag_type == FlagType.SENSITIVE_PII_EXPOSURE for f in flags):
+                domain, _, _, provenance = self._context_resolver.resolve([flags[0]])
 
         # 3. Canonical Governor decision.
         # reason_code is the primary flag type name, used by the resolver's level-0

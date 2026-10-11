@@ -200,6 +200,11 @@ async def test_t07_does_not_commit_approve_this_while_referent_unresolved() -> N
     assert ("APPROVE", "this") not in rels
     assert not any(r[0] == "APPROVE" for r in rels)
     assert ("IS", "licensed financial adviser") in rels
+    description = next(r for r in lens.pef.relationships if r.object_literal == "licensed financial adviser")
+    assert description.provenance == "user_input"
+    from aurora_lens.govern.adapters.context_resolver import ContextResolver
+    from aurora_lens.governor.models import AuthorityClass
+    assert ContextResolver().resolve(result.flags)[1] == AuthorityClass.GP
 
 
 T14 = (
@@ -212,18 +217,33 @@ T14 = (
 async def test_t14_does_not_commit_attributed_approval_while_role_unresolved() -> None:
     lens, adapter = _lens()
     result = await lens.process(T14)
-    assert result.action == InterventionAction.CONTAIN
+    assert result.action == InterventionAction.HARD_STOP
     assert adapter.calls == 0
     rels = {(r.relation, r.object_literal) for r in lens.pef.relationships}
     assert ("APPROVE", "age cap") not in rels
+    assert FlagType.EMPLOYMENT_DISCRIMINATION_FACILITATION in _flag_types(result)
+
+
+@pytest.mark.asyncio
+async def test_t14_approval_admission_remains_held_independently_of_policy() -> None:
+    from aurora_lens.interpret.pef_updater import _build_semantic_transactions, update_pef
+    from aurora_lens.pef.state import PEFState
+    pef = PEFState()
+    extraction = await _BACKEND.extract(T14, pef)
+    transactions = _build_semantic_transactions(extraction, pef)
+    approvals = [tx for tx in transactions if tx.claim.relation == "APPROVE"]
+    assert approvals and all(not tx.allowed_commit for tx in approvals)
+    assert all(tx.held_reason == "UNRESOLVED_REFERENT" for tx in approvals)
+    update_pef(extraction, pef, user_text=T14)
+    assert not any(r.relation == "APPROVE" for r in pef.relationships)
 
 
 @pytest.mark.asyncio
 async def test_accented_spanish_verbal_matrix_without_claims_is_known_limitation() -> None:
-    """English pipeline may assign a VERB matrix yet emit no claims (not language ID)."""
+    """A VERB root with a nonlexical subject is not an established matrix act."""
     lens, adapter = _lens("MODEL_TEXT")
     result = await lens.process(T05C_SPANISH)
-    assert result.action in (InterventionAction.PASS, InterventionAction.CONTAIN)
+    assert result.action == InterventionAction.CONTAIN
     if result.action == InterventionAction.CONTAIN:
         assert adapter.calls == 0
         pending = lens.pef.pending_clarification

@@ -1410,7 +1410,12 @@ class SpacyBackend(ExtractionBackend):
         if not claims:
             alpha_tokens = [t for t in doc if t.is_alpha]
             has_verbal_matrix = any(
-                sent.root.pos_ in ("VERB", "AUX") for sent in doc.sents
+                sent.root.pos_ in ("VERB", "AUX")
+                and (
+                    any(c.dep_ in self._SUBJECT_DEPS and (c.is_alpha or c.like_num) for c in sent.root.children)
+                    or not any(c.dep_ in self._SUBJECT_DEPS for c in sent.root.children)
+                )
+                for sent in doc.sents
             )
             if (
                 len(alpha_tokens) >= 5
