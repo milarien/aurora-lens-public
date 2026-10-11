@@ -162,6 +162,7 @@ async def test_unsupported_script_is_held_with_its_limitation() -> None:
     assert _world(lens) == ([], [])
     assert _flag_types(result) == {FlagType.INTERPRETATION_LIMIT}
     assert "Devanagari" in result.response
+    assert "Please rephrase your question in English." in result.response
     assert T12H in result.response
     pending = lens.pef.pending_clarification
     assert pending["failed_constraint"] == "INTERPRETATION_LIMIT"

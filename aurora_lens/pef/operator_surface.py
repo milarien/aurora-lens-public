@@ -131,6 +131,7 @@ def build_operator_pef_surface(
         out["pending_clarification"] = {
             "active": True,
             "failed_constraint": pending.get("failed_constraint"),
+            "interpretation_limit": pending.get("interpretation_limit"),
             "original_question": pending.get("original_question"),
             "ambiguous_referents": pending.get("ambiguous_referents"),
             "candidate_entities": pending.get("candidate_entities"),

@@ -443,7 +443,7 @@ def _interpretation_limit_clarification(limit: dict, original_input: str) -> str
     kind = str(limit.get("kind") or "")
     detail = str(limit.get("detail") or "This input could not be interpreted.")
     if kind == "UNSUPPORTED_SCRIPT":
-        ask = "Restate the request in English to continue."
+        ask = "Please rephrase your question in English."
     elif kind == "FINANCIAL_DETERMINATION_UNRESOLVED":
         ask = (
             "Restate the allocation you are asking about and the decision you "
