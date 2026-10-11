@@ -405,54 +405,78 @@
     const CLARIFY_FALLBACK_NO_VALID_OPTIONS =
       "Operator state did not yield discrete continuation choices.\nEnter your clarification in the request box, then run the admissibility check.";
 
-    function procedureClarificationUiCopy(pending, uiStage) {
+    const CLARIFY_FREETEXT_GENERIC =
+      "Continuation is paused until clarification is supplied.\n\n" +
+      "Enter your clarification in the request box, then run the admissibility check, or reset the scenario to start fresh.";
+
+    function backendClarificationText(pending, assistantMessage) {
+      const msg = String(assistantMessage || "").trim();
+      if (msg) return msg;
+      return String((pending || {}).clarification_prompt || "").trim();
+    }
+
+    function procedureClarificationUiCopy(pending, uiStage, labelCount, assistantMessage) {
       const fc = String((pending || {}).failed_constraint || "");
       const kind = String((pending || {}).state_native_ambiguity_kind || "");
-      if (uiStage === "freetext") {
+      const choiceCount = Number(labelCount) || 0;
+      const hasChoiceButtons = uiStage === "options" && choiceCount > 0;
+      const backendText = backendClarificationText(pending, assistantMessage);
+
+      if (fc === "INTERPRETATION_LIMIT") {
         return {
-          body:
-            "Continuation is paused until clarification is supplied.\n\n" +
-            "Enter your clarification in the request box, then run the admissibility check, or reset the scenario to start fresh.",
-          footer: fc || "",
-        };
-      }
-      if (kind === "inventory_holder_query_unresolved_item") {
-        return {
-          body:
-            "This request could refer to more than one committed holding.\n" +
-            "Select the intended item to continue.",
-          footer: fc || "",
-        };
-      }
-      if (fc === "UNRESOLVED_REFERENT") {
-        return {
-          body:
-            "This request could refer to more than one party.\n" +
-            "Select the intended referent to continue.",
-          footer: "UNRESOLVED_REFERENT",
-        };
-      }
-      if (fc === "UNRESOLVED_COMPARAND") {
-        return {
-          body:
-            "This request does not yet admit a single resolved comparison.\n" +
-            "Select the intended option to continue.",
-          footer: "UNRESOLVED_COMPARAND",
-        };
-      }
-      if (fc) {
-        return {
-          body:
-            "Continuation is paused until governed clarification completes.\n" +
-            "Select an option to continue.",
+          body: backendText || CLARIFY_FREETEXT_GENERIC,
           footer: fc,
         };
       }
+      if (uiStage === "freetext") {
+        return {
+          body: backendText || CLARIFY_FREETEXT_GENERIC,
+          footer: fc || "",
+        };
+      }
+      if (kind === "inventory_holder_query_unresolved_item" && hasChoiceButtons) {
+        return {
+          body:
+            "This request could refer to more than one committed holding.\n" +
+            "Select the intended item below.",
+          footer: fc || "",
+        };
+      }
+      if (fc === "UNRESOLVED_REFERENT" && hasChoiceButtons) {
+        return {
+          body:
+            "This request could refer to more than one party.\n" +
+            "Select the intended referent below.",
+          footer: "UNRESOLVED_REFERENT",
+        };
+      }
+      if (fc === "UNRESOLVED_COMPARAND" && hasChoiceButtons) {
+        return {
+          body:
+            "This request does not yet admit a single resolved comparison.\n" +
+            "Select the intended option below.",
+          footer: "UNRESOLVED_COMPARAND",
+        };
+      }
+      if (fc && hasChoiceButtons) {
+        return {
+          body:
+            "Continuation is paused until governed clarification completes.\n" +
+            "Select an option below.",
+          footer: fc,
+        };
+      }
+      if (hasChoiceButtons) {
+        return {
+          body:
+            "Continuation is paused until governed clarification completes.\n" +
+            "Select an option below.",
+          footer: "",
+        };
+      }
       return {
-        body:
-          "Continuation is paused until governed clarification completes.\n" +
-          "Select an option to continue.",
-        footer: "",
+        body: backendText || CLARIFY_FALLBACK_NO_VALID_OPTIONS,
+        footer: fc || "",
       };
     }
 
@@ -526,9 +550,37 @@
         ) === "none",
         "UI contract: HARD_STOP/BLOCKED must not render clarification UI.",
       );
+      const referentCopy = procedureClarificationUiCopy(
+        { failed_constraint: "UNRESOLVED_REFERENT" },
+        "options",
+        2,
+        "",
+      );
+      console.assert(
+        referentCopy.body.includes("Select the intended referent below"),
+        "UI contract: referent headline only when choice buttons exist.",
+      );
+      console.assert(
+        !procedureClarificationUiCopy(
+          { failed_constraint: "UNRESOLVED_REFERENT" },
+          "freetext",
+          0,
+          "",
+        ).body.includes("Select the intended referent"),
+        "UI contract: no referent headline without choice buttons.",
+      );
+      console.assert(
+        procedureClarificationUiCopy(
+          { failed_constraint: "INTERPRETATION_LIMIT" },
+          "freetext",
+          0,
+          "Clarification required.\n\nMain act could not be determined.",
+        ).body.startsWith("Clarification required."),
+        "UI contract: interpretation-limit holds show governed backend text.",
+      );
     }
 
-    function renderClarificationChoices(domain, pending, currentStatus) {
+    function renderClarificationChoices(domain, pending, currentStatus, assistantMessage) {
       const panel = document.getElementById("clarify-panel");
       const clarifyBody = document.getElementById("clarify-body");
       const clarifyFooter = document.getElementById("clarify-footer");
@@ -547,7 +599,7 @@
         return { labels: [], mode };
       }
       if (singleCandidateFailsPromptShape(pending, labels)) {
-        const proc = procedureClarificationUiCopy(pending, "freetext");
+        const proc = procedureClarificationUiCopy(pending, "freetext", 0, assistantMessage);
         clarifyBody.textContent = `${proc.body}\n\n${CLARIFY_FALLBACK_NO_VALID_OPTIONS}`;
         applyClarifyFooter(clarifyFooter, proc.footer);
         modeHint.textContent = "";
@@ -557,7 +609,7 @@
         return { labels: [], mode: "freetext" };
       }
       const uiStage = mode === "freetext" ? "freetext" : "options";
-      const proc = procedureClarificationUiCopy(pending, uiStage);
+      const proc = procedureClarificationUiCopy(pending, uiStage, labels.length, assistantMessage);
       clarifyBody.textContent = proc.body;
       applyClarifyFooter(clarifyFooter, proc.footer);
       modeHint.textContent = "";
@@ -781,7 +833,12 @@
       ).trim();
       const pendingClarification = ((aurora.operator_pef || {}).pending_clarification) || {};
       const pendingActive = Boolean(pendingClarification.active);
-      const clarificationUi = renderClarificationChoices(selectedDomain, pendingClarification, currentStatus);
+      const clarificationUi = renderClarificationChoices(
+        selectedDomain,
+        pendingClarification,
+        currentStatus,
+        message,
+      );
       const clarificationChoices = clarificationUi.labels;
       setClarificationInteractionMode(pendingClarification, clarificationChoices, currentStatus);
 

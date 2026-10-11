@@ -114,6 +114,8 @@ class TestDemoGoldenPath:
         assert 'id="scenario"' in demo
         assert "const SCENARIOS = {" in demo
         assert "function resolveFailedConstraintDisplay(" in demo
+        assert "function backendClarificationText(" in demo
+        assert 'failed_constraint: "INTERPRETATION_LIMIT"' in demo
 
     def test_eric_class_pre_llm_hard_stop_operator_payload_has_failed_constraint(
         self,
