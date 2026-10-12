@@ -36,6 +36,12 @@ python scripts/verify_shared_program.py --role private --ref PRIVATE_SHA --peer 
 | `aurora-lens.yaml` | Private production startup configuration, strict policy and spaCy extraction; public installations supply their own config. Exact private settings are pinned. | Private-only; public absence pinned |
 | `aurora_lens/BUILD_INFO.json` | Public generated distribution build provenance metadata. | 225e9b4e50b6 / 225e9b4e50b6 |
 | `aurora_lens/__init__.py` | Distribution version, authorship and licence metadata; no governance rules. | 225e9b4e50b6 / 225e9b4e50b6 |
+| `aurora_lens/benchmarks/runtime/__init__.py` | Private benchmark harness/data; not imported by runtime governance. | Private-only; public absence pinned |
+| `aurora_lens/benchmarks/runtime/__main__.py` | Private benchmark harness/data; not imported by runtime governance. | Private-only; public absence pinned |
+| `aurora_lens/benchmarks/runtime/cases_v1.json` | Private benchmark harness/data; not imported by runtime governance. | Private-only; public absence pinned |
+| `aurora_lens/benchmarks/runtime/models.py` | Private benchmark harness/data; not imported by runtime governance. | Private-only; public absence pinned |
+| `aurora_lens/benchmarks/runtime/runner.py` | Private benchmark harness/data; not imported by runtime governance. | Private-only; public absence pinned |
+| `aurora_lens/benchmarks/runtime/score.py` | Private benchmark harness/data; not imported by runtime governance. | Private-only; public absence pinned |
 | `aurora_lens/cli.py` | Public licensed managed launcher and installation diagnostics. | 225e9b4e50b6 / 225e9b4e50b6 |
 | `aurora_lens/launcher/controller.py` | Managed installation process lifecycle; pinned public packaging implementation. | 225e9b4e50b6 / 225e9b4e50b6 |
 | `aurora_lens/launcher/lifecycle.py` | Public managed installation launcher lifecycle/support component. | 225e9b4e50b6 / 225e9b4e50b6 |

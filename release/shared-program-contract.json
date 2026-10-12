@@ -32,12 +32,6 @@
     "aurora_lens/benchmarks/governance/models.py": "5f8e6e958f00b715d40c8b1be56e0ff37b8c62a08327f0eabe135e07365ab2b1",
     "aurora_lens/benchmarks/governance/runner.py": "dbf81a82c618964f07910464474c1e36312b92c2028ea7c493c1d2d1454ec4bb",
     "aurora_lens/benchmarks/governance/score.py": "3071e75680a09254557152f0fc1bbed8e94819786ac7b4edf2c542b642156191",
-    "aurora_lens/benchmarks/runtime/__init__.py": "2bb117c819f72f8169ea5a68a007e060f7d48622c5f94bbabcc18a396f46c74b",
-    "aurora_lens/benchmarks/runtime/__main__.py": "ce5c07bbb0bfea8f2584d40230f0252a6b1979223ab93e5d1d15545b38d1a9ab",
-    "aurora_lens/benchmarks/runtime/cases_v1.json": "7d6eaf912e8e54410d8ddd08085be23f61f6e603c4257297e21945d866ec213c",
-    "aurora_lens/benchmarks/runtime/models.py": "04dc0ae06c4efa95a44963b4931804490830a75e139050a2574565f04c618425",
-    "aurora_lens/benchmarks/runtime/runner.py": "ab787b43185aa7fceb65321a4def9feeb68417573c2c71bb1bd09346ec570373",
-    "aurora_lens/benchmarks/runtime/score.py": "648ff2ff8199a8c893bffdcddf81679e15abb0faf47a82a6b2c7fc8b6c9caacb",
     "aurora_lens/build_info.py": "8ffd7912b8f3eaef5f93842e1d8b920f5c607fa67792f03416c3cf1251479648",
     "aurora_lens/config.py": "d8e2f869a287b375596ffa1c67f19ea2be0f0bcb910f9f38afd514a4347ceb1b",
     "aurora_lens/context.py": "e101c4e9bf882c9eade83e73d137eab91f408871abca25e207c8160b4d970162",
@@ -312,6 +306,36 @@
       "public": "a9e99cd0607343aaf397c0a78dff016d39c3b051fb89922d7055958c884c3095",
       "reason": "Distribution version, authorship and licence metadata; no governance rules."
     },
+    "aurora_lens/benchmarks/runtime/__init__.py": {
+      "private": "2bb117c819f72f8169ea5a68a007e060f7d48622c5f94bbabcc18a396f46c74b",
+      "public": null,
+      "reason": "Private benchmark harness/data; not imported by runtime governance."
+    },
+    "aurora_lens/benchmarks/runtime/__main__.py": {
+      "private": "ce5c07bbb0bfea8f2584d40230f0252a6b1979223ab93e5d1d15545b38d1a9ab",
+      "public": null,
+      "reason": "Private benchmark harness/data; not imported by runtime governance."
+    },
+    "aurora_lens/benchmarks/runtime/cases_v1.json": {
+      "private": "7d6eaf912e8e54410d8ddd08085be23f61f6e603c4257297e21945d866ec213c",
+      "public": null,
+      "reason": "Private benchmark harness/data; not imported by runtime governance."
+    },
+    "aurora_lens/benchmarks/runtime/models.py": {
+      "private": "04dc0ae06c4efa95a44963b4931804490830a75e139050a2574565f04c618425",
+      "public": null,
+      "reason": "Private benchmark harness/data; not imported by runtime governance."
+    },
+    "aurora_lens/benchmarks/runtime/runner.py": {
+      "private": "ab787b43185aa7fceb65321a4def9feeb68417573c2c71bb1bd09346ec570373",
+      "public": null,
+      "reason": "Private benchmark harness/data; not imported by runtime governance."
+    },
+    "aurora_lens/benchmarks/runtime/score.py": {
+      "private": "648ff2ff8199a8c893bffdcddf81679e15abb0faf47a82a6b2c7fc8b6c9caacb",
+      "public": null,
+      "reason": "Private benchmark harness/data; not imported by runtime governance."
+    },
     "aurora_lens/cli.py": {
       "private": "596480567a6aa990fe21ac22be989cacb7bb863e979205fa7e12fb148d89944f",
       "public": "9a849aff6b9dd4ed0df7582148ffed0149282053020b5e9375104fd4d41b1c56",
@@ -424,6 +448,6 @@
       }
     }
   },
-  "shared_core_sha256": "8c41cd758992419df9a49b99ec46bf926e3d27e313eaec9b38f0f34ebffdcf9e",
+  "shared_core_sha256": "fd5c7bc4dd488a569184a3ba788f43c5b3c7e92187c6e71d00995df2a2db0187",
   "pair_verified": true
 }
