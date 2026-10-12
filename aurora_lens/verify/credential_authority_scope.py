@@ -41,17 +41,22 @@ def credential_validations(text, user_input, nlp) -> tuple[CredentialValidation,
         hypothetical = any(c.dep_ == "aux" and c.lemma_.lower() in {"may", "might", "could", "would", "can"} for c in predicate.children)
         if validated and personal and predicate.lemma_.lower() in _VALIDATION_RELATIONS and not negated and not hypothetical:
             findings.append(CredentialValidation(target.text, predicate.text, target.sent.text, "personal_external_validation_assertion"))
-    # A bare affirmative inherits the user's verification question. This is
+    # An initial affirmative inherits the user's verification question. This is
     # an explicit speech-act linkage, not evidence that the credential is true.
     first = next(iter(doc.sents), None)
-    if first is not None and first.root.lemma_.lower() in {"yes", "correct"} and user_input:
+    affirmative = next((t for t in first if not t.is_space), None) if first is not None else None
+    # The answer act can be a discourse child of a longer sentence rather than
+    # its root. Preserve that existing question/answer linkage across parses.
+    if (affirmative is not None and affirmative.lemma_.lower() in {"yes", "correct"}
+            and (affirmative == first.root or affirmative.dep_ in {"intj", "discourse"})
+            and user_input):
         question = nlp(user_input)
         for target in question:
             if target.lemma_.lower() not in _CREDENTIALS:
                 continue
             scope = list(target.sent)
             if any(t.text.lower() in _PERSONAL for t in scope) and any(t.lemma_.lower() in _VALIDATION or t.text.lower() in _VALIDATED_STATUS for t in scope):
-                findings.append(CredentialValidation(target.text, first.root.text, first.text + " | " + target.sent.text, "affirmative_inherited_validation"))
+                findings.append(CredentialValidation(target.text, affirmative.text, first.text + " | " + target.sent.text, "affirmative_inherited_validation"))
                 break
     logger.debug("credential_validation_claims=%r", findings)
     return tuple(findings)

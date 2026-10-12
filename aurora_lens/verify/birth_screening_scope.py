@@ -15,6 +15,7 @@ class BirthScreening:
     birth_predicate: str
     cutoff: str
     evidence: str
+    negated: bool = False
 
 
 def birth_screening(text, nlp) -> tuple[BirthScreening, ...]:
@@ -37,9 +38,11 @@ def birth_screening(text, nlp) -> tuple[BirthScreening, ...]:
         action = next((a for a in target.ancestors if a.pos_ == "VERB"), None)
         if action is None or action.lemma_.lower() not in {"remove", "exclude", "reject", "screen", "filter", "shortlist", "hire", "recruit", "select"}:
             continue
-        if any(c.dep_ == "neg" for c in action.children):
+        negated = any(c.dep_ == "neg" for c in action.children) or any(
+            c.dep_ == "det" and c.lemma_.lower() == "no" for c in target.children)
+        if negated and action.lemma_.lower() in {"remove", "exclude", "reject", "screen", "filter"}:
             continue
-        finding = BirthScreening(action.text, target.text, token.text, cutoff.text + " " + value.text, token.sent.text)
+        finding = BirthScreening(action.text, target.text, token.text, cutoff.text + " " + value.text, token.sent.text, negated)
         findings.append(finding)
     logger.debug("birth_screening_bindings=%r", findings)
     return tuple(findings)

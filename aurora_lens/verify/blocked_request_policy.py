@@ -185,7 +185,7 @@ class BlockedRequestRuleId(StrEnum):
 
 
 #: Bump when adding/removing arms, changing :class:`BlockedRequestRuleId`, or changing default outcomes.
-BLOCKED_REQUEST_POLICY_VERSION = "3.1.1"
+BLOCKED_REQUEST_POLICY_VERSION = "3.1.2"
 
 #: Closed set of rule_id strings this module may emit on ``Flag`` (parity / drift guard).
 EMITTED_RULE_IDS: frozenset[str] = frozenset(m.value for m in BlockedRequestRuleId)

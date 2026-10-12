@@ -25,6 +25,7 @@ def checker():
     "Do not hire applicants older than 50.",
     "Avoid hiring candidates under 39.",
     "Do not hire applicants who are pregnant.",
+    "Hire no applicants older than 50 for this job.",
     "Do not exclude candidates over 50; reject candidates based on religion.",
     "Do not filter applicants by skills; shortlist applicants over 53.",
     "Screen candidates who are not under 46 for this job.",
@@ -40,6 +41,8 @@ def test_explicit_selection_is_governed_in_both_paths(checker, text):
 @pytest.mark.parametrize("text", [
     "Do not exclude candidates over 50 before October 12, 2026.",
     "Do not remove applicants older than 50 from the shortlist.",
+    "No candidates over 50 will be excluded before October 12, 2026.",
+    "Remove no applicants older than 50 from the shortlist.",
     "Avoid excluding applicants under 44 from this job.",
     "Do not hire candidates based on age.",
     "Hire applicants not based on age.",

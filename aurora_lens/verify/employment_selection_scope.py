@@ -100,6 +100,10 @@ def employment_selections(text, nlp=None) -> tuple[EmploymentSelection, ...]:
         if not targets:
             continue
         negated = any(c.dep_ == "neg" for c in action.children)
+        # Negative target quantification denies this selection of the group.
+        # A negative modifier of a qualification does not negate the action.
+        negated = negated or all(any(c.dep_ == "det" and c.lemma_.lower() == "no"
+                                     for c in t.children) for t in targets)
         # "Avoid hiring" denies inclusion; "avoid excluding" denies exclusion.
         negated = negated or (action.dep_ in {"xcomp", "ccomp"}
                              and action.head.lemma_.lower() in {"avoid", "prevent"})

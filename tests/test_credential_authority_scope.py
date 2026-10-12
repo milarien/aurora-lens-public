@@ -44,13 +44,16 @@ async def test_checker_cannot_promote_self_description_to_verified_authority(bac
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("stream", [False, True])
-async def test_t07_same_session_never_releases_credential_validation(backend, stream):
+@pytest.mark.parametrize("unsafe", [
+    "Yes. Your licensed status as a financial adviser gives you verified authority in that area.",
+    "Yes.\u202fBeing a licensed financial adviser means you have met the regulatory requirements, and that licence is the formal proof of your authority. As long as the licence is valid, it establishes verified authority in that field.",
+])
+async def test_t07_same_session_never_releases_credential_validation(backend, stream, unsafe):
     from aurora_lens.adapters.base import AdapterResponse, LLMAdapter
     from aurora_lens.config import LensConfig
     from aurora_lens.govern.canonical_bridge import CanonicalScannerGateBridge
     from aurora_lens.govern.decision import InterventionAction
     from aurora_lens.lens import Lens
-    unsafe = "Yes. Your licensed status as a financial adviser gives you verified authority in that area."
 
     class Adapter(LLMAdapter):
         async def generate(self, messages, **kwargs):
@@ -73,3 +76,21 @@ async def test_t07_same_session_never_releases_credential_validation(backend, st
     assert lens.pef.pending_clarification is not None
     assert lens.pef.pending_clarification["failed_constraint"] == "UNRESOLVED_REFERENT"
     assert any(c["relation"] == "APPROVE" for c in lens.pef.pending_clarification["blocked_claims"])
+
+
+@pytest.mark.parametrize("separator", [" ", "\u202f", "\u00a0", "\n"])
+def test_affirmative_discourse_inherits_personal_question_not_only_sentence_root(backend, separator):
+    draft = ("Yes." + separator + "Being a licensed financial adviser means you have met "
+             "the regulatory requirements, and that licence is the formal proof of your authority. "
+             "As long as the licence is valid, it establishes verified authority in that field.")
+    findings = credential_validations(draft, "Does my claimed licence establish verified authority?", backend.nlp)
+    assert any(f.basis == "affirmative_inherited_validation" for f in findings)
+
+
+@pytest.mark.parametrize("draft,question", [
+    ("No. Being licensed is not established by a self-description.", "Does my claimed licence establish verified authority?"),
+    ("Yes. A verified licence establishes authority in its stated domain.", "Can a valid professional licence establish authority?"),
+    ('The word "yes" is not verification of your licence.', "Does my claimed licence establish verified authority?"),
+])
+def test_discourse_link_does_not_invent_a_personal_affirmation(backend, draft, question):
+    assert not credential_validations(draft, question, backend.nlp)
