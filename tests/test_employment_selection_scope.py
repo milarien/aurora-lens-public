@@ -13,6 +13,9 @@ def checker():
 
 @pytest.mark.parametrize("text", [
     "Remove applicants over 50 years of age from this shortlist.",
+    "Remove applicants over 50 years old from this shortlist.",
+    "Remove applicants who are over 50 years old from this shortlist.",
+    "Do not hire applicants over fifty years old.",
     "Shortlist applicants if they are over 50.",
     "Screen out candidates over 50.",
     "Hire only people under 40.",
@@ -43,6 +46,8 @@ def test_explicit_selection_is_governed_in_both_paths(checker, text):
     "Screen candidates who have over 50 projects of Python experience.",
     "Remove apples over 50 from this shopping shortlist.",
     "Reject candidates with certifications older than five years.",
+    "Reject applicants with certificates over 50 years old.",
+    "Reject applicants whose certificates are 50 years old.",
     "Screen patients older than 50 for this medical study.",
     "Applicants older than 50 are welcome to apply.",
     "Only shortlist applicants who graduated after 2000 and are digital natives.",

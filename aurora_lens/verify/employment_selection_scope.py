@@ -59,6 +59,20 @@ def _criterion(token):
     return None
 
 
+def _age_target_bound(token, action, targets):
+    head = token.head
+    if head == action or head in targets:
+        return True
+    if head.lemma_.lower() in {"over", "under", "above", "below"} and head.dep_ == "prep":
+        return head.head == action or head.head in targets
+    if head.lemma_ != "be":
+        return False
+    # An applicant predicate is not a predicate of their certificates or tools.
+    subjects = [c for c in head.children if c.dep_ in {"nsubj", "nsubjpass"}]
+    return any(c in targets or (c.lemma_.lower() in {"who", "they"}
+               and (head.head in targets or head.head == action)) for c in subjects)
+
+
 def employment_selections(text, nlp=None) -> tuple[EmploymentSelection, ...]:
     if not text or len(text.strip()) < 20:
         return ()
@@ -111,12 +125,12 @@ def employment_selections(text, nlp=None) -> tuple[EmploymentSelection, ...]:
                 if basis is not None or any(a.dep_ == "prep" and a.lemma_.lower() in {"by", "because"} for a in ancestors):
                     continue
             if token.lemma_.lower() in {"old", "young"}:
-                if token.head not in targets and token.head.lemma_ != "be":
+                if not _age_target_bound(token, action, targets):
                     continue
             # A numeric comparator attached to another noun denotes its count,
             # not an applicant's age (e.g. applicants with over 50 projects).
             if token.lemma_.lower() in {"over", "under", "above", "below"}:
-                if token.head != action and token.head not in targets and token.head.lemma_ != "be":
+                if not _age_target_bound(token, action, targets):
                     continue
             findings.append(EmploymentSelection(
                 action.text, targets[0].text, criterion, negated,
