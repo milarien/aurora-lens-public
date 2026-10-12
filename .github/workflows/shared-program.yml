@@ -1,0 +1,16 @@
+name: Shared program release gate
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  shared-program:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Complete public program against the shared release contract
+        run: python scripts/verify_shared_program.py --role public --ref ${{ github.sha }}

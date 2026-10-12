@@ -14,6 +14,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY pyproject.toml aurora_lens_build_backend.py release_guard.py setup.py ./
 COPY LICENSE NOTICE LICENSING.md README.md ./
 COPY aurora_lens/ ./aurora_lens/
+COPY governor/ ./governor/
+COPY Dockerfile .dockerignore entrypoint.sh ./
+COPY scripts/verify_shared_program.py ./scripts/verify_shared_program.py
+COPY release/shared-program-contract.json ./release/shared-program-contract.json
+
+# Required complete shared-program release gate; retain non-editable installation.
+RUN python scripts/verify_shared_program.py --role public
 
 RUN pip install --no-cache-dir ".[spacy,proxy,redis]"
 RUN python -m spacy download en_core_web_sm

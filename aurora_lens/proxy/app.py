@@ -890,16 +890,8 @@ def _auth_exempt(path: str, *, listen_host: str) -> bool:
 # Public demo surface proxied by aurora-lens.ai Pages Functions. Transport-only gate;
 # does not change governance. Requires Railway secret AURORA_EDGE_TOKEN.
 #
-# The gate is a property of the hosted deployment, not of the request path.
-# Railway injects RAILWAY_ENVIRONMENT_NAME (and, on older images,
-# RAILWAY_ENVIRONMENT) into that service. A licensed local install does not,
-# and must not 403 chat when AURORA_EDGE_TOKEN is unset.
-#
-# Audit GET routes are intentionally excluded: the Railway /forensics console loads
-# them same-origin from the browser (no place to put the edge token), and the same
-# read surface is already public via aurora-lens.ai Pages. Chat / new-scenario remain
-# gated on the hosted deployment so anonymous clients cannot burn upstream model
-# capacity on the Railway URL.
+# Hosted forensic reads require the server credential before any route handler.
+# Browser demo forwarding must not grant access to those reads.
 _HOSTED_PUBLIC_DEMO_ENVS = (
     "RAILWAY_ENVIRONMENT_NAME",
     "RAILWAY_ENVIRONMENT",
@@ -933,8 +925,17 @@ def _hosted_public_demo_deployment() -> bool:
     return any((os.environ.get(name) or "").strip() for name in _HOSTED_PUBLIC_DEMO_ENVS)
 
 
+def _protected_diagnostic_path(path: str) -> bool:
+    return path.startswith("/v1/audit/") or path == "/v1/session/operator-pef"
+
+
+def _diagnostic_credential_present(request: Request) -> bool:
+    expected = (os.environ.get("AURORA_EDGE_TOKEN") or "").strip()
+    return bool(expected) and _edge_token_matches(request.headers.get("x-aurora-edge-token"), expected)
+
+
 def _public_demo_edge_token_required(path: str) -> bool:
-    return _hosted_public_demo_deployment() and path in PUBLIC_DEMO_EDGE_PATHS
+    return _hosted_public_demo_deployment() and (path in PUBLIC_DEMO_EDGE_PATHS or _protected_diagnostic_path(path))
 
 
 def _provider_display(p: str | None) -> str:
@@ -1184,12 +1185,10 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
 
     @app.middleware("http")
     async def _aurora_edge_token_middleware(request: Request, call_next):
-        """Transport gate for the Railway-hosted public demo.
+        """Transport gate for public-demo routes proxied by aurora-lens.ai.
 
-        Inactive unless Railway has set the deployment environment name, so a
-        licensed local install is not blocked when ``AURORA_EDGE_TOKEN`` is unset.
-        When active, requires ``x-aurora-edge-token`` matching that secret and
-        fails closed if the secret is missing. Does not log token values.
+        Requires ``x-aurora-edge-token`` matching Railway secret ``AURORA_EDGE_TOKEN``.
+        Fail closed when the secret is unset. Does not log token values.
         Registered last among http middlewares so it runs before auth/route work.
         """
         path = request.url.path
@@ -1474,7 +1473,12 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
             body["proxy_run_id"] = snap["proxy_run_id"]
             body["audit_log_path"] = snap["audit_log_path"]
             body["audit_signing_configured"] = snap["audit_signing_configured"]
+        if _hosted_public_demo_deployment() and not _diagnostic_credential_present(request):
+            body = {key: body[key] for key in ("status", "application_version", "git_commit")}
         h = _base_headers(tid, proxy_ms=int((time.time() - started) * 1000))
+        if _hosted_public_demo_deployment() and not _diagnostic_credential_present(request):
+            h = {}
+        h["Cache-Control"] = "no-store"
         return JSONResponse(content=body, headers=h)
 
     @app.get("/about")
@@ -2179,7 +2183,7 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
         )
 
     @app.get("/v1/operator/summary")
-    async def operator_summary(n: int = Query(30, ge=1, le=200)):
+    async def operator_summary(request: Request, n: int = Query(30, ge=1, le=200)):
         """Compact operator summary for first-screen dashboard tiles.
 
         This endpoint is read-only and intentionally coarse-grained. It exposes
@@ -2223,11 +2227,16 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
             "audit_writable": audit_writable,
             "proxy_run_id": snap.get("proxy_run_id"),
         }
+        if _hosted_public_demo_deployment() and not _diagnostic_credential_present(request):
+            body = {key: body[key] for key in (
+                "system_status", "sessions", "decision_window_n", "recent_decisions", "warning_count", "block_count"
+            )}
         proxy_ms = int((time.time() - started) * 1000)
-        return JSONResponse(
-            content=_json_safe(body),
-            headers=_base_headers(tid, proxy_ms=proxy_ms),
-        )
+        headers = _base_headers(tid, proxy_ms=proxy_ms)
+        if _hosted_public_demo_deployment() and not _diagnostic_credential_present(request):
+            headers = {}
+        headers["Cache-Control"] = "no-store"
+        return JSONResponse(content=_json_safe(body), headers=headers)
 
     def _read_audit_entry_by_cid(path: Path, cid: str) -> dict[str, Any] | None:
         """Find audit entry by cid. JSONL backend. Returns None if not found."""

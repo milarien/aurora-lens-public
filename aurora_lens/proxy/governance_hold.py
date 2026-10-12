@@ -11,6 +11,8 @@ from __future__ import annotations
 import copy
 from typing import Any
 
+from aurora_lens.pef.hiring_criterion import HiringCriterionContext
+from aurora_lens.pef.hold_disposition import HoldDisposition
 from aurora_lens.pef.state import (
     EPISTEMIC_MODE_AMBIGUITY,
     EPISTEMIC_MODE_REFUSAL,
@@ -27,7 +29,7 @@ from aurora_lens.pef.unresolved_referents import (
     registry_entries_to_wire,
 )
 
-GOVERNANCE_HOLD_SCHEMA_VERSION = 1
+GOVERNANCE_HOLD_SCHEMA_VERSION = 2
 
 _DURABLE_HOLD_MODES = frozenset({
     EPISTEMIC_MODE_AMBIGUITY,
@@ -47,14 +49,36 @@ def unresolved_governance_residue(pef: PEFState) -> dict[str, Any] | None:
     hold = pef.epistemic_hold if isinstance(pef.epistemic_hold, dict) else None
     if hold is not None and hold.get("mode") not in _DURABLE_HOLD_MODES:
         hold = None
-    if not registry and pending is None and hold is None:
+    criterion = pef.hiring_criterion_context
+    dispositions = [item.to_dict() for item in pef.hold_dispositions]
+    if not registry and pending is None and hold is None and criterion is None and not dispositions:
         return None
     return {
         "schema_version": GOVERNANCE_HOLD_SCHEMA_VERSION,
         "unresolved_referent_registry": registry,
         "pending_clarification": pending,
         "epistemic_hold": hold,
+        "hiring_criterion_context": criterion.to_dict() if criterion else None,
+        "hold_dispositions": dispositions,
     }
+
+
+def _restore_decision_context(pef: PEFState, residue: dict[str, Any]) -> None:
+    """Carry uncommitted criteria and explicit closure, never expired world facts.
+
+    Missing fields in a version-1 residue are not authority to clear newer state.
+    A version-2 null criterion records its explicit removal, such as reset, while
+    the disposition journal preserves why it closed without resolving its basis.
+    The typed loader always restores screening_authorized=False.
+    """
+    if "hiring_criterion_context" in residue:
+        pef.hiring_criterion_context = HiringCriterionContext.from_dict(
+            copy.deepcopy(residue["hiring_criterion_context"])
+        )
+    for data in residue.get("hold_dispositions", []):
+        disposition = HoldDisposition.from_dict(copy.deepcopy(data))
+        if disposition not in pef.hold_dispositions:
+            pef.hold_dispositions.append(disposition)
 
 
 def _epistemic_hold_rank(hold: dict[str, Any] | None) -> int:
@@ -244,6 +268,7 @@ def merge_unresolved_governance_residue(pef: PEFState, residue: dict[str, Any]) 
             continue
         _install_durable_entry(existing, incoming)
     _reconcile_pending_clarification(pef, residue)
+    _restore_decision_context(pef, residue)
     incoming_hold = residue.get("epistemic_hold")
     if isinstance(incoming_hold, dict) and incoming_hold.get("mode") in _DURABLE_HOLD_MODES:
         current = pef.epistemic_hold if isinstance(pef.epistemic_hold, dict) else None
@@ -265,6 +290,7 @@ def apply_unresolved_governance_residue(pef: PEFState, residue: dict[str, Any]) 
     ]
     pending = residue.get("pending_clarification")
     pef.pending_clarification = dict(pending) if isinstance(pending, dict) else None
+    _restore_decision_context(pef, residue)
     hold = residue.get("epistemic_hold")
     if isinstance(hold, dict) and hold.get("mode") in _DURABLE_HOLD_MODES:
         pef.epistemic_hold = dict(hold)
