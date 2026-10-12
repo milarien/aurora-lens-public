@@ -1,5 +1,17 @@
 # Translation-assisted admission: bounded candidate stage
 
+## Work stopped by user instruction — 2026-10-12
+
+Translation development is stopped. Retain the other verified governance repairs and the existing candidate containment behavior; this instruction does not remove the fidelity gate or enable translated admission. No further translation implementation or architectural expansion is planned under the current task.
+
+The subsequently authorised [language-support admission task](language-support-admission.md) is separate. Its boundary assessment does not resume translation development or establish translation fidelity. The language-gap description below records the deployed state before that separate boundary is verified and released.
+
+The supported governance scope remains English-only. The implemented translation stage can retain a source-linked, untrusted English candidate, but cannot establish its fidelity or admit it as the source request. Detected unsupported input remains held and requires an English restatement, which is assessed as new user evidence under normal governance. Restatement does not automatically clear earlier holds or authorise their requested consequences.
+
+There is also an open input-admission limitation: unsupported Latin-script or mixed-language input can miss the existing interpretation-limit triggers and reach ordinary English processing, including state admission. The public demo supplies no `translation_required` flag. Therefore unsupported input is not guaranteed to be detected or contained. Candidate containment does not close this gap, and no general multilingual governance or completed translate-then-adjudicate capability is claimed.
+
+The architectural decisions described below are historical outstanding capability requirements, not authorised next steps. Resuming this work would require a new instruction and an explicit fidelity-evidence and input-capability contract.
+
 This repair implements a quarantined transformation stage, not general multilingual governance or automatic translated admission. Lens remains English-only. An English parser result and a fluent translator output are not language or fidelity evidence.
 
 ## Entry points
