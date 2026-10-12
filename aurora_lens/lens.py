@@ -8738,7 +8738,9 @@ class Lens:
                 _binding_found = True
             else:
                 # Entity-placeholder and pronoun-ambiguity paths need PEF updated.
-                if not _clar_ext.extraction_error:
+                # Independent turns have a single admission owner: the normal
+                # turn pipeline. Probing an older hold must not also write them.
+                if not _clar_ext.extraction_error and not _registry_allows_through:
                     _committed_state_mutation = self._commit_extraction_if_admissible(
                         _clar_ext,
                         user_text=history_user_input,
@@ -10601,7 +10603,9 @@ class Lens:
             elif _matches_candidate(user_input, _clar_ext, _pending):
                 _binding_found = True
             else:
-                if not _clar_ext.extraction_error:
+                # Independent turns have a single admission owner: the normal
+                # turn pipeline. Probing an older hold must not also write them.
+                if not _clar_ext.extraction_error and not _registry_allows_through:
                     _committed_state_mutation = self._commit_extraction_if_admissible(
                         _clar_ext,
                         user_text=history_user_input,

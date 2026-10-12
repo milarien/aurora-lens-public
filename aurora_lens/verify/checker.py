@@ -35,6 +35,7 @@ from __future__ import annotations
 import re
 from aurora_lens.verify.medical_directive_scope import treatment_bindings
 from aurora_lens.verify.birth_screening_scope import birth_screening
+from aurora_lens.verify.employment_selection_scope import employment_selections
 from aurora_lens.verify.credential_authority_scope import credential_validations
 from collections.abc import AsyncIterator
 from enum import Enum
@@ -264,19 +265,6 @@ _STUDENT_RECORD_DATA_RE = re.compile(
 )
 _STUDENT_RECORD_PERSON_RE = re.compile(
     r"\b(?:[A-Z][a-z]+\s+[A-Z][a-z]+|his|her|their)\b",
-)
-
-# ── Employment discrimination patterns ────────────────────────────────────────
-_EMPLOYMENT_ACTION_RE = re.compile(
-    r"\b(?:hire|hiring|recruit|screen|filter|reject|fire|dismiss|demote|"
-    r"avoid\s+hiring|not\s+hire|don['’]t\s+hire|exclude)\b",
-    re.IGNORECASE,
-)
-_PROTECTED_CHARACTERISTIC_RE = re.compile(
-    r"\b(?:age|race|gender|sex|religion|disability|pregnant|pregnancy|"
-    r"national\s+origin|ethnicity|sexual\s+orientation|marital\s+status|"
-    r"colour|color|over\s+\d{2}|under\s+\d{2})\b",
-    re.IGNORECASE,
 )
 
 # ── Employee record exposure patterns ─────────────────────────────────────────
@@ -2128,7 +2116,7 @@ class Checker:
         (built by Lens). When omitted, behaviour matches pre-bridge verification.
         """
         if user_input:
-            _request_blocked = evaluate_blocked_act_request(user_input, pef=pef)
+            _request_blocked = evaluate_blocked_act_request(user_input, pef=pef, nlp=getattr(self._backend, "nlp", None))
             _vci_flags = violent_criminal_intent_flags(user_input)
             if _request_blocked or _vci_flags:
                 _merged = list(_request_blocked) + list(_vci_flags)
@@ -2605,7 +2593,7 @@ class Checker:
 
         Implementation: :func:`~aurora_lens.verify.blocked_request_policy.evaluate_blocked_act_request`.
         """
-        flags = evaluate_blocked_act_request(user_input, pef=pef)
+        flags = evaluate_blocked_act_request(user_input, pef=pef, nlp=getattr(self._backend, "nlp", None))
         birth_findings = birth_screening(user_input, getattr(self._backend, "nlp", None))
         if birth_findings and not any(f.flag_type == FlagType.EMPLOYMENT_DISCRIMINATION_FACILITATION for f in flags):
             flags.extend(self._check_employment_discrimination(user_input))
@@ -5222,8 +5210,8 @@ class Checker:
     def _check_employment_discrimination(self, text: str) -> list[Flag]:
         """Axis 3 HARD_STOP: instructions to select/exclude on protected characteristics.
 
-        Fires when an employment action verb (hire, fire, screen) is combined
-        with a protected characteristic term in directive proximity.
+        Binds a selection action, employment target and explicit protected
+        criterion in the same clause, preserving local action polarity.
         Does not fire on general anti-discrimination policy discussion.
         """
         if not text or len(text.strip()) < 20:
@@ -5240,27 +5228,16 @@ class Checker:
                 rule_id="checker.employment_birth_date_selection",
             )]
 
-        action_m = _EMPLOYMENT_ACTION_RE.search(text)
-        if not action_m:
+        findings = employment_selections(text, getattr(self._backend, "nlp", None))
+        if not findings:
             return []
-
-        prefix = text[max(0, action_m.start() - 120): action_m.start()]
-        if _NEGATION_PREFIX_RE.search(prefix):
-            return []
-
-        window_start = max(0, action_m.start() - 80)
-        window_end = min(len(text), action_m.end() + 80)
-        window = text[window_start:window_end]
-        char_m = _PROTECTED_CHARACTERISTIC_RE.search(window)
-        if not char_m:
-            return []
-
         return [Flag(
             flag_type=FlagType.EMPLOYMENT_DISCRIMINATION_FACILITATION,
             entity_name="employment_discrimination",
             claim="Response facilitates selection or exclusion based on a protected characteristic",
-            evidence=f"Action {action_m.group()!r} + characteristic {char_m.group()!r} detected",
+            evidence=repr(findings),
             severity="error",
+            rule_id="checker.employment_protected_selection",
         )]
 
     def _check_employee_record_exposure(self, text: str) -> list[Flag]:

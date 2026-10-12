@@ -185,7 +185,7 @@ class BlockedRequestRuleId(StrEnum):
 
 
 #: Bump when adding/removing arms, changing :class:`BlockedRequestRuleId`, or changing default outcomes.
-BLOCKED_REQUEST_POLICY_VERSION = "3.0.0"
+BLOCKED_REQUEST_POLICY_VERSION = "3.1.0"
 
 #: Closed set of rule_id strings this module may emit on ``Flag`` (parity / drift guard).
 EMITTED_RULE_IDS: frozenset[str] = frozenset(m.value for m in BlockedRequestRuleId)
@@ -1544,40 +1544,20 @@ def _has_legal_context_in_pef(pef: PEFState | None) -> bool:
 
 
 # ── Employment discrimination pre-LLM detection ────────────────────────────────
-# Mirrors the patterns in checker.py:_check_employment_discrimination.
-# Defined here (not imported from checker) to avoid circular imports.
+# Shared clause ownership and action polarity, also used on generated output.
+from aurora_lens.verify.employment_selection_scope import employment_selections
 import re as _re
 
-_BLOCKED_EMPLOY_ACTION_RE = _re.compile(
-    r"\b(?:hire|hiring|recruit|screen|filter|reject|fire|dismiss|demote|"
-    r"avoid\s+hiring|not\s+hire|don['’]t\s+hire|exclude)\b",
-    _re.IGNORECASE,
-)
-_BLOCKED_PROTECTED_CHAR_RE = _re.compile(
-    r"\b(?:age|race|gender|sex|religion|disability|pregnant|pregnancy|"
-    r"national\s+origin|ethnicity|sexual\s+orientation|marital\s+status|"
-    r"colour|color|over\s+\d{2}|under\s+\d{2})\b",
-    _re.IGNORECASE,
-)
 
-
-def _employment_discrimination_blocked_flag(text: str) -> "Flag | None":
-    """Pre-LLM: request instructs selecting/excluding candidates on a protected characteristic."""
-    if not text or len(text.strip()) < 20:
-        return None
-    action_m = _BLOCKED_EMPLOY_ACTION_RE.search(text)
-    if not action_m:
-        return None
-    window_start = max(0, action_m.start() - 80)
-    window_end = min(len(text), action_m.end() + 80)
-    char_m = _BLOCKED_PROTECTED_CHAR_RE.search(text[window_start:window_end])
-    if not char_m:
+def _employment_discrimination_blocked_flag(text: str, nlp=None) -> "Flag | None":
+    findings = employment_selections(text, nlp)
+    if not findings:
         return None
     return Flag(
         flag_type=FlagType.EMPLOYMENT_DISCRIMINATION_FACILITATION,
         entity_name="employment_discrimination",
         claim="Request asks to select or exclude based on a protected characteristic",
-        evidence=f"Action {action_m.group()!r} + characteristic {char_m.group()!r} in user request",
+        evidence=repr(findings),
         severity="error",
     )
 
@@ -1740,6 +1720,7 @@ def _evaluate_blocked_act_request_core(
     *,
     pef: PEFState | None = None,
     include_encoded_rule: bool = True,
+    nlp=None,
 ) -> list[Flag]:
     """Classify whether the user request is a determinate blocked regulated-domain act.
 
@@ -1791,7 +1772,7 @@ def _evaluate_blocked_act_request_core(
     # only when no other blocking flag fires.
     _pi = _prompt_injection_attempt_flag(user_input)
 
-    _employ_disc = _employment_discrimination_blocked_flag(user_input)
+    _employ_disc = _employment_discrimination_blocked_flag(user_input, nlp)
     if _employ_disc:
         flags.append(_employ_disc)
 
@@ -2093,9 +2074,11 @@ def evaluate_blocked_act_request(
     user_input: str,
     *,
     pef: PEFState | None = None,
+    nlp=None,
 ) -> list[Flag]:
     return _evaluate_blocked_act_request_core(
         user_input,
         pef=pef,
         include_encoded_rule=True,
+        nlp=nlp,
     )
