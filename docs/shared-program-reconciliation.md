@@ -32,7 +32,7 @@ python scripts/verify_shared_program.py --role private --ref PRIVATE_SHA --peer 
 | Path | Reason | First/last public history evidence |
 |---|---|---|
 | `.dockerignore` | Distribution-specific build-context exclusions; private governor inputs required by the complete contract are explicitly retained. | 22dad8fec6bf / 22dad8fec6bf |
-| `Dockerfile` | Public non-editable licensed installation versus private editable source and config startup. | 225e9b4e50b6 / 22dad8fec6bf |
+| `Dockerfile` | Public non-editable licensed installation versus private editable source and config startup. | 225e9b4e50b6 / 2f47ebde9ab9 |
 | `aurora-lens.yaml` | Private production startup configuration, strict policy and spaCy extraction; public installations supply their own config. Exact private settings are pinned. | Private-only; public absence pinned |
 | `aurora_lens/BUILD_INFO.json` | Public generated distribution build provenance metadata. | 225e9b4e50b6 / 225e9b4e50b6 |
 | `aurora_lens/__init__.py` | Distribution version, authorship and licence metadata; no governance rules. | 225e9b4e50b6 / 225e9b4e50b6 |
