@@ -569,7 +569,7 @@ class ProxyConfig:
             session_map = {}
         session_backend = (session_map.get("backend") or "memory").strip().lower()
         if session_backend not in ("memory", "redis"):
-            session_backend = "memory"
+            raise ValueError("session.backend must be memory or redis; refusing fallback")
         session_ttl = int(session_map.get("ttl_seconds", 3600))
         session_redis_url = str(session_map.get("redis_url", "")).strip()
         lock_acquire = float(session_map.get("lock_acquire_timeout_seconds", 10))
@@ -891,7 +891,7 @@ class ProxyConfig:
         sess_cfg = self.session
         sess_backend = os.environ.get("AURORA_LENS_SESSION_BACKEND", sess_cfg.backend).strip().lower()
         if sess_backend not in ("memory", "redis"):
-            sess_backend = sess_cfg.backend
+            raise ValueError("AURORA_LENS_SESSION_BACKEND must be memory or redis; refusing fallback")
         sess_ttl = int(os.environ.get("AURORA_LENS_SESSION_TTL_SECONDS", sess_cfg.ttl_seconds))
         sess_redis = os.environ.get("AURORA_LENS_REDIS_URL", sess_cfg.redis_url or "").strip()
         lock_acquire = float(os.environ.get("AURORA_LENS_LOCK_ACQUIRE_TIMEOUT", sess_cfg.lock_acquire_timeout_seconds))

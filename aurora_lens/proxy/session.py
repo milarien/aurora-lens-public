@@ -45,6 +45,8 @@ def _create_session_store(
                 "session.backend=redis requires session.redis_url or AURORA_LENS_REDIS_URL"
             )
         return RedisSessionStore(redis_url=redis_url, ttl_seconds=ttl_seconds, **lock_kw)
+    if backend != "memory":
+        raise ValueError("Unknown session backend; refusing memory fallback")
     return MemorySessionStore(ttl_seconds=ttl_seconds, **lock_kw)
 
 

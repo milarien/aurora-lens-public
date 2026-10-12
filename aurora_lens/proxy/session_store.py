@@ -275,6 +275,8 @@ class RedisSessionStore(SessionStore):
     def _deserialize(self, raw: str) -> SessionRecord | None:
         try:
             data = json.loads(raw)
+            if not isinstance(data, dict):
+                return None
             return SessionRecord(
                 pef_state=data["pef_state"],
                 expires_at=float(data["expires_at"]),
@@ -296,7 +298,7 @@ class RedisSessionStore(SessionStore):
             return None
         record = self._deserialize(raw)
         if record is None:
-            return None
+            raise SessionStoreError("Redis session record is unreadable; refusing empty state")
         # Past expires_at the conversational record is gone, even if Redis has
         # not yet dropped the key. The governance hold is a different key.
         if time.time() >= record.expires_at:

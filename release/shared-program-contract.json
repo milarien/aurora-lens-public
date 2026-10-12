@@ -372,8 +372,8 @@
       "reason": "Public managed launcher integration and environment credential resolution."
     },
     "aurora_lens/proxy/config.py": {
-      "private": "3325e75d94ab214da01c77ca35f7ecfe9038a836ebc7672006deefbaf92eeb92",
-      "public": "2b5d8a05929747d0b0e006c26e611d329636513b23ce0fa94b0e6c4a04065db1",
+      "private": "2e0f82f76273e2c1328ffc2604065de70566bc324207ea9a35b2b4c281af9273",
+      "public": "83eaadbbe5c8256e4e88db02665bc1152e1248228a1a9a501dfb5a5ddf798cec",
       "reason": "Public credential environment-variable names for installation; governance configuration remains pinned."
     },
     "aurora_lens/proxy/demo.html": {
