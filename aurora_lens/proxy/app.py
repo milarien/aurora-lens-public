@@ -2812,6 +2812,7 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
 
         lock_ctx = sessions.with_lock(session_id)
         lock_ctx.__enter__()
+        lens = None
         try:
             lens, _is_new_session = sessions.get_or_create(session_id)
 
@@ -3276,13 +3277,16 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
                 session_id_var.reset(token)
                 mock_hard_stop_var.reset(token_mock)
         finally:
-            # Non-streaming path: persist and release lock
-            if not parsed.stream:
-                sessions.persist(session_id, lens)
+            # Streaming owns the lock only after session bootstrap succeeds.
+            if not parsed.stream or lens is None:
                 try:
-                    lock_ctx.__exit__(None, None, None)
-                except Exception:
-                    pass
+                    if lens is not None:
+                        sessions.persist(session_id, lens)
+                finally:
+                    try:
+                        lock_ctx.__exit__(None, None, None)
+                    except Exception:
+                        pass
 
     return app
 

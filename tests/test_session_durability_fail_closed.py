@@ -43,3 +43,45 @@ def test_unavailable_store_refuses_both_reads():
     for read in (store.get, store.get_governance_hold):
         with pytest.raises(SessionStoreError, match="failed"):
             read("existing")
+
+
+@pytest.mark.parametrize("stream", [False, True])
+def test_bootstrap_failure_releases_lock_without_generation(monkeypatch, stream):
+    from contextlib import contextmanager
+    from starlette.testclient import TestClient
+    from tests.test_edge_token_gate import _make_app
+    from tests.test_proxy import CountingMockAdapter
+
+    class FailedSessions:
+        entered = 0
+        released = 0
+        @contextmanager
+        def with_lock(self, session_id):
+            self.entered += 1
+            try:
+                yield
+            finally:
+                self.released += 1
+        def get_or_create(self, session_id):
+            raise SessionStoreError("unreadable session")
+        def persist(self, *args):
+            pytest.fail("bootstrap failure must not persist empty state")
+        def cleanup_expired(self):
+            return 0
+        def active_count(self):
+            return 0
+
+    sessions = FailedSessions()
+    monkeypatch.setattr("aurora_lens.proxy.app.SessionManager", lambda *a, **k: sessions)
+    counter = CountingMockAdapter()
+    app, _ = _make_app(monkeypatch, adapter=counter)
+    with TestClient(app) as client:
+        for _ in range(2):
+            response = client.post("/v1/chat/completions", json={
+                "model": "gpt-4", "stream": stream,
+                "messages": [{"role": "user", "content": "What is the capital of France?"}],
+            })
+            assert response.status_code == 503
+            assert response.json()["error"]["code"] == "session_store_error"
+    assert sessions.entered == sessions.released == 2
+    assert counter.generate_calls == 0
