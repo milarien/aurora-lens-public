@@ -177,7 +177,7 @@ class TestPublicDemoEdgeTokenGate:
         assert r.status_code == 200
         assert "session_id" in r.json() or "pef_context_id" in r.json()
 
-    def test_audit_verify_does_not_require_edge_token(self, monkeypatch):
+    def test_hosted_audit_verify_requires_edge_token(self, monkeypatch):
         try:
             from starlette.testclient import TestClient
         except ImportError:
@@ -191,9 +191,9 @@ class TestPublicDemoEdgeTokenGate:
             headers={"x-test-omit-edge-token": "1"},
         )
         # Forensics console reads verify/recent without an edge token.
-        assert r.status_code != 403
+        assert r.status_code == 403
 
-    def test_audit_recent_does_not_require_edge_token(self, monkeypatch):
+    def test_hosted_audit_recent_requires_edge_token(self, monkeypatch):
         try:
             from starlette.testclient import TestClient
         except ImportError:
@@ -206,7 +206,7 @@ class TestPublicDemoEdgeTokenGate:
             "/v1/audit/recent?n=5",
             headers={"x-test-omit-edge-token": "1"},
         )
-        assert r.status_code != 403
+        assert r.status_code == 403
 
     def test_health_unaffected(self, monkeypatch):
         try:
