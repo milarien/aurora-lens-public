@@ -1199,6 +1199,14 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
             return JSONResponse(status_code=403, content=_EDGE_TOKEN_FORBIDDEN)
         provided = request.headers.get("x-aurora-edge-token")
         if not _edge_token_matches(provided, expected):
+            if (provided is None and request.method == "GET" and path == "/v1/audit/recent"
+                    and "text/html" in request.headers.get("accept", "").lower()):
+                n = request.query_params.get("n", "20")
+                if re.fullmatch(r"[1-9][0-9]*", n):
+                    return Response(status_code=303, headers={
+                        "Location": "https://aurora-lens.ai/admin/audit/all?n=" + n,
+                        "Cache-Control": "no-store",
+                    })
             return JSONResponse(status_code=403, content=_EDGE_TOKEN_FORBIDDEN)
         return await call_next(request)
 
@@ -2119,6 +2127,15 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
             content=_json_safe(body),
             headers=_base_headers(tid, outcome="PASS", proxy_ms=int((time.time() - started) * 1000)),
         )
+
+    @app.get("/v1/audit/all")
+    def audit_all(n: int | None = Query(None, ge=1)):
+        from aurora_lens.proxy.audit_archive import all_records_response
+
+        if not cfg.governance.audit_log:
+            return JSONResponse({"error": "Audit log not configured"}, status_code=404)
+        return all_records_response(Path(cfg.governance.audit_log), n,
+                                    os.environ.get("AURORA_EDGE_TOKEN", ""))
 
     @app.get("/v1/audit/archive")
     def audit_archive(

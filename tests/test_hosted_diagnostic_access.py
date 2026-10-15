@@ -4,7 +4,7 @@ from starlette.testclient import TestClient
 from tests.test_edge_token_gate import _make_app
 from tests.conftest import PYTEST_AURORA_EDGE_TOKEN
 
-@pytest.mark.parametrize('path', ['/v1/audit/recent?n=1','/v1/audit/verify','/v1/audit/search','/v1/audit/entry','/v1/audit/anomaly-check','/v1/audit/future-route','/v1/audit/archive','/v1/audit/archive?download=true','/v1/session/operator-pef'])
+@pytest.mark.parametrize('path', ['/v1/audit/recent?n=1','/v1/audit/verify','/v1/audit/search','/v1/audit/entry','/v1/audit/anomaly-check','/v1/audit/future-route','/v1/audit/archive','/v1/audit/archive?download=true','/v1/audit/all','/v1/audit/all?n=10','/v1/session/operator-pef'])
 @pytest.mark.parametrize('token', [None,'wrong'])
 def test_hosted_diagnostics_denied_before_handlers(monkeypatch,path,token):
     monkeypatch.setenv('RAILWAY_ENVIRONMENT_NAME','production')
@@ -12,6 +12,7 @@ def test_hosted_diagnostics_denied_before_handlers(monkeypatch,path,token):
     def forbidden(*a,**k): raise AssertionError('backend reached')
     monkeypatch.setattr('aurora_lens.proxy.app._read_audit_tail',forbidden)
     monkeypatch.setattr('aurora_lens.proxy.audit_archive.archive_response',forbidden)
+    monkeypatch.setattr('aurora_lens.proxy.audit_archive.all_records_response',forbidden)
     headers={'x-test-omit-edge-token':'1'}
     if token: headers['x-aurora-edge-token']=token
     response=TestClient(app).get(path,headers=headers)
@@ -32,3 +33,20 @@ def test_hosted_diagnostics_missing_secret_fails_closed(monkeypatch):
     monkeypatch.delenv('AURORA_EDGE_TOKEN',raising=False)
     app,_=_make_app(monkeypatch)
     assert TestClient(app).get('/v1/audit/recent?n=1').status_code==403
+
+
+def test_railway_browser_audit_link_redirects_to_owner_login_without_reading_logs(monkeypatch):
+    monkeypatch.setenv('RAILWAY_ENVIRONMENT_NAME', 'production')
+    app, _ = _make_app(monkeypatch)
+    def forbidden(*a, **k):
+        raise AssertionError('Audit handler reached without authentication')
+    monkeypatch.setattr('aurora_lens.proxy.app._read_audit_tail', forbidden)
+    client = TestClient(app)
+    headers = {'x-test-omit-edge-token': '1', 'Accept': 'text/html'}
+    for n in ('10', '1000000'):
+        response = client.get('/v1/audit/recent?n=' + n, headers=headers, follow_redirects=False)
+        assert response.status_code == 303
+        assert response.headers['location'] == 'https://aurora-lens.ai/admin/audit/all?n=' + n
+        assert not response.content
+    assert client.get('/v1/audit/all', headers=headers, follow_redirects=False).status_code == 403
+    assert client.get('/v1/audit/recent?n=10', headers={**headers, 'x-aurora-edge-token': 'wrong'}, follow_redirects=False).status_code == 403

@@ -104,5 +104,45 @@ def test_authenticated_route_lists_and_exports_without_session_writes(tmp_path, 
         recent = client.get("/v1/audit/recent", params={"n": n}, headers=headers)
         assert recent.status_code == 200
         assert len(recent.json()["entries"]) == expected
+    all_rows = client.get("/v1/audit/all?n=150", headers=headers)
+    assert all_rows.status_code == 200
+    assert len(all_rows.json()["entries"]) == 150
     assert path.read_bytes() == raw
+
+
+def test_all_retained_records_and_owner_selected_tail_keep_source_boundaries(tmp_path):
+    import os
+    from aurora_lens.proxy.audit_archive import all_records_response
+
+    current = tmp_path / "audit.jsonl"
+    old = tmp_path / "audit.jsonl.pre_restart.20261015T010000Z"
+    old.write_bytes(b'{"old":true}\nnot-json\n')
+    current.write_bytes(b"".join(json.dumps({"turn": i}).encode() + b"\n" for i in range(305)))
+    os.utime(old, (1, 1))
+    os.utime(current, (2, 2))
+    before = {p.name: p.read_bytes() for p in (current, old)}
+    for n, expected in ((None, 307), (10, 10), (1000000, 307)):
+        r = all_records_response(current, n, "server-secret")
+        assert r.status_code == 200
+        data = json.loads(body(r))
+        assert data["n"] == len(data["entries"]) == expected
+        assert data["entries"][-1] == {"turn": 304}
+        if n != 10:
+            assert data["entries"][0] == {"old": True}
+            assert data["entries"][1]["unparsed_raw_base64"] == "bm90LWpzb24K"
+            assert len(data["sources"]) == 2
+        else:
+            assert data["entries"][0] == {"turn": 295}
+        assert sum(s["entry_count"] for s in data["sources"]) == expected
+    assert {p.name: p.read_bytes() for p in (current, old)} == before
+
+
+def test_all_records_withholds_credentials_before_release(tmp_path):
+    from aurora_lens.proxy.audit_archive import all_records_response
+
+    current = tmp_path / "audit.jsonl"
+    current.write_bytes(b'{"secret":"server-secret"}\n')
+    r = all_records_response(current, None, "server-secret")
+    assert r.status_code == 503
+    assert b"server-secret" not in r.body
 

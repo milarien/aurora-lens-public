@@ -6,6 +6,7 @@ snapshot is bounded at each file's open size; it is not a global transaction.
 from __future__ import annotations
 
 import datetime
+import base64
 import hashlib
 import json
 import os
@@ -64,6 +65,67 @@ def _stream_file(spool):
             yield chunk
     finally:
         spool.close()
+
+
+def _reject_non_json_constant(value):
+    raise ValueError(value)
+
+
+def all_records_response(current: Path, n: int | None, forbidden: str):
+    """Raw records across retained files; sources explicitly preserve chain boundaries."""
+    snapshot = tempfile.SpooledTemporaryFile(max_size=1024 * 1024, mode="w+b")
+    output = tempfile.SpooledTemporaryFile(max_size=1024 * 1024, mode="w+b")
+    headers = {"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff"}
+    try:
+        files = sorted(retained_files(current), key=lambda p: (p.stat().st_mtime_ns, p.name))
+        segments = []
+        for path in files:
+            start = snapshot.tell()
+            info = _copy_snapshot(path, snapshot, forbidden.encode())
+            segments.append((start, snapshot.tell(), info))
+        total = sum(info["physical_lines"] for _, _, info in segments)
+        skip = max(0, total - n) if n is not None else 0
+        output.write(b'{"entries":[')
+        count = 0
+        sources = []
+        for start, end, info in segments:
+            snapshot.seek(start)
+            entry_start = count
+            source_skip = 0
+            line_number = 0
+            while snapshot.tell() < end:
+                line = snapshot.readline(end - snapshot.tell())
+                line_number += 1
+                if skip:
+                    skip -= 1
+                    source_skip += 1
+                    continue
+                try:
+                    json.loads(line.decode("utf-8"), parse_constant=_reject_non_json_constant)
+                    encoded = line.strip()
+                except (ValueError, UnicodeError):
+                    encoded = json.dumps({"unparsed_raw_base64": base64.b64encode(line).decode(),
+                                          "source_line": line_number}).encode()
+                if count:
+                    output.write(b",")
+                output.write(encoded)
+                count += 1
+            if count > entry_start or (n is None and not info["physical_lines"]):
+                sources.append({**info, "entry_start": entry_start, "entry_count": count - entry_start,
+                                "source_lines_skipped": source_skip})
+        output.write(b'],"n":' + str(count).encode() + b',"backend":"retained_audit_files","sources":')
+        output.write(json.dumps(sources).encode())
+        output.write(b',"ordering":"File modification time, then physical line order. Sources are separate audit chains; no cross-file chain verification is asserted."}')
+        headers["Content-Length"] = str(output.tell())
+        output.seek(0)
+        return StreamingResponse(_stream_file(output), media_type="application/json", headers=headers,
+                                 background=BackgroundTask(output.close))
+    except (OSError, ValueError):
+        output.close()
+        return JSONResponse({"error": "Audit read unavailable; no records were changed."},
+                            status_code=503, headers=headers)
+    finally:
+        snapshot.close()
 
 
 def archive_response(current: Path, selected: str | None, download: bool, forbidden: str):
