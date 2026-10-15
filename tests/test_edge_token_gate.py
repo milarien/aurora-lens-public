@@ -190,7 +190,7 @@ class TestPublicDemoEdgeTokenGate:
             "/v1/audit/verify?n=5",
             headers={"x-test-omit-edge-token": "1"},
         )
-        # Forensics console reads verify/recent without an edge token.
+        # Hosted forensic reads require the server-side diagnostic credential.
         assert r.status_code == 403
 
     def test_hosted_audit_recent_requires_edge_token(self, monkeypatch):
