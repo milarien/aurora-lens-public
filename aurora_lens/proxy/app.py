@@ -2120,6 +2120,18 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
             headers=_base_headers(tid, outcome="PASS", proxy_ms=int((time.time() - started) * 1000)),
         )
 
+    @app.get("/v1/audit/archive")
+    def audit_archive(
+        file: str | None = Query(None, pattern=r"^[0-9a-f]{64}$"),
+        download: bool = Query(False),
+    ):
+        from aurora_lens.proxy.audit_archive import archive_response
+
+        if not cfg.governance.audit_log:
+            return JSONResponse({"error": "Audit log not configured"}, status_code=404)
+        return archive_response(Path(cfg.governance.audit_log), file, download,
+                                os.environ.get("AURORA_EDGE_TOKEN", ""))
+
     @app.get("/v1/audit/recent")
     async def audit_recent(
         n: int = Query(20, ge=1, le=100),

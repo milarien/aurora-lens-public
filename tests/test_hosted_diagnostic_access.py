@@ -4,13 +4,14 @@ from starlette.testclient import TestClient
 from tests.test_edge_token_gate import _make_app
 from tests.conftest import PYTEST_AURORA_EDGE_TOKEN
 
-@pytest.mark.parametrize('path', ['/v1/audit/recent?n=1','/v1/audit/verify','/v1/audit/search','/v1/audit/entry','/v1/audit/anomaly-check','/v1/audit/future-route','/v1/session/operator-pef'])
+@pytest.mark.parametrize('path', ['/v1/audit/recent?n=1','/v1/audit/verify','/v1/audit/search','/v1/audit/entry','/v1/audit/anomaly-check','/v1/audit/future-route','/v1/audit/archive','/v1/audit/archive?download=true','/v1/session/operator-pef'])
 @pytest.mark.parametrize('token', [None,'wrong'])
 def test_hosted_diagnostics_denied_before_handlers(monkeypatch,path,token):
     monkeypatch.setenv('RAILWAY_ENVIRONMENT_NAME','production')
     app,_ = _make_app(monkeypatch)
     def forbidden(*a,**k): raise AssertionError('backend reached')
     monkeypatch.setattr('aurora_lens.proxy.app._read_audit_tail',forbidden)
+    monkeypatch.setattr('aurora_lens.proxy.audit_archive.archive_response',forbidden)
     headers={'x-test-omit-edge-token':'1'}
     if token: headers['x-aurora-edge-token']=token
     response=TestClient(app).get(path,headers=headers)
