@@ -100,5 +100,9 @@ def test_authenticated_route_lists_and_exports_without_session_writes(tmp_path, 
     assert response.status_code == 200
     with zipfile.ZipFile(io.BytesIO(response.content)) as bundle:
         assert bundle.read("audit.jsonl") == raw
+    for n, expected in ((150, 150), (1000000, 151)):
+        recent = client.get("/v1/audit/recent", params={"n": n}, headers=headers)
+        assert recent.status_code == 200
+        assert len(recent.json()["entries"]) == expected
     assert path.read_bytes() == raw
 

@@ -2134,7 +2134,7 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
 
     @app.get("/v1/audit/recent")
     async def audit_recent(
-        n: int = Query(20, ge=1, le=100),
+        n: int = Query(20, ge=1),
         outcome: str | None = Query(
             None,
             description="Optional filter: outcome (matches flat JSONL, AFL op, or nested action)",
