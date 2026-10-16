@@ -11,6 +11,7 @@ import hmac
 import json
 import os
 import secrets
+import tempfile
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
@@ -84,7 +85,11 @@ class EvidenceAccessDenied(PermissionError):
 
 
 class EvidenceVaultConfigurationError(RuntimeError):
-    """Raised when sealed capture is configured without a usable encryption key."""
+    """Required sealed capture cannot provide recoverable evidence."""
+
+    def __init__(self, message: str, *, reason: CaptureFailureReason | None = None):
+        super().__init__(message)
+        self.reason = reason
 
 
 class EvidenceIntegrityError(ValueError):
@@ -97,6 +102,87 @@ class EvidenceNotFoundError(FileNotFoundError):
 
 class EvidenceLegalHoldError(RuntimeError):
     """Raised when delete/expiry is attempted on legal-hold evidence."""
+
+
+class CaptureFailureReason(str, Enum):
+    MISSING_KEY = "missing_key"
+    STORAGE_UNAVAILABLE = "storage_unavailable"
+    SEALED_UNAVAILABLE = "sealed_unavailable"
+
+
+@dataclass(frozen=True)
+class EvidenceCaptureState:
+    """Deployment capture readiness, separate from governance and receipts."""
+
+    enabled: bool
+    requested_mode: str
+    effective_mode: str | None
+    key_available: bool
+    vault_available: bool
+    required_sealed: bool
+    failure_reason: CaptureFailureReason | None = None
+
+    @property
+    def ready(self) -> bool:
+        return not self.enabled or self.failure_reason is None
+
+    def to_dict(self) -> dict[str, Any]:
+        # Deliberately exclude keys, fingerprints, paths and evidence content.
+        return {
+            "enabled": self.enabled,
+            "requested_mode": self.requested_mode,
+            "effective_mode": self.effective_mode,
+            "key_available": self.key_available,
+            "vault_available": self.vault_available,
+            "required_sealed": self.required_sealed,
+            "ready": self.ready,
+            "failure_reason": self.failure_reason.value if self.failure_reason else None,
+        }
+
+
+def evidence_capture_state(
+    audit_path: str | Path | None,
+    *,
+    capture_mode: str | CaptureMode,
+    encryption_key: str | bytes | None = None,
+    vault: LocalSealedEvidenceVault | None = None,
+    storage_available: bool = False,
+) -> EvidenceCaptureState:
+    """Represent requested/effective state without changing capture policy."""
+    mode = CaptureMode(capture_mode)
+    enabled = bool(audit_path and str(audit_path).strip())
+    key_available = (
+        bool(vault.master_key) if vault is not None
+        else bool(resolve_evidence_encryption_key(encryption_key))
+    )
+    required = enabled and mode == CaptureMode.SEALED
+    available = enabled and vault is not None and storage_available
+    effective = vault.capture_mode.value if enabled and vault is not None else None
+    failure = None
+    if required and not key_available:
+        failure = CaptureFailureReason.MISSING_KEY
+    elif enabled and not available:
+        failure = CaptureFailureReason.STORAGE_UNAVAILABLE
+    elif required and effective != CaptureMode.SEALED.value:
+        failure = CaptureFailureReason.SEALED_UNAVAILABLE
+    return EvidenceCaptureState(
+        enabled, mode.value, effective, key_available, available, required, failure
+    )
+
+
+def evidence_storage_available(
+    audit_path: str | Path | None, vault: LocalSealedEvidenceVault | None
+) -> bool:
+    """Probe actual append/blob writes; never emit filesystem exception text."""
+    if not audit_path or vault is None:
+        return False
+    try:
+        vault.check_storage()
+        with Path(audit_path).open("ab"):
+            pass
+        return True
+    except OSError:
+        return False
 
 
 def canonicalize_evidence_content(content: str | bytes) -> bytes:
@@ -314,7 +400,7 @@ def seal_decrypt(master_key: bytes, blob: bytes) -> bytes:
 
 
 def evidence_vault_dir_for_audit(audit_path: str | Path | None) -> Path | None:
-    if audit_path is None:
+    if audit_path is None or not str(audit_path).strip():
         return None
     p = Path(audit_path)
     return p.parent / f"{p.name}.evidence"
@@ -344,14 +430,40 @@ class LocalSealedEvidenceVault:
     _manifest_index_name: str = field(default="manifests.jsonl", init=False, repr=False)
 
     def __post_init__(self) -> None:
-        self.root.mkdir(parents=True, exist_ok=True)
         if self.capture_mode == CaptureMode.SEALED and not self.master_key:
             raise EvidenceVaultConfigurationError(
-                "sealed evidence capture requires AURORA_LENS_EVIDENCE_KEY or evidence_encryption_key"
+                "required sealed evidence capture unavailable: missing_key",
+                reason=CaptureFailureReason.MISSING_KEY,
             )
+        try:
+            self.root.mkdir(parents=True, exist_ok=True)
+            if self.capture_mode == CaptureMode.SEALED:
+                self.check_storage()
+        except OSError:
+            if self.capture_mode == CaptureMode.SEALED:
+                raise EvidenceVaultConfigurationError(
+                    "required sealed evidence capture unavailable: storage_unavailable",
+                    reason=CaptureFailureReason.STORAGE_UNAVAILABLE,
+                ) from None
+            raise
 
     def _manifest_path(self) -> Path:
         return self.root / self._manifest_index_name
+
+    def check_storage(self) -> None:
+        """Check manifest append and content-directory writes without evidence."""
+        directories = [self.root]
+        if self.capture_mode != CaptureMode.HASH_ONLY:
+            blobs = self.root / "blobs"
+            blobs.mkdir(exist_ok=True)
+            directories.append(blobs)
+        for directory in directories:
+            with tempfile.TemporaryFile(dir=directory) as probe:
+                probe.write(b"\x00")
+                probe.flush()
+                os.fsync(probe.fileno())
+        with self._manifest_path().open("ab"):
+            pass
 
     def _blob_path(self, evidence_ref: str) -> Path:
         internal_ref = normalize_evidence_ref(evidence_ref)
@@ -528,9 +640,21 @@ def create_local_evidence_vault(
     mode = capture_mode if isinstance(capture_mode, CaptureMode) else CaptureMode(str(capture_mode))
     key = resolve_evidence_encryption_key(encryption_key)
     if mode == CaptureMode.SEALED and not key:
-        # Sealed-and-referencable without encryption key: retain hash-only proof.
-        mode = CaptureMode.HASH_ONLY
-    return LocalSealedEvidenceVault(root=vault_dir, master_key=key, capture_mode=mode)
+        raise EvidenceVaultConfigurationError(
+            "required sealed evidence capture unavailable: missing_key",
+            reason=CaptureFailureReason.MISSING_KEY,
+        )
+    vault = LocalSealedEvidenceVault(root=vault_dir, master_key=key, capture_mode=mode)
+    if mode == CaptureMode.SEALED:
+        try:
+            with Path(audit_path).open("ab"):
+                pass
+        except OSError:
+            raise EvidenceVaultConfigurationError(
+                "required sealed evidence capture unavailable: storage_unavailable",
+                reason=CaptureFailureReason.STORAGE_UNAVAILABLE,
+            ) from None
+    return vault
 
 
 # Protocol conformance for type checkers

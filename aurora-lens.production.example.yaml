@@ -29,7 +29,8 @@ governance:
 
   # Evidence vault — sealed storage for raw prompts and model outputs.
   # "sealed" encrypts blobs at /data/audit.jsonl.evidence/ using the key below.
-  # Without a key, "sealed" falls back to "hash_only" (SHA-256 digest only).
+  # With audit capture enabled, sealed requires a key and writable storage;
+  # startup fails if either is unavailable. Choose hash_only explicitly if needed.
   # See docs/key-custody.md for provisioning, rotation, and sealed-vs-hash_only semantics.
   evidence_capture_mode: sealed        # sealed | hash_only | redacted | plaintext_dev
   evidence_encryption_key: ${AURORA_LENS_EVIDENCE_KEY}  # generate: python -c "import secrets; print(secrets.token_hex(32))"

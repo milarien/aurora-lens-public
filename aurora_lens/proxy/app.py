@@ -75,6 +75,13 @@ from aurora_lens.govern.audit_io import (
     verify_pef_linkage_detailed,
 )
 from aurora_lens.govern.chain_of_custody import get_code_revision_snapshot
+from aurora_lens.govern.evidence_vault import (
+    CaptureFailureReason,
+    EvidenceCaptureState,
+    EvidenceVaultConfigurationError,
+    evidence_capture_state,
+    evidence_storage_available,
+)
 from aurora_lens.proxy.rate_limits import RateLimiter
 from aurora_lens.proxy.metrics import get_metrics
 from aurora_lens import __author__, __license__, __project__
@@ -369,6 +376,19 @@ def _check_audit_writable(audit_path: str | None) -> bool | None:
         return False
 
 
+def _required_capture_failure(cfg: ProxyConfig, audit_path: str | None, reason: CaptureFailureReason):
+    state = evidence_capture_state(
+        audit_path,
+        capture_mode=cfg.governance.evidence_capture_mode,
+        encryption_key=cfg.governance.evidence_encryption_key,
+    )
+    state = replace(state, failure_reason=reason)
+    _logger.error("evidence_capture_unavailable", extra={"evidence_capture": state.to_dict()})
+    raise EvidenceVaultConfigurationError(
+        f"required sealed evidence capture unavailable: {reason.value}", reason=reason
+    ) from None
+
+
 def _proxy_audit_target_snapshot(
     audit_log: str | None,
     *,
@@ -457,9 +477,9 @@ def _operator_forensic_extras(entry: dict[str, Any], sink: str) -> dict[str, Any
     - ``request_capture_status``: how *this request's* content was actually
       captured by the evidence vault (e.g. ``sealed_by_policy``, ``hash_only``,
       ``omitted``) — set by :func:`aurora_lens.govern.evidence_capture.attach_evidence_fields_to_audit_entry`.
-    - ``evidence_capture_mode``: the *configured* vault capture mode that
-      produced that status (``sealed`` | ``redacted`` | ``hash_only`` |
-      ``plaintext_dev``), i.e. the policy, not the outcome.
+    - ``evidence_capture_mode``: this request's effective protection mode
+      (``sealed`` | ``redacted`` | ``hash_only`` | ``plaintext_dev``).
+      Deployment requested/effective state is separate, on diagnostic health.
     - ``evidence_audit_status``: whether the chain-of-custody *packaging*
       around the row is complete or degraded (from ``chain_of_custody``).
     - ``provenance_status``: whether the governing *instrument* (policy /
@@ -865,6 +885,7 @@ def _auth_exempt(path: str, *, listen_host: str) -> bool:
     return path in (
         "/health",
         "/healthz",
+        "/readyz",
         "/dashboard",
         "/forensics",
         "/operator",
@@ -1023,6 +1044,14 @@ def _maybe_rotate_audit_for_fresh_chain(path: Path) -> None:
 def create_app(cfg: ProxyConfig) -> FastAPI:
     app = FastAPI(title="aurora-lens-proxy", version="1.0")
 
+    capture_preflight = evidence_capture_state(
+        cfg.governance.audit_log,
+        capture_mode=cfg.governance.evidence_capture_mode,
+        encryption_key=cfg.governance.evidence_encryption_key,
+    )
+    if capture_preflight.failure_reason == CaptureFailureReason.MISSING_KEY:
+        _required_capture_failure(cfg, cfg.governance.audit_log, CaptureFailureReason.MISSING_KEY)
+
     upstream_adapter, extraction_adapter = _build_provider_adapters(cfg)
     if cfg.governance.enable_mock_hard_stop:
         upstream_adapter = _wrap_adapter_for_mock_hard_stop(upstream_adapter)
@@ -1048,8 +1077,6 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
     proxy_run_id = str(uuid.uuid4())
     _gov_in = cfg.governance
     _resolved_audit = _resolve_proxy_audit_log_path(_gov_in.audit_log, proxy_run_id)
-    if _gov_in.audit_log_fresh_chain_on_startup and _resolved_audit:
-        _maybe_rotate_audit_for_fresh_chain(Path(_resolved_audit))
     if _resolved_audit != _gov_in.audit_log:
         cfg = replace(cfg, governance=replace(_gov_in, audit_log=_resolved_audit))
 
@@ -1058,7 +1085,10 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
         k.encode("utf-8") for k in cfg.governance.audit_signing_keys if str(k).strip()
     )
     _effective_audit_log = cfg.governance.audit_log
+    _capture_audit_path = _effective_audit_log
     try:
+        if _gov_in.audit_log_fresh_chain_on_startup and _resolved_audit:
+            _maybe_rotate_audit_for_fresh_chain(Path(_resolved_audit))
         bridge = CanonicalScannerGateBridge(
             mode=cfg.governance.mode,
             audit_path=_effective_audit_log,
@@ -1073,14 +1103,21 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
             evidence_capture_mode=cfg.governance.evidence_capture_mode,
             evidence_encryption_key=cfg.governance.evidence_encryption_key,
         )
-    except OSError as _audit_err:
+    except EvidenceVaultConfigurationError as capture_error:
+        _required_capture_failure(
+            cfg, _capture_audit_path,
+            capture_error.reason or CaptureFailureReason.STORAGE_UNAVAILABLE,
+        )
+    except OSError:
+        if capture_preflight.required_sealed:
+            _required_capture_failure(cfg, _capture_audit_path, CaptureFailureReason.STORAGE_UNAVAILABLE)
         # Audit path not writable (e.g. root-owned volume mount on Railway).
         # Degrade to null audit — governance enforcement is unaffected.
         _logger.warning(
             "audit_path_unwritable",
             extra={
                 "audit_path": str(_effective_audit_log),
-                "error": str(_audit_err),
+                "failure_reason": CaptureFailureReason.STORAGE_UNAVAILABLE.value,
                 "degraded_to": "null",
             },
         )
@@ -1101,6 +1138,27 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
             evidence_encryption_key=cfg.governance.evidence_encryption_key,
         )
     audit_sink = cfg.governance.audit_backend if _effective_audit_log else "none"
+
+    def _capture_snapshot() -> EvidenceCaptureState:
+        vault = bridge._evidence_vault
+        return evidence_capture_state(
+            _capture_audit_path,
+            capture_mode=cfg.governance.evidence_capture_mode,
+            encryption_key=cfg.governance.evidence_encryption_key,
+            vault=vault,
+            storage_available=(
+                _check_audit_writable(_capture_audit_path) is True
+                and evidence_storage_available(_capture_audit_path, vault)
+            ),
+        )
+
+    app.state.evidence_capture_state = _capture_snapshot().to_dict()
+    if capture_preflight.required_sealed and not app.state.evidence_capture_state["ready"]:
+        _required_capture_failure(cfg, _capture_audit_path, CaptureFailureReason.STORAGE_UNAVAILABLE)
+    _logger.info(
+        "evidence_capture_state",
+        extra={"evidence_capture": app.state.evidence_capture_state},
+    )
     if _effective_audit_log and not cfg.governance.audit_signing_key:
         _logger.warning(
             "audit_unsigned",
@@ -1436,6 +1494,16 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
         h = _base_headers(tid, proxy_ms=int((time.time() - started) * 1000))
         return JSONResponse(content={"ok": True}, headers=h)
 
+    @app.get("/readyz")
+    async def readyz():
+        """Readiness only; detailed capture state stays on diagnostic health."""
+        capture = _capture_snapshot()
+        app.state.evidence_capture_state = capture.to_dict()
+        return JSONResponse(
+            content={"ready": capture.ready}, status_code=200 if capture.ready else 503,
+            headers={"Cache-Control": "no-store"},
+        )
+
     def _health_code_features() -> Dict[str, bool]:
         """Runtime probe so operators can confirm deployed code supports PEF admission kwargs."""
         import inspect
@@ -1457,8 +1525,12 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
         started = time.time()
         tid = trace_id_var.get() or f"proxy:{uuid.uuid4().hex}"
         audit_writable = _check_audit_writable(cfg.governance.audit_log)
+        capture = _capture_snapshot()
+        request.app.state.evidence_capture_state = capture.to_dict()
         # degraded = configured but broken; ok = not configured (null) or writable
         status = "ok" if (audit_writable is None or audit_writable) else "degraded"
+        if not capture.ready:
+            status = "degraded"
         snap = request.app.state.proxy_audit_target
         rev = get_code_revision_snapshot()
         body: Dict[str, Any] = {
@@ -1468,6 +1540,7 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
             "policy_version": policy_version,
             "audit_sink": snap["audit_sink"],
             "audit_writable": audit_writable,
+            "evidence_capture": capture.to_dict(),
             "auto_verify": True,   # LensConfig default; proxy does not override
             "auto_interpret": True,  # LensConfig default; proxy does not override
             "extraction_backend": cfg.extraction.backend,
@@ -1487,7 +1560,10 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
         if _hosted_public_demo_deployment() and not _diagnostic_credential_present(request):
             h = {}
         h["Cache-Control"] = "no-store"
-        return JSONResponse(content=body, headers=h)
+        return JSONResponse(
+            content=body, headers=h,
+            status_code=503 if capture.required_sealed and not capture.ready else 200,
+        )
 
     @app.get("/about")
     async def about():

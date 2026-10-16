@@ -10,15 +10,16 @@ from aurora_lens.govern.decision import GovernanceDecision, InterventionAction
 from aurora_lens.govern.evidence_vault import (
     CaptureMode,
     CaptureStatus,
+    CaptureFailureReason,
     EvidenceKind,
     EvidenceManifest,
     EvidenceVault,
+    EvidenceVaultConfigurationError,
     EVIDENCE_ACCESS_POLICY_AUDIT_ONLY,
     LocalSealedEvidenceVault,
     create_local_evidence_vault,
     format_sha256_digest,
     public_evidence_ref,
-    resolve_evidence_encryption_key,
 )
 from aurora_lens.verify.consequence_intent import LOW_RISK_CONVERSATIONAL
 
@@ -191,6 +192,18 @@ def capture_governance_evidence(
 ) -> EvidenceCaptureResult:
     """Apply capture policy; return audit fields and manifest summaries."""
     mode = _effective_capture_mode(config, decision)
+    # Per-request hash-only policy does not waive the deployment requirement.
+    if config.capture_mode == CaptureMode.SEALED.value and isinstance(vault, LocalSealedEvidenceVault):
+        if not vault.master_key:
+            raise EvidenceVaultConfigurationError(
+                "required sealed evidence capture unavailable: missing_key",
+                reason=CaptureFailureReason.MISSING_KEY,
+            )
+        if vault.capture_mode != CaptureMode.SEALED:
+            raise EvidenceVaultConfigurationError(
+                "required sealed evidence capture unavailable: sealed_unavailable",
+                reason=CaptureFailureReason.SEALED_UNAVAILABLE,
+            )
     retention_class = "standard"
     manifests: list[dict[str, Any]] = []
     request_manifest: EvidenceManifest | None = None
@@ -407,18 +420,8 @@ def build_evidence_vault_for_bridge(
     capture_mode: str = CaptureMode.SEALED.value,
     encryption_key: str | bytes | None = None,
 ) -> LocalSealedEvidenceVault | None:
-    if audit_path is None:
-        return None
-    mode = (
-        capture_mode
-        if isinstance(capture_mode, CaptureMode)
-        else CaptureMode(str(capture_mode))
-    )
-    key = resolve_evidence_encryption_key(encryption_key)
-    if mode == CaptureMode.SEALED and not key:
-        mode = CaptureMode.HASH_ONLY
     return create_local_evidence_vault(
         audit_path,
-        capture_mode=mode,
+        capture_mode=capture_mode,
         encryption_key=encryption_key,
     )

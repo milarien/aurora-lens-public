@@ -242,38 +242,19 @@ async def test_strict_low_risk_pass_hash_only_capture_and_basis(tmp_path: Path) 
     _ledger_excludes_prompt(row, "Hello")
 
 
-@pytest.mark.asyncio
-async def test_hard_stop_without_key_degrades_to_hash_only_proof(
+def test_sealed_bridge_without_key_rejects_startup(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.delenv("AURORA_LENS_EVIDENCE_KEY", raising=False)
-    audit = tmp_path / "hash_only_fallback.jsonl"
-    bridge = BuiltinBridge(
-        audit_path=str(audit),
-        evidence_capture_mode=CaptureMode.SEALED.value,
-        evidence_encryption_key=None,
-    )
-    lens = Lens(
-        LensConfig(
-            adapter=MockAdapter(responses=[_HARMFUL_OPERATIONAL_RESPONSE]),
-            governance_bridge=bridge,
-            auto_interpret=False,
-            auto_verify=True,
+    audit = tmp_path / "required_sealed.jsonl"
+    with pytest.raises(EvidenceVaultConfigurationError):
+        BuiltinBridge(
+            audit_path=str(audit),
+            evidence_capture_mode=CaptureMode.SEALED.value,
+            evidence_encryption_key=None,
         )
-    )
-
-    result = await lens.process(_REVENGE_PLOT_PROMPT)
-    assert result.action == InterventionAction.HARD_STOP
-
-    row = _read_last_jsonl_object(audit)
-    assert row.get("evidence_capture_mode") == CaptureMode.HASH_ONLY.value
-    assert row.get("request_capture_status") == CaptureStatus.HASH_ONLY.value
-    assert row.get("request_evidence_ref", "").startswith(HASH_ONLY_EVIDENCE_REF_PREFIX)
-    assert row.get("request_raw_sha256", "").startswith("sha256:")
-    assert row.get("request_canonical_sha256", "").startswith("sha256:")
-    assert row.get("evidence_access_policy") == "audit_only"
-    _ledger_excludes_prompt(row, _REVENGE_PLOT_PROMPT)
+    assert not audit.exists()
 
 
 def test_sealed_mode_fails_closed_without_key(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -287,16 +268,14 @@ def test_sealed_mode_fails_closed_without_key(tmp_path: Path, monkeypatch: pytes
         )
 
 
-def test_create_vault_without_key_degrades_to_hash_only(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_create_vault_without_key_rejects_startup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("AURORA_LENS_EVIDENCE_KEY", raising=False)
-    audit = tmp_path / "degrade.jsonl"
-    vault = create_local_evidence_vault(
-        audit,
-        capture_mode=CaptureMode.SEALED.value,
-        encryption_key=None,
-    )
-    assert vault is not None
-    assert vault.capture_mode == CaptureMode.HASH_ONLY
+    audit = tmp_path / "required_sealed.jsonl"
+    with pytest.raises(EvidenceVaultConfigurationError):
+        create_local_evidence_vault(
+            audit, capture_mode=CaptureMode.SEALED.value, encryption_key=None,
+        )
+    assert not audit.exists()
 
 
 @pytest.mark.asyncio

@@ -539,7 +539,8 @@ listen:
             },
         })
         create_app(cfg)
-        assert not audit.exists()
+        # Required sealed startup probes appendability without writing a row.
+        assert audit.read_bytes() == b""
         backups = list(tmp_path.glob("one.jsonl.pre_restart.*"))
         assert len(backups) == 1
         assert b"legacy" in backups[0].read_bytes()

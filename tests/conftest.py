@@ -17,6 +17,16 @@ _OMIT_EDGE_TOKEN_HEADER = "x-test-omit-edge-token"
 
 
 @pytest.fixture(autouse=True)
+def synthetic_evidence_key(monkeypatch):
+    """Audited test deployments must satisfy the default sealed requirement.
+
+    This is synthetic test material only. Missing-key/configuration tests must
+    explicitly remove or override it, just as they do other deployment env.
+    """
+    monkeypatch.setenv("AURORA_LENS_EVIDENCE_KEY", "synthetic-suite-evidence-key")
+
+
+@pytest.fixture(autouse=True)
 def reset_request_scoped_context_vars():
     """Clear proxy-style ContextVars so tests do not inherit state from prior tests.
 

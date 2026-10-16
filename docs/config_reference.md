@@ -55,3 +55,18 @@ the audit log. Other forensics routes used by the operator page are unchanged.
 - `openai`: set `api_key_env: OPENAI_API_KEY`
 - `anthropic`: set `api_key_env: ANTHROPIC_API_KEY`
 - `local`: set `base_url` (for example `http://127.0.0.1:11434/v1`); `api_key_env` only if your endpoint requires auth
+
+## Evidence vault settings (`governance.*`)
+
+| Field | Default | Values | Env override |
+|-------|---------|--------|--------------|
+| `evidence_capture_mode` | `sealed` | `sealed` \| `redacted` \| `hash_only` \| `plaintext_dev` | `AURORA_LENS_EVIDENCE_CAPTURE_MODE` |
+| `evidence_encryption_key` | — | UTF-8 key string | `AURORA_LENS_EVIDENCE_KEY` |
+
+`sealed` stores `AELV1-HMAC-CTR` encrypted blobs adjacent to the audit log (`{audit_log}.evidence/`), not AES.
+When audit capture is enabled, `sealed` requires a non-empty key and writable
+audit/vault storage. Missing keys or unavailable storage fail startup with
+`EvidenceVaultConfigurationError`; there is no automatic hash-only downgrade.
+An unset audit path disables capture. Explicit `hash_only` remains supported.
+See [Key Custody](key-custody.md) for provisioning, rotation, and `sealed` vs `hash_only` semantics.
+See [Evidence vault operations](evidence-vault-operations.md) for persistent storage and synthetic restart verification.

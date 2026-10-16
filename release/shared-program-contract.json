@@ -85,8 +85,8 @@
     "aurora_lens/govern/decision.py": "901fa78a6a31f8827a82babc61fb961e99184119c6cb638c7ff46b3fdd4afe6e",
     "aurora_lens/govern/epistemic_normalisation.py": "d3d9146c69539a63d62d9f6883bd94ce7116d02081b9501168c007b050d73e75",
     "aurora_lens/govern/epistemic_uncertainty_gate.py": "83264349ce5ced5fd9b189c0dc9e4d27834c001f74f41775e189a2408ffc3cdc",
-    "aurora_lens/govern/evidence_capture.py": "cb020bafb21b710ee1336e21441c454b8ec852fccb768f6abe2c3d8c1c9a78e9",
-    "aurora_lens/govern/evidence_vault.py": "99c8b125b302931e1a19f6c76b9d9eb1b62e1ee3ac3d12d237b32bea12b9e20d",
+    "aurora_lens/govern/evidence_capture.py": "4afcd965f3debbe2f4dc26e59b8aec66f43cb101e4a8b6526d265b4a502ba392",
+    "aurora_lens/govern/evidence_vault.py": "74503391d7eaa939470565f38f536082fd1dca6c2b75d2de0e74a5cb6cb4c31e",
     "aurora_lens/govern/forensic_append_guard.py": "eac8f1c9a79758b4af65dc63ac42b245057086f58c932909737d17cb60655ea0",
     "aurora_lens/govern/forensic_ledger.py": "18f9427bde5160c1626fedebe0e6351c8e90df43ef866ac8e694b678c92eb253",
     "aurora_lens/govern/freshness_permission_policy.py": "dd59bde258e6cc3e5525641ba73ef6a0001196ba6324dec09ac433bb2e89e011",
@@ -161,7 +161,7 @@
     "aurora_lens/pre_model_state/protocol.py": "0ad16c91415762e4860a0192f481fbec604e361d8fd788a9aea70984cd22a6a1",
     "aurora_lens/pre_model_state/types.py": "7dd1639da4af45944c72fa9b81fe680625a6b69bc5ad2ec10c658b7c09cb50dd",
     "aurora_lens/proxy/__init__.py": "2975467af33f81ccd1fbb411346816cb823df1e48f22cc5b103badf157b26cd3",
-    "aurora_lens/proxy/app.py": "d28782a9c994c07463010a8ba158a79c4ab4d26cdf34340637964ab0d8214a8b",
+    "aurora_lens/proxy/app.py": "c9032bd7d7aa990406756588ffc3adb3f3a188d93e0fa55d3020f7c5cd9610fe",
     "aurora_lens/proxy/audit_archive.py": "8b76d304ea99193d0a11ba12f20ebd6f4b24650bf138110afbe64970ddaa83d4",
     "aurora_lens/proxy/dashboard.html": "b61400d7982c7b09be294b7af4653eaf9be36a19ca2662c5c7b83fedee473752",
     "aurora_lens/proxy/frame_lifecycle.py": "3f03f0aaac2bfe1ad18497b45fcd9bae0850dc02e49f08153570ebea0f856895",
@@ -449,6 +449,6 @@
       }
     }
   },
-  "shared_core_sha256": "5c28cbbbac634f734cc9c779cab5790b4f99e0c00d8eee77b914f2d0d5ba2e07",
+  "shared_core_sha256": "146056de1a70bf9906851921e51e602d0147a98fa14b32edd73d126f08db046a",
   "pair_verified": true
 }
