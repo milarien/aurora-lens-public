@@ -72,3 +72,52 @@ append-open checks without adding evidence content.
 
 Earlier hash-only records still contain no recoverable content. Enabling sealed
 capture cannot recover them. See the [implementation record](sealed-evidence-missing-key-proposal.md).
+
+## Opt-in public HTTP capture and restart smoke test
+
+From an operator checkout with an authenticated Railway CLI account authorised
+to inspect variables, use SSH and restart the demo service:
+
+```sh
+python scripts/smoke_http_sealed_evidence.py --run --project <railway-project-id>
+```
+
+`--run` and an explicit project UUID are required. Without them the command
+prints `FAIL`, exits nonzero and performs no network operations. Default pytest
+and CI exercise only offline tests; they do not invoke the live smoke test.
+The script prints exactly one line (`PASS` or `FAIL`), exits 0 or 1, and never
+prints subprocess output, credentials, evidence references or raw content.
+
+Defaults target the existing demo: service `aurora_lens`, environment
+`production`, public origin `https://aurora-lens.ai`, Railway origin
+`https://auroralens-production.up.railway.app`, and a 300-second restart wait.
+Override with `--service`, `--environment`, `--public-origin`, `--railway-origin`,
+`--timeout` (30–1800 seconds), or `--railway-cli` (executable path). HTTPS is
+required; redirects are rejected. The Railway origin must belong to the
+explicitly selected service. A temporary CLI link isolates this test from the
+operator's existing checkout link and is removed afterwards.
+
+The test performs one normal public HTTP chat turn in a fresh demo session.
+Its fixed synthetic fixture asks for a label for an invented medicine and an
+imaginary adult, without using real patient data. It requires an actual
+post-LLM `HARD_STOP`, distinct sealed request/upstream manifests and a
+`sealed_by_policy` receipt on the uniquely correlated audit row. It never
+enables a mock response, supplies a policy override, weakens a gate or retries
+the model request to obtain a desired result. If the provider produces a
+different governance outcome, the smoke test fails before restarting.
+
+Before restart, trusted SSH tooling runs as `aurora` and checks both exact
+references through `get_evidence(..., purpose="forensic_review",
+actor="forensic_reviewer")`. It checks recovered lengths and hashes against
+the audit manifests, encrypted blob format, and denial of an unauthorised
+actor. It then restarts the existing deployment and requires the same code
+revision, original volume/mount, audit path and evidence key, healthy sealed
+readiness, and a new deployment/process identity. It rechecks the unchanged
+original audit row and recovers those same two references again.
+
+Key comparisons remain in memory; keys, fingerprints and evidence are never
+written to local reports or logs. No key is generated, provisioned or rotated;
+no variable or volume configuration is written. The normal audit/vault records
+remain subject to the existing retention policy. No additional evidence or
+manifest marker is written by the recovery checker. A failed verification after
+restart still prints `FAIL`; it does not roll back or change capture policy.
