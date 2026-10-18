@@ -281,7 +281,7 @@ def test_explicit_hash_only_choice_is_preserved_for_pass_and_stop(tmp_path, basi
         assert all(m["protection_mode"] == "hash_only" for m in result.evidence_manifests)
 
 
-def test_keyed_restart_recovers_both_blobs_and_preserves_low_risk_pass(tmp_path):
+def test_keyed_restart_recovers_both_blobs_and_sealed_low_risk_pass(tmp_path):
     from aurora_lens.govern.decision import GovernanceDecision, InterventionAction
     from aurora_lens.govern.evidence_capture import EvidenceCaptureConfig, capture_governance_evidence
     from aurora_lens.verify.consequence_intent import LOW_RISK_CONVERSATIONAL
@@ -306,8 +306,10 @@ def test_keyed_restart_recovers_both_blobs_and_preserves_low_risk_pass(tmp_path)
         decision, pre_llm=False, vault=reopened, config=EvidenceCaptureConfig(),
         request_prompt="synthetic low risk",
     )
-    assert result.request_capture_status == "hash_only"
-    assert result.evidence_capture_mode == "hash_only"
+    assert result.request_capture_status == "sealed_by_policy"
+    assert result.evidence_capture_mode == "sealed"
+    manifest = result.request_evidence_manifest
+    assert reopened.get_evidence(manifest["evidence_ref"], "forensic_review", "forensic_reviewer") == b"synthetic low risk"
 
 
 @pytest.mark.parametrize("factory_name", ["local", "bridge"])

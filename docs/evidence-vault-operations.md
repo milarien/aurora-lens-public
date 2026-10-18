@@ -57,6 +57,13 @@ destination, never to ordinary application logs or public audit responses.
 
 ## Authorised decision evidence review
 
+Configured `sealed` capture retains every available request reaching a governance
+decision, including strict low-risk PASS and moderate PASS. Per-PASS output
+retention choices do not downgrade request storage. Existing released-output
+retention and governance rulings are unchanged. The request manifest and
+`sealed_by_policy` status expose the actual request storage mode. This applies
+to newly captured decisions; earlier hash-only requests cannot be reconstructed.
+
 Open **Review captured decision evidence** from the owner audit session page or
 retained-log page, then **Open decision**. The hosted route is
 `/admin/audit/review`. It uses the existing Cloudflare Access owner sign-in;

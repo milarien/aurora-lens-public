@@ -85,7 +85,7 @@
     "aurora_lens/govern/decision.py": "901fa78a6a31f8827a82babc61fb961e99184119c6cb638c7ff46b3fdd4afe6e",
     "aurora_lens/govern/epistemic_normalisation.py": "d3d9146c69539a63d62d9f6883bd94ce7116d02081b9501168c007b050d73e75",
     "aurora_lens/govern/epistemic_uncertainty_gate.py": "83264349ce5ced5fd9b189c0dc9e4d27834c001f74f41775e189a2408ffc3cdc",
-    "aurora_lens/govern/evidence_capture.py": "4afcd965f3debbe2f4dc26e59b8aec66f43cb101e4a8b6526d265b4a502ba392",
+    "aurora_lens/govern/evidence_capture.py": "a36c4c53fb6fe03dadaf6b27530e392f22621fdaf012e025a11ff0bb18778d9c",
     "aurora_lens/govern/evidence_vault.py": "74503391d7eaa939470565f38f536082fd1dca6c2b75d2de0e74a5cb6cb4c31e",
     "aurora_lens/govern/forensic_append_guard.py": "eac8f1c9a79758b4af65dc63ac42b245057086f58c932909737d17cb60655ea0",
     "aurora_lens/govern/forensic_ledger.py": "18f9427bde5160c1626fedebe0e6351c8e90df43ef866ac8e694b678c92eb253",
@@ -450,6 +450,6 @@
       }
     }
   },
-  "shared_core_sha256": "03d7f0c25f2ede8ff003414b32cdfc48be59198c385cf44e4b2fefab7cb8c5df",
+  "shared_core_sha256": "60ef47ed9365fdd402f36b36ad034e7e8ff4c7c92f4ae6dbda2aeb9ca4161b30",
   "pair_verified": true
 }

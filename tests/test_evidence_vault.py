@@ -212,7 +212,7 @@ async def test_main_ledger_does_not_contain_raw_prompt_inline(tmp_path: Path) ->
 
 
 @pytest.mark.asyncio
-async def test_strict_low_risk_pass_hash_only_capture_and_basis(tmp_path: Path) -> None:
+async def test_strict_low_risk_pass_sealed_capture_and_basis(tmp_path: Path) -> None:
     audit = tmp_path / "low_risk.jsonl"
     bridge = BuiltinBridge(
         audit_path=str(audit),
@@ -235,10 +235,11 @@ async def test_strict_low_risk_pass_hash_only_capture_and_basis(tmp_path: Path) 
     row = _read_last_jsonl_object(audit)
     assert row.get("admissibility_basis") == LOW_RISK_CONVERSATIONAL
     assert row.get("pass_reason_code") == LOW_RISK_CONVERSATIONAL
-    assert row.get("evidence_capture_mode") == CaptureMode.HASH_ONLY.value
-    assert row.get("request_capture_status") == "hash_only"
+    assert row.get("evidence_capture_mode") == CaptureMode.SEALED.value
+    assert row.get("request_capture_status") == "sealed_by_policy"
     manifest = row.get("request_evidence_manifest") or {}
-    assert manifest.get("capture_status") == "hash_only"
+    assert manifest.get("capture_status") == "captured"
+    assert manifest.get("protection_mode") == "sealed"
     _ledger_excludes_prompt(row, "Hello")
 
 

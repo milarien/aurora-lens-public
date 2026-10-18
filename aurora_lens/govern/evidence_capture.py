@@ -38,6 +38,7 @@ class EvidenceCaptureConfig:
     """Deployment capture policy for the evidence vault."""
 
     capture_mode: str = CaptureMode.SEALED.value
+    # PASS output-retention choices cannot downgrade a sealed request.
     strict_pass_low_risk_mode: str = CaptureMode.HASH_ONLY.value
     moderate_pass_mode: str = CaptureMode.HASH_ONLY.value
     moderate_pass_sealed_when_configured: bool = False
@@ -159,6 +160,17 @@ def _effective_capture_mode(config: EvidenceCaptureConfig, decision: GovernanceD
     return config.capture_mode
 
 
+def _request_capture_mode(config: EvidenceCaptureConfig, decision: GovernanceDecision) -> str:
+    """Configured sealed capture retains requests independently of the ruling.
+
+    Keep the existing PASS output-retention choices separate: they do not waive
+    the deployment's recoverable-request requirement.
+    """
+    if config.capture_mode == CaptureMode.SEALED.value:
+        return CaptureMode.SEALED.value
+    return _effective_capture_mode(config, decision)
+
+
 def _llm_was_called(decision: GovernanceDecision, *, pre_llm: bool) -> bool:
     if pre_llm:
         return False
@@ -230,7 +242,7 @@ def capture_governance_evidence(
     elif must_capture_request and vault is None:
         request_status = CaptureStatus.FORBIDDEN_BY_POLICY.value
     elif must_capture_request:
-        protection_mode = _vault_protection_mode(vault, mode)
+        protection_mode = _vault_protection_mode(vault, _request_capture_mode(config, decision))
         meta = {
             "capture_basis": f"governance:{action.name.lower()}",
             "retention_class": retention_class,

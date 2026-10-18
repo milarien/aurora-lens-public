@@ -308,3 +308,38 @@ def test_preview_cannot_inherit_deployment_configuration(tmp_path, monkeypatch):
     assert service.cfg.auth.enabled is False
     import os
     assert os.environ["AURORA_LENS_EVIDENCE_KEY"] == "synthetic-unrelated-key"
+
+
+@pytest.mark.parametrize("policy,basis", [("strict", "LOW_RISK_CONVERSATIONAL"), ("moderate", None)])
+def test_sealed_pass_request_review_recovery_and_denial(review_client, policy, basis):
+    from aurora_lens.govern.decision import GovernanceDecision, InterventionAction
+    from aurora_lens.govern.evidence_capture import EvidenceCaptureConfig, capture_governance_evidence
+    from aurora_lens.verify.consequence_intent import LOW_RISK_CONVERSATIONAL
+    client, path, vault, _, _ = review_client
+    prompt = "Synthetic PASS request with spacing\u202fand punctuation\u2011preserved."
+    decision = GovernanceDecision(action=InterventionAction.PASS, flags=[], rationale="Synthetic PASS",
+        policy=policy, admissibility_basis=LOW_RISK_CONVERSATIONAL if basis else None,
+        governed_response="Synthetic released answer")
+    captured = capture_governance_evidence(decision, pre_llm=False, vault=vault,
+        config=EvidenceCaptureConfig(capture_mode="sealed"), request_prompt=prompt)
+    assert captured.request_capture_status == "sealed_by_policy"
+    assert captured.evidence_capture_mode == "sealed"
+    # Existing output-retention policy remains independent of request retention.
+    assert captured.governed_evidence_manifest is None
+    row = {"seq": 8, "time": "2026-10-19T00:00:00Z", "payload": {"data": {
+        "action": "PASS", "flags": [], "rationale": decision.rationale,
+        "request_evidence_manifest": captured.request_evidence_manifest,
+        "governed_response": decision.governed_response}}}
+    path.write_text(json.dumps(row) + "\n")
+    assert prompt not in path.read_text()
+    selected = decisions(path)[0]["id"]
+    url = REVIEW_PATH + "?decision=" + selected
+    response = client.get(url, headers=signed_headers("synthetic-transport", selected))
+    assert response.status_code == 200
+    data = response.json()
+    assert data["request"]["state"] == "verified" and data["request"]["text"] == prompt
+    assert data["request"]["sha256"] == hashlib.sha256(prompt.encode()).hexdigest()
+    assert data["ruling"]["action"] == "PASS" and data["released_response"] == decision.governed_response
+    assert client.get(url, headers={"x-aurora-edge-token": "synthetic-transport"}).status_code == 403
+    access = path.with_name(path.name + ".evidence-access.jsonl").read_text()
+    assert prompt not in access and "Synthetic released answer" not in access
