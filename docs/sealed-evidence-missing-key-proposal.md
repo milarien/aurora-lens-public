@@ -32,8 +32,11 @@ fallbacks are now rejected when sealed capture is required.
    historical receipts.
 3. Add tests for absent/empty keys, both factories, proxy startup/readiness,
    storage errors, explicit hash-only configuration, keyed recovery across
-   restart, and exclusion of secrets/content from diagnostics. Preserve the
-   existing intentionally hash-only low-risk PASS policy.
+   restart, and exclusion of secrets/content from diagnostics. The original
+   missing-key change preserved the then-existing low-risk PASS hash-only
+   policy. That request exception was superseded on 19 October 2026: configured
+   sealed capture now retains all available requests, including PASS. Explicit
+   hash-only deployments and existing output-retention choices remain supported.
 4. When audit capture is enabled and the deployment requests `sealed`, reject
    missing keys before accepting traffic with `EvidenceVaultConfigurationError`;
    do not substitute `hash_only`. Reject unavailable required storage instead

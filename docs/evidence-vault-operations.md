@@ -150,8 +150,9 @@ rejects non-loopback targets; it cannot target production.
 When audit capture is enabled, required `sealed` capture rejects startup if the
 key is missing/empty or audit/vault storage is unavailable. No key is generated
 automatically and no hash-only or null-audit fallback satisfies that requirement.
-An unset audit path leaves capture disabled; explicit hash-only capture and the
-existing low-risk PASS hash-only policy remain supported.
+An unset audit path leaves capture disabled; explicit hash-only deployments
+remain supported. A sealed deployment retains low-risk PASS requests too;
+the PASS output-retention setting cannot downgrade request capture.
 
 Structured startup diagnostics and diagnostic `GET /health` expose
 `evidence_capture`: `enabled`, `requested_mode`, `effective_mode`, `key_available`,
