@@ -16,6 +16,14 @@ The dashboard is a **simple web page** built into the Aurora Lens proxy. It does
 
 The page is read-only. It calls the same HTTP APIs you could call with `curl`; it just formats the answers for a browser.
 
+**Authorised evidence review:** the recent-decisions section links to a separate
+reviewer-protected decision list. Open a decision to inspect its captured request,
+withheld response, recorded ruling and hash-verification result. The hosted demo
+uses the existing owner sign-in at `/admin/audit/review`; an ordinary demo session
+does not grant access. Hash-only, unavailable, access-denied and integrity-failed
+captures are labelled explicitly and are never presented as successfully recovered.
+See [evidence review access and local setup](evidence-vault-operations.md#authorised-decision-evidence-review).
+
 The first screen is intentionally minimal:
 
 - **Operator overview** (system, model, policy, recent decisions, warnings/blocks, sessions, audit status)

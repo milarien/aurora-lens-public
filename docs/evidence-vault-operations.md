@@ -50,9 +50,95 @@ of a service restart.
 
 `get_evidence(ref, purpose, actor)` is an in-process interface. Trusted operator
 tooling must authenticate the caller before supplying an allowed actor/purpose
-pair; the strings are not authentication credentials. There is no evidence-vault
-retrieval HTTP endpoint. Return recovered content only to its authorised
+pair; the strings are not authentication credentials. The authorised decision
+review workflow below uses this interface behind mandatory server authorisation.
+Return recovered content only to its authorised
 destination, never to ordinary application logs or public audit responses.
+
+## Authorised decision evidence review
+
+Open **Review captured decision evidence** from the owner audit session page or
+retained-log page, then **Open decision**. The hosted route is
+`/admin/audit/review`. It uses the existing Cloudflare Access owner sign-in;
+reviewers do not supply an encryption key or run Python. The page shows the
+recorded ruling, captured request, withheld model response, SHA-256/byte-length
+verification, and any released answer recorded in the audit event.
+
+Evidence states are explicit:
+
+- **Verified**: recovered bytes match the audit manifest and vault manifest,
+  SHA-256 and byte length. Sealed content also passes the vault MAC check.
+- **Hash only**: a digest was captured; there is no recoverable blob. It is not
+  labelled verified merely because a digest exists.
+- **Unavailable**: no capture, missing blob/key/storage, or unavailable access
+  auditing. Original records are not rewritten or recaptured.
+- **Access denied**: the caller lacks reviewer authorisation, or vault access
+  was denied. No evidence plaintext is returned for that item.
+- **Integrity failed**: inconsistent manifests, corrupted ciphertext, wrong
+  decryption key, or recovered bytes that fail the hash/length check. Content
+  is withheld.
+
+The hash result verifies the blob against its manifests. It does not assert that
+the entire governance audit chain verified; use the existing chain-verification
+workflow for that separate check.
+
+The backend route `/v1/audit/evidence-review` is **not public**, including on
+loopback or when ordinary inbound authentication is disabled. Hosted access
+requires both the existing server transport credential and a short-lived,
+selection-bound HMAC assertion of the owner identity. The site signs it only
+after verifying the existing Access JWT. The assertion is purpose-bound,
+expires after 30 seconds, and rejects nonce reuse within a backend process.
+It uses a domain-separated HMAC key derived from the existing server transport
+credential; no new persistent secret or evidence key is created. The site's
+existing trusted credential remains privileged and must stay server-side.
+The browser's cookies, JWT and claimed identity headers are not forwarded to
+Railway. Redirects are never followed with the transport credential.
+
+For a licensed local install, enable existing inbound API authentication and
+set `AURORA_LENS_EVIDENCE_REVIEWERS` to a comma-separated allowlist of existing
+API-key labels. Open `/v1/audit/evidence-review` in the browser; its Basic-auth
+prompt accepts that existing API credential as the password (the username is
+only a browser-login label). Use HTTPS outside loopback. Ordinary API keys
+whose labels are not explicitly allowed cannot review evidence. Local-key
+review is disabled on hosted Railway deployments.
+
+Every backend attempt, including denials, is appended and fsynced to
+`<audit_log>.evidence-access.jsonl` before a response is released. Events contain
+time, authenticated identity (or `unauthenticated`), purpose, decision digest,
+result and capture states. They contain no prompts, outputs, credentials or
+exception text. This separate access log does not append to or modify the
+governance decision chain and is excluded from ordinary retained-audit exports.
+New access-log files use mode 0600. Missing/unwritable access auditing fails
+closed. Site-side owner denials emit only a fixed content-free denial code.
+
+Views use private/no-store responses, no-referrer policy, escaped text and a
+script-free CSP. No plaintext is written to ordinary logs, browser storage or
+an export file by this workflow. Do not configure external request/response-body
+logging on the protected review routes. The existing key, volume, vault blobs
+and manifests are read in place; retrieval does not rotate or regenerate them.
+
+### Local synthetic preview and verification
+
+```sh
+python scripts/preview_evidence_review.py --run
+python -m pytest tests/test_evidence_review.py tests/test_evidence_vault.py
+node --test tests/evidence_review_site.test.mjs
+```
+
+The preview binds only `127.0.0.1:8766`, creates a temporary synthetic vault,
+and clearly labels the simulated reviewer identity. It includes verified,
+hash-only, unavailable and denied examples. It cannot run inside Railway and
+does not read the production key, audit file or volume. Starting it is opt-in;
+it is not part of normal startup or CI. Stop it with Ctrl+C.
+
+The companion site's `functions/lib/evidence_review.js` mirrors
+`integrations/cloudflare/evidence_review.js`. Its `/admin/audit/review` wrapper
+supplies the existing `verifyOwner`, `ownerResponse` and verified owner email.
+Its synthetic JWT tests also cover wrong-owner, expired and forged credentials.
+With the preview running, set `AURORA_REVIEW_TEST_BACKEND=http://127.0.0.1:8766`
+for the site's `tests/evidence_review.test.mjs` to exercise signed owner login,
+real local vault recovery and denied access end to end. That optional test
+rejects non-loopback targets; it cannot target production.
 
 When audit capture is enabled, required `sealed` capture rejects startup if the
 key is missing/empty or audit/vault storage is unavailable. No key is generated

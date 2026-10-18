@@ -161,9 +161,10 @@
     "aurora_lens/pre_model_state/protocol.py": "0ad16c91415762e4860a0192f481fbec604e361d8fd788a9aea70984cd22a6a1",
     "aurora_lens/pre_model_state/types.py": "7dd1639da4af45944c72fa9b81fe680625a6b69bc5ad2ec10c658b7c09cb50dd",
     "aurora_lens/proxy/__init__.py": "2975467af33f81ccd1fbb411346816cb823df1e48f22cc5b103badf157b26cd3",
-    "aurora_lens/proxy/app.py": "c9032bd7d7aa990406756588ffc3adb3f3a188d93e0fa55d3020f7c5cd9610fe",
+    "aurora_lens/proxy/app.py": "6248c2536604673b98fa13517d7381fe795ac6e80b08d7cd165768a453ba92c8",
     "aurora_lens/proxy/audit_archive.py": "8b76d304ea99193d0a11ba12f20ebd6f4b24650bf138110afbe64970ddaa83d4",
-    "aurora_lens/proxy/dashboard.html": "b61400d7982c7b09be294b7af4653eaf9be36a19ca2662c5c7b83fedee473752",
+    "aurora_lens/proxy/dashboard.html": "12a87a807c8183efc294163b3729c80c3abff17038827ba96bf4340be1e4ce33",
+    "aurora_lens/proxy/evidence_review.py": "08913401a60609928f1d7b33f41372050a4502e19254668fd46fef5092d92493",
     "aurora_lens/proxy/frame_lifecycle.py": "3f03f0aaac2bfe1ad18497b45fcd9bae0850dc02e49f08153570ebea0f856895",
     "aurora_lens/proxy/governance_hold.py": "e2d1ea5dd6ba8e4d3fb7d6885f73ec7465d34ddce3c3d38f1e2c5ee38ad0af40",
     "aurora_lens/proxy/json_wire.py": "f1b7b1515b2dbf894816743c4b90704fcf6f44618397231ffd6df4a5935e12a2",
@@ -449,6 +450,6 @@
       }
     }
   },
-  "shared_core_sha256": "146056de1a70bf9906851921e51e602d0147a98fa14b32edd73d126f08db046a",
+  "shared_core_sha256": "03d7f0c25f2ede8ff003414b32cdfc48be59198c385cf44e4b2fefab7cb8c5df",
   "pair_verified": true
 }

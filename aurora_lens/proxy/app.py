@@ -893,6 +893,9 @@ def _auth_exempt(path: str, *, listen_host: str) -> bool:
         "/v1/audit/anomaly-check",
         "/v1/audit/verify",
         "/v1/audit/entry",
+        # This route enforces its own mandatory reviewer authorisation and
+        # access audit, including when normal inbound auth is disabled.
+        "/v1/audit/evidence-review",
         "/v1/operator/summary",
         "/v1/session/operator-pef",
         "/v1/corpus/records",
@@ -1250,6 +1253,10 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
         Registered last among http middlewares so it runs before auth/route work.
         """
         path = request.url.path
+        if path == "/v1/audit/evidence-review":
+            # The review handler checks both transport and signed reviewer
+            # identity, and durably records denied attempts before responding.
+            return await call_next(request)
         if not _public_demo_edge_token_required(path):
             return await call_next(request)
         expected = (os.environ.get("AURORA_EDGE_TOKEN") or "").strip()
@@ -2203,6 +2210,13 @@ def create_app(cfg: ProxyConfig) -> FastAPI:
             content=_json_safe(body),
             headers=_base_headers(tid, outcome="PASS", proxy_ms=int((time.time() - started) * 1000)),
         )
+
+    from aurora_lens.proxy.evidence_review import EvidenceReview
+    evidence_reviewer = EvidenceReview(cfg)
+
+    @app.api_route("/v1/audit/evidence-review", methods=["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"])
+    def audit_evidence_review(request: Request):
+        return evidence_reviewer.handle(request)
 
     @app.get("/v1/audit/all")
     def audit_all(n: int | None = Query(None, ge=1)):
