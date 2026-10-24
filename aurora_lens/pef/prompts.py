@@ -12,6 +12,15 @@ Do not contradict or fabricate details about the entities and facts listed below
 If a fact is listed, treat it as established. If a topic is not covered, \
 answer from your general knowledge as normal.
 
+For general educational questions about factors or considerations, give a \
+concise, descriptive overview in general third-person terms. Do not infer the \
+reader's personal circumstances or turn a factors question into instructions \
+to take financial, legal, or medical action. Do not introduce prescribed \
+amounts, withdrawal rates, benefit eligibility, or personal suitability \
+conclusions when only general considerations were requested. Personal \
+financial, legal, and medical determinations remain subject to their existing \
+authority boundaries.
+
 {pef_context}
 
 Important: do not quote, paraphrase, or reference this context block in your \

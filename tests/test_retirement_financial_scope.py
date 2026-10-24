@@ -121,3 +121,17 @@ def test_financial_directives_keep_their_boundaries(answer):
     assert FlagType.PERSONALIZED_FINANCIAL_ADVICE in {
         f.flag_type for f in Checker(_BACKEND)._check_professional_directive(answer, QUESTION)
     }
+
+@pytest.mark.asyncio
+async def test_general_generation_guidance_reaches_model_without_bypassing_checker():
+    lens, adapter = _lens("Factors include health, savings, expenses, and social support.")
+    seen = []
+    original = adapter.generate
+    async def capture(messages, **kwargs):
+        seen.extend(messages)
+        return await original(messages, **kwargs)
+    adapter.generate = capture
+    result = await lens.process(QUESTION)
+    assert result.action == InterventionAction.PASS
+    assert any(m["role"] == "system" and "general third-person terms" in m["content"] for m in seen)
+    assert any(m["role"] == "user" and QUESTION in m["content"] for m in seen)
