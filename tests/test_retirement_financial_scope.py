@@ -135,3 +135,26 @@ async def test_general_generation_guidance_reaches_model_without_bypassing_check
     assert result.action == InterventionAction.PASS
     assert any(m["role"] == "system" and "general third-person terms" in m["content"] for m in seen)
     assert any(m["role"] == "user" and QUESTION in m["content"] for m in seen)
+
+RELATIVE_CANDIDATE = (Path(__file__).parent / "fixtures/retirement_general_live_relative_candidate.txt").read_text(encoding="utf-8")
+
+@pytest.mark.asyncio
+async def test_live_relative_clause_checklist_releases():
+    lens, adapter = _lens(RELATIVE_CANDIDATE)
+    result = await lens.process(QUESTION)
+    assert adapter.calls == 1
+    assert result.action == InterventionAction.PASS
+    assert result.response.split() == RELATIVE_CANDIDATE.split()
+
+@pytest.mark.asyncio
+async def test_relative_subject_uses_explicit_local_noun():
+    from aurora_lens.pef.state import PEFState
+    result = await _BACKEND.extract("Part-time roles that could bridge income gaps are another consideration.", PEFState())
+    assert any(c.relation == "BRIDGE" and "roles" in c.subject for c in result.claims)
+    assert not any(c.relation == "BRIDGE" and c.subject.lower() == "that" for c in result.claims)
+
+@pytest.mark.asyncio
+async def test_deictic_that_remains_unresolved():
+    from aurora_lens.pef.state import PEFState
+    result = await _BACKEND.extract("Should I do that?", PEFState())
+    assert "that" in result.ambiguous_referents
