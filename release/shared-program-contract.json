@@ -125,7 +125,7 @@
     "aurora_lens/interpret/pending_continuation.py": "883c7c49c0f359fbc1c6594f8e44a8d74aae99b607b12d9e2d9774d440e202ab",
     "aurora_lens/interpret/revision_gate.py": "ce19eff84aa2f0dbca991d06edc9efe30fb46f78c05029ce6d466e2d8c224876",
     "aurora_lens/interpret/schema.py": "80eaa7ad7101cdebe8c91abc44c823808eab3340d73f9dc813e389d8161b608a",
-    "aurora_lens/interpret/spacy_backend.py": "4c700d1015cc159f4c624e20c86426c5ac6a52138a90128be070a1fcbffe47ca",
+    "aurora_lens/interpret/spacy_backend.py": "4559d8b561025032458482c9c7dec275b3e64f5eec957ad8bb19b2cde9501e74",
     "aurora_lens/interpret/translation_candidate.py": "15cd44c16804b7353f3af93460288fb8c916b639a7cb673e0370ff4e59e06890",
     "aurora_lens/interpret/turn_act.py": "b4aa3e3f405b8e29c9abf96b756d1e86d1b2b780512b92589573eb33cafbd63a",
     "aurora_lens/interpret/turn_semantics.py": "b13d9c05bedcac6f6def4c59ac10ee4cc8de088b01e9a1c5e386dcca48d3b30e",
@@ -248,10 +248,11 @@
     "aurora_lens/verify/blocked_request_surface_medical.py": "505650bd8b96dee61fcc8024c0210c5589ad3a62d90a21e76f0e8fbd7d092289",
     "aurora_lens/verify/blocked_request_surface_synthesis_encoded.py": "4d92eae803a246d4ae7dae7ca9785d79fa62892245d2324a81c86dadb10486d0",
     "aurora_lens/verify/causal_surface.py": "9ee8f709d8d11492407741b61edbe94ab7d9ca7fa131f7ba35e43e295e705844",
-    "aurora_lens/verify/checker.py": "3494497745b280129394b272ea9608f61c5efd2e5c8b3a2f438591fc17b38941",
+    "aurora_lens/verify/checker.py": "166f846844041832db5af2bf446492ba9b648e3cf2258d3befd29a43428da46c",
     "aurora_lens/verify/consequence_intent.py": "d4c2b704a59b6be5fe452835f1e41c9ce840254cfd176d0abc78c8c32e52f84c",
     "aurora_lens/verify/credential_authority_scope.py": "86a329b4ac3f59a07a3828d31007a44a0eedf19d0109764a7d03b586bfcbbe4b",
     "aurora_lens/verify/employment_selection_scope.py": "9db072a67ef8d3a1b6496b8bff95686cf02b50ddaed5ae1f6756f2eea2f5732e",
+    "aurora_lens/verify/financial_directive_scope.py": "b584dcb31822fa143e3aafbf927b1fe8f1c29b292e2a06a0acb8151f55b2ab3f",
     "aurora_lens/verify/flags.py": "7ebbf8282ec1e61077214ec87c3bb8b43f822eca2a818b701f45d1b97ade1fed",
     "aurora_lens/verify/harmful_operational_response.py": "1fe72f7b25236c9b8c151d506ddfb066230ae88f11ce9fb34508a1446945e30b",
     "aurora_lens/verify/hazard/__init__.py": "e6412216b3b5fbea2aaa4756fc8a28afaa6376a17d6149ee98c22973438451e2",
@@ -450,6 +451,6 @@
       }
     }
   },
-  "shared_core_sha256": "60ef47ed9365fdd402f36b36ad034e7e8ff4c7c92f4ae6dbda2aeb9ca4161b30",
+  "shared_core_sha256": "c2dabd0cd0669bf61ab7ad32d3c7e518d655eb3ce41e187b10a543f5dad44be7",
   "pair_verified": true
 }

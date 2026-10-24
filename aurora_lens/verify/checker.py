@@ -34,6 +34,7 @@ from __future__ import annotations
 
 import re
 from aurora_lens.verify.medical_directive_scope import treatment_bindings
+from aurora_lens.verify.financial_directive_scope import financial_action_bindings
 from aurora_lens.verify.birth_screening_scope import birth_screening
 from aurora_lens.verify.employment_selection_scope import employment_selections
 from aurora_lens.verify.credential_authority_scope import credential_validations
@@ -4543,25 +4544,24 @@ class Checker:
             _FIN_DIRECTIVE_FORCE_RE.search(lower)
             or _FIN_IMPERATIVE_ACTION_RE.search(lower)
         )
-        _financial_personalisation_signal = bool(
-            re.search(
-                r"\b(?:in\s+your\s+(?:case|situation|circumstances?)|"
-                r"based\s+on\s+(?:what\s+you['\u2019]?ve\s+(?:described|said|told|mentioned)|"
-                r"your\s+(?:situation|description)|"
-                r"the\s+(?:details?|information|facts?|context)\s+you\s+(?:provided|gave|shared))|"
-                r"given\s+your\s+(?:situation|circumstances?|age|balance|savings|income|debt|mortgage)|"
-                r"for\s+your\s+(?:situation|circumstances?|goals?|needs?)|"
-                r"from\s+what\s+you['\u2019]?ve\s+(?:described|said|told|mentioned)|"
-                r"at\s+your\s+age|with\s+your\s+(?:savings|balance|income|mortgage|debt)|"
-                r"your\s+(?:(?:\w+\s+){0,3})"
-                r"(?:super\s+balance|mortgage|savings|portfolio|investment|"
-                r"retirement\s+savings|risk\s+tolerance|timeline|financial\s+situation)|"
-                r"i\s+(?:would\s+)?recommend|i\s+(?:would\s+)?suggest|"
-                r"you\s+(?:should|would\s+be\s+better\s+off|might\s+want\s+to|"
-                r"may\s+want\s+to|need\s+to\s+(?:consider|think\s+about)))\b",
-                lower,
-            )
+        _financial_personalisation_pattern = re.compile(
+            r"\b(?:in\s+your\s+(?:case|situation|circumstances?)|"
+            r"based\s+on\s+(?:what\s+you['\u2019]?ve\s+(?:described|said|told|mentioned)|"
+            r"your\s+(?:situation|description)|"
+            r"the\s+(?:details?|information|facts?|context)\s+you\s+(?:provided|gave|shared))|"
+            r"given\s+your\s+(?:situation|circumstances?|age|balance|savings|income|debt|mortgage)|"
+            r"for\s+your\s+(?:situation|circumstances?|goals?|needs?)|"
+            r"from\s+what\s+you['\u2019]?ve\s+(?:described|said|told|mentioned)|"
+            r"at\s+your\s+age|with\s+your\s+(?:savings|balance|income|mortgage|debt)|"
+            r"your\s+(?:(?:\w+\s+){0,3})"
+            r"(?:super\s+balance|mortgage|savings|portfolio|investment|"
+            r"retirement\s+savings|risk\s+tolerance|timeline|financial\s+situation)|"
+            r"i\s+(?:would\s+)?recommend|i\s+(?:would\s+)?suggest|"
+            r"you\s+(?:should|would\s+be\s+better\s+off|might\s+want\s+to|"
+            r"may\s+want\s+to|need\s+to\s+(?:consider|think\s+about)))\b",
+            re.IGNORECASE,
         )
+        _financial_personalisation_signal = bool(_financial_personalisation_pattern.search(lower))
         _financial_personal_suitability = bool(
             _FIN_PERSONAL_SUITABILITY_RE.search(lower)
         )
@@ -4580,10 +4580,19 @@ class Checker:
             and not _financial_personalisation_signal
             and not _financial_personal_suitability
         )
+        # The action and personalised context must belong to a financial
+        # proposition, not unrelated passages in a retirement checklist.
+        financial_bindings = financial_action_bindings(text, getattr(self._backend, "nlp", None))
+        _personalised_financial_action = financial_action and _financial_personalisation_signal
+        if financial_bindings is not None:
+            _personalised_financial_action = any(
+                _financial_personalisation_pattern.search(b.sentence)
+                for b in financial_bindings
+            )
         if _financial_domain_context and not qualifies_claim and (
             _financial_directive_force
             or _financial_personal_suitability
-            or (financial_action and _financial_personalisation_signal)
+            or _personalised_financial_action
         ):
             # Models often refuse finance questions with boilerplate that *matches* this gate
             # ("I recommend consulting a licensed financial adviser", "not investment advice",
@@ -4606,7 +4615,8 @@ class Checker:
                         ),
                         evidence=(
                             "Directive-force/personalized-suitability signal in financial context; "
-                            "not a purely educational/descriptive explanation"
+                            "not a purely educational/descriptive explanation; "
+                            + (repr(financial_bindings) if financial_bindings is not None else "scope parser unavailable")
                         ),
                         severity="warning",
                     ))
