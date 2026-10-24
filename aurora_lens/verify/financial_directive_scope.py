@@ -34,6 +34,9 @@ def financial_action_bindings(text, nlp) -> tuple[FinancialActionBinding, ...] |
             predicate = next((a for a in token.ancestors if a.pos_ in {"VERB", "AUX"}), None)
             if predicate is not None and predicate.lemma_.lower() in _ACTIONS:
                 bindings.append(FinancialActionBinding(predicate.lemma_.lower(), token.text, token.sent.text))
+        for token in doc:
+            if token.pos_ == "VERB" and token.lemma_.lower() in {"invest", "retire", "reallocate", "rebalance", "diversify"}:
+                bindings.append(FinancialActionBinding(token.lemma_.lower(), "", token.sent.text, "financial_predicate"))
         # Preserve unresolved anaphoric actions: an earlier financial object
         # does not license "moving it ... your situation" as general education.
         if any(t.lemma_.lower() in _OBJECTS for t in doc):
@@ -44,4 +47,18 @@ def financial_action_bindings(text, nlp) -> tuple[FinancialActionBinding, ...] |
         return tuple(bindings)
     except Exception:
         logger.warning("Financial scope parsing unavailable; retaining conservative gate")
+        return None
+
+
+def financial_sentence_scopes(text, nlp) -> tuple[str, ...] | None:
+    """Local statement text for directive force; None retains the old gate."""
+    if nlp is None:
+        return None
+    try:
+        doc = nlp(text)
+        if not doc.has_annotation("DEP"):
+            return None
+        return tuple(sentence.text for sentence in doc.sents)
+    except Exception:
+        logger.warning("Financial sentence parsing unavailable; retaining conservative gate")
         return None
