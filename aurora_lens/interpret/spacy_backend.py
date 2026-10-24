@@ -19,6 +19,42 @@ from typing import Any, TYPE_CHECKING
 logger = logging.getLogger(__name__)
 
 
+def _table_header_query_indices(doc) -> set[int]:
+    """Question column labels are metadata, not asserted SVO propositions.
+
+    Recognise an actual Markdown delimiter row, then scope only WH-labelled
+    header cells. Body rows and declarative headers remain fully checked.
+    Offsets refer to the unchanged input; no evidence text is rewritten.
+    """
+    lines = doc.text.splitlines(keepends=True)
+    offsets = []
+    offset = 0
+    for line in lines:
+        offsets.append(offset)
+        offset += len(line)
+    indices = set()
+    for row in range(1, len(lines)):
+        delimiter = lines[row].strip().strip("|").split("|")
+        if len(delimiter) < 2 or not all(re.fullmatch(r"\s*:?-{3,}:?\s*", cell) for cell in delimiter):
+            continue
+        header = lines[row - 1]
+        cells = list(re.finditer(r"[^|]+", header.rstrip("\r\n")))
+        cells = [cell for cell in cells if cell.group().strip()]
+        if len(cells) != len(delimiter):
+            continue
+        for cell in cells:
+            start = offsets[row - 1] + cell.start()
+            end = offsets[row - 1] + cell.end()
+            tokens = [t for t in doc if start <= t.idx < end and not t.is_space and not t.is_punct]
+            # A label has one predicate. Do not hide appended assertions
+            # merely because the cell begins with a question word.
+            if (tokens and tokens[0].tag_ in {"WP", "WRB", "WDT"}
+                    and sum(t.pos_ in {"VERB", "AUX"} for t in tokens) <= 1):
+                indices.update(t.i for t in tokens)
+    return indices
+
+
+
 def _finance_copula_diag_enabled() -> bool:
     """Env-gated diagnostics for live vs dev extractor path (finance metric copula)."""
     v = os.environ.get("AURORA_LENS_DEBUG_FINANCE_COPULA", "").strip().lower()
@@ -1739,7 +1775,7 @@ class SpacyBackend(ExtractionBackend):
             )
 
         # Build set of token indices that belong to interrogative sentences.
-        interrogative_indices: set[int] = set()
+        interrogative_indices: set[int] = _table_header_query_indices(doc)
         for sent in doc.sents:
             if self._is_interrogative_sentence(sent):
                 for token in sent:
