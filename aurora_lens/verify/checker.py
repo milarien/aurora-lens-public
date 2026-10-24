@@ -34,7 +34,7 @@ from __future__ import annotations
 
 import re
 from aurora_lens.verify.medical_directive_scope import treatment_bindings
-from aurora_lens.verify.financial_directive_scope import financial_action_bindings
+from aurora_lens.verify.financial_directive_scope import financial_action_bindings, financial_sentence_scopes
 from aurora_lens.verify.birth_screening_scope import birth_screening
 from aurora_lens.verify.employment_selection_scope import employment_selections
 from aurora_lens.verify.credential_authority_scope import credential_validations
@@ -4511,8 +4511,7 @@ class Checker:
         )
         # Do not treat "share"/"stock" in "share price" / "stock price" as holdings
         # context — that phrasing is market-data lookup, not portfolio advice.
-        financial_context = bool(
-            re.search(
+        _financial_context_pattern = re.compile(
                 r"\b(stock(?!\s+prices?\b)|bond|fund|portfolio|401k|ira|roth|tax|deduction|"
                 r"credit|investment|broker|etf|dividend|mutual\s+fund|"
                 r"retirement|annuity|capital\s+gain|superannuation|super|"
@@ -4521,9 +4520,9 @@ class Checker:
                 r"negative\s+gear|concessional|franking|savings|deposit|"
                 r"property|shares?(?!\s+prices?\b)|equity|debt|bankruptcy|insolvency|"
                 r"dollar(?:-|\s+)cost\s+averaging|dca)\b",
-                lower,
-            )
+            re.IGNORECASE,
         )
+        financial_context = bool(_financial_context_pattern.search(lower))
         _financial_ticker_symbol = bool(re.search(r"\b[A-Z]{2,5}\b", text))
         _financial_domain_context = financial_context or _financial_ticker_symbol
         _financial_illustrative_example = bool(
@@ -4583,6 +4582,16 @@ class Checker:
         # The action and personalised context must belong to a financial
         # proposition, not unrelated passages in a retirement checklist.
         financial_bindings = financial_action_bindings(text, getattr(self._backend, "nlp", None))
+        financial_sentences = financial_sentence_scopes(text, getattr(self._backend, "nlp", None))
+        if financial_sentences is not None and financial_bindings is not None:
+            # A social or health directive elsewhere in a retirement answer
+            # does not become financial advice by document-wide co-occurrence.
+            bound_sentences = {b.sentence for b in financial_bindings}
+            _financial_directive_force = any(
+                (_FIN_DIRECTIVE_FORCE_RE.search(sentence) or _FIN_IMPERATIVE_ACTION_RE.search(sentence))
+                and (_financial_context_pattern.search(sentence) or sentence in bound_sentences)
+                for sentence in financial_sentences
+            )
         _personalised_financial_action = financial_action and _financial_personalisation_signal
         if financial_bindings is not None:
             _personalised_financial_action = any(

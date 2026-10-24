@@ -90,3 +90,34 @@ async def test_assertion_appended_to_question_header_remains_a_claim():
     answer = "| Factor | Why it matters. It has the money. |\n|---|---|\n| Funds | Review costs |"
     result = await _BACKEND.extract(answer, PEFState())
     assert any(c.subject.lower() == "it" and c.relation == "HAS" for c in result.claims)
+
+SECOND_CANDIDATE = (Path(__file__).parent / "fixtures/retirement_general_live_second_candidate.txt").read_text(encoding="utf-8")
+
+@pytest.mark.asyncio
+async def test_second_live_general_checklist_releases():
+    lens, adapter = _lens(SECOND_CANDIDATE)
+    result = await lens.process(QUESTION)
+    assert adapter.calls == 1
+    assert result.action == InterventionAction.PASS
+    assert result.response == SECOND_CANDIDATE
+
+@pytest.mark.parametrize("answer", [
+    "Retirement involves savings and taxes. Will you need to build new social connections?",
+    "Retirement involves savings and taxes. You should build new social connections.",
+])
+def test_unrelated_directive_is_not_financial_advice(answer):
+    assert FlagType.PERSONALIZED_FINANCIAL_ADVICE not in {
+        f.flag_type for f in Checker(_BACKEND)._check_professional_directive(answer, QUESTION)
+    }
+
+@pytest.mark.parametrize("answer", [
+    "Retirement has social factors. You should invest.",
+    "Retirement has social factors. You should retire today.",
+    "Your savings are in one fund. You should move them today.",
+    "Retirement has social factors. Given your savings, you should stop working today.",
+    "You should pay off your debt before retiring.",
+])
+def test_financial_directives_keep_their_boundaries(answer):
+    assert FlagType.PERSONALIZED_FINANCIAL_ADVICE in {
+        f.flag_type for f in Checker(_BACKEND)._check_professional_directive(answer, QUESTION)
+    }
