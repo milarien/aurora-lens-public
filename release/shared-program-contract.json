@@ -125,7 +125,7 @@
     "aurora_lens/interpret/pending_continuation.py": "883c7c49c0f359fbc1c6594f8e44a8d74aae99b607b12d9e2d9774d440e202ab",
     "aurora_lens/interpret/revision_gate.py": "ce19eff84aa2f0dbca991d06edc9efe30fb46f78c05029ce6d466e2d8c224876",
     "aurora_lens/interpret/schema.py": "80eaa7ad7101cdebe8c91abc44c823808eab3340d73f9dc813e389d8161b608a",
-    "aurora_lens/interpret/spacy_backend.py": "4559d8b561025032458482c9c7dec275b3e64f5eec957ad8bb19b2cde9501e74",
+    "aurora_lens/interpret/spacy_backend.py": "f750dd38fc484337c51ac185c4d2df97623ef316075c1345d008a843ab837014",
     "aurora_lens/interpret/translation_candidate.py": "15cd44c16804b7353f3af93460288fb8c916b639a7cb673e0370ff4e59e06890",
     "aurora_lens/interpret/turn_act.py": "b4aa3e3f405b8e29c9abf96b756d1e86d1b2b780512b92589573eb33cafbd63a",
     "aurora_lens/interpret/turn_semantics.py": "b13d9c05bedcac6f6def4c59ac10ee4cc8de088b01e9a1c5e386dcca48d3b30e",
@@ -451,6 +451,6 @@
       }
     }
   },
-  "shared_core_sha256": "ad204c11746e3f62930639bca6406f374ea38e6c29c60382c8ac7f7628125ea4",
+  "shared_core_sha256": "d7a3e20d3b44a0985072bdf65d6ad394cf3de76e19e04403bd075fb2be72f0ed",
   "pair_verified": true
 }

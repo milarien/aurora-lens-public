@@ -2352,6 +2352,10 @@ class SpacyBackend(ExtractionBackend):
         """Find the subject of a verb from its dependency children."""
         for child in verb.children:
             if child.dep_ in ("nsubj", "nsubjpass"):
+                # A relative subject is bound by the local noun-modifying
+                # dependency, not by recency or an inferred external referent.
+                if verb.dep_ == "relcl" and _is_relative_pronoun_in_relcl(child):
+                    return self._get_head_noun_text(verb.head)
                 return self._get_span_text(child)
         # Check head for passives / aux chains
         if verb.dep_ in ("xcomp", "ccomp", "conj"):
