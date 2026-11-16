@@ -47,6 +47,13 @@ SKIP_ANTHROPIC_API_KEY_MISSING = (
     "Opt-in integration test — not default CI. Environment-dependent credentials."
 )
 
+SKIP_ANTHROPIC_PACKAGE_MISSING = (
+    "Requires the optional anthropic package for ClaudeAdapter "
+    "(pip install aurora-lens[claude]). "
+    "Triggers when ANTHROPIC_API_KEY is set but anthropic is not installed. "
+    "Environment-dependent; not a governance waiver."
+)
+
 # --- Ollama local LLM ----------------------------------------------------------
 
 SKIP_OLLAMA_DAEMON_OR_MODEL = (

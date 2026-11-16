@@ -12,6 +12,7 @@ import pytest
 
 from tests.skip_reasons import (
     SKIP_ANTHROPIC_API_KEY_MISSING,
+    SKIP_ANTHROPIC_PACKAGE_MISSING,
     SKIP_OLLAMA_CONNECTION_FAILED,
     SKIP_STARLETTE_HTTP_TESTCLIENT,
 )
@@ -237,12 +238,14 @@ class TestLLMGovernanceIntegration:
         if not key or key.startswith("${"):
             pytest.skip(SKIP_ANTHROPIC_API_KEY_MISSING)
 
+        try:
+            import anthropic  # noqa: F401
+        except ImportError:
+            pytest.skip(SKIP_ANTHROPIC_PACKAGE_MISSING)
+
         from aurora_lens.adapters.claude import ClaudeAdapter
 
-        try:
-            adapter = ClaudeAdapter(api_key=key, model="claude-haiku-4-5-20251001")
-        except ImportError:
-            pytest.skip("anthropic package not installed (pip install aurora-lens[claude])")
+        adapter = ClaudeAdapter(api_key=key, model="claude-haiku-4-5-20251001")
         config = LensConfig(
             adapter=adapter,
             auto_interpret=True,
