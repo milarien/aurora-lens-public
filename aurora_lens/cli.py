@@ -204,6 +204,7 @@ def _run_init_config(args: argparse.Namespace) -> int:
             "  default_policy: strict\n"
             "  mode: public\n"
             f"  audit_log: {audit_path}\n"
+            "  evidence_capture_mode: hash_only\n"
             "extraction:\n"
             "  backend: spacy\n"
         ),

@@ -341,7 +341,7 @@
     },
     "aurora_lens/cli.py": {
       "private": "596480567a6aa990fe21ac22be989cacb7bb863e979205fa7e12fb148d89944f",
-      "public": "9a849aff6b9dd4ed0df7582148ffed0149282053020b5e9375104fd4d41b1c56",
+      "public": "ff5f5615bbaa2603256ee7ca6e2cf3f297628e9910a64b4aaa8b8aa983e92a98",
       "reason": "Public licensed managed launcher and installation diagnostics."
     },
     "aurora_lens/launcher/controller.py": {
