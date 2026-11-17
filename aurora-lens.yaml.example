@@ -19,6 +19,7 @@ governance:
   default_policy: strict
   mode: public
   audit_log: ./audit.jsonl
+  evidence_capture_mode: hash_only
 
 extraction:
   backend: spacy
